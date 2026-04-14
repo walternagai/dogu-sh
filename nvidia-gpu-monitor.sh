@@ -151,6 +151,10 @@ rotate_logs() {
 format_bar() {
     local value="$1"
     local width=20
+    if ! [[ "$value" =~ ^[0-9]+$ ]]; then
+        echo "N/A"
+        return
+    fi
     local filled=$(( value * width / 100 ))
     local empty=$(( width - filled ))
     local bar=""
@@ -260,9 +264,9 @@ print_summary() {
     local vbios="${20}"
 
     local temp_color="$GREEN"
-    if [ "${temp:-0}" -ge "$TEMP_THRESHOLD" ]; then
+    if [[ "$temp" =~ ^[0-9]+$ ]] && [ "$temp" -ge "$TEMP_THRESHOLD" ]; then
         temp_color="$RED"
-    elif [ "${temp:-0}" -ge $((TEMP_THRESHOLD - 10)) ]; then
+    elif [[ "$temp" =~ ^[0-9]+$ ]] && [ "$temp" -ge $((TEMP_THRESHOLD - 10)) ]; then
         temp_color="$YELLOW"
     fi
 
@@ -362,22 +366,26 @@ monitor_loop() {
         process_data=$(collect_process_data)
 
         while IFS=, read -r idx name gpu_util mem_util mem_used mem_total mem_free temp fan_speed power_draw power_limit sm_clock mem_clock max_sm max_mem pstate uuid driver vbios; do
-            idx=$(echo "$idx" | xargs)
+            sanitize() { echo "$1" | sed 's/\[N\/A\]//g; s/ //g' | xargs; }
+            idx=$(sanitize "$idx")
             name=$(echo "$name" | xargs)
-            gpu_util=$(echo "$gpu_util" | xargs)
-            mem_util=$(echo "$mem_util" | xargs)
-            mem_used=$(echo "$mem_used" | xargs)
-            mem_total=$(echo "$mem_total" | xargs)
-            mem_free=$(echo "$mem_free" | xargs)
-            temp=$(echo "$temp" | xargs)
-            fan_speed=$(echo "$fan_speed" | xargs)
-            power_draw=$(echo "$power_draw" | xargs)
-            power_limit=$(echo "$power_limit" | xargs)
-            sm_clock=$(echo "$sm_clock" | xargs)
-            mem_clock=$(echo "$mem_clock" | xargs)
-            max_sm=$(echo "$max_sm" | xargs)
-            max_mem=$(echo "$max_mem" | xargs)
-            pstate=$(echo "$pstate" | xargs)
+            gpu_util=$(sanitize "$gpu_util"); gpu_util=${gpu_util:-0}
+            mem_util=$(sanitize "$mem_util"); mem_util=${mem_util:-0}
+            mem_used=$(sanitize "$mem_used"); mem_used=${mem_used:-0}
+            mem_total=$(sanitize "$mem_total"); mem_total=${mem_total:-0}
+            mem_free=$(sanitize "$mem_free"); mem_free=${mem_free:-0}
+            temp=$(sanitize "$temp"); temp=${temp:-0}
+            fan_speed=$(sanitize "$fan_speed"); fan_speed=${fan_speed:-N/A}
+            power_draw=$(sanitize "$power_draw"); power_draw=${power_draw:-N/A}
+            power_limit=$(sanitize "$power_limit"); power_limit=${power_limit:-N/A}
+            sm_clock=$(sanitize "$sm_clock"); sm_clock=${sm_clock:-N/A}
+            mem_clock=$(sanitize "$mem_clock"); mem_clock=${mem_clock:-N/A}
+            max_sm=$(sanitize "$max_sm"); max_sm=${max_sm:-N/A}
+            max_mem=$(sanitize "$max_mem"); max_mem=${max_mem:-N/A}
+            pstate=$(echo "$pstate" | xargs); pstate=${pstate:-N/A}
+            uuid=$(echo "$uuid" | xargs)
+            driver=$(echo "$driver" | xargs)
+            vbios=$(echo "$vbios" | xargs)
 
             print_summary "$timestamp" "$idx" "$name" \
                 "$gpu_util" "$mem_util" "$mem_used" "$mem_total" "$mem_free" \
@@ -385,7 +393,7 @@ monitor_loop() {
                 "$sm_clock" "$mem_clock" "$max_sm" "$max_mem" \
                 "$pstate" "$uuid" "$driver" "$vbios"
 
-            if [ "${temp:-0}" -ge "$TEMP_THRESHOLD" ]; then
+            if [[ "$temp" =~ ^[0-9]+$ ]] && [ "$temp" -ge "$TEMP_THRESHOLD" ]; then
                 log_alert "$timestamp" "$idx" "$name" "$temp" \
                     "$gpu_util" "$mem_util" "$mem_used" "$mem_total" \
                     "$power_draw" "$power_limit" "$fan_speed" \
