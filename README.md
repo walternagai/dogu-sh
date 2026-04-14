@@ -25,6 +25,10 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `docker-network-manager.sh`: Criação, remoção, conexão e inspeção de redes Docker.
 - `docker-volume-mgr.sh`: Listagem, identificação de órfãos, backup e restauração de volumes.
 - `docker-stats-history.sh`: Registro histórico de CPU/RAM dos containers em CSV.
+- `docker-dependency-map.sh`: Mapeamento de dependências entre containers (redes, volumes, depends_on).
+- `docker-cis-benchmark.sh`: Verificação de conformidade com CIS Docker Benchmark.
+- `docker-secret-scanner.sh`: Detecção de segredos expostos em variáveis de ambiente e labels.
+- `docker-bottleneck-detect.sh`: Detecção de gargalos e desperdício de recursos comparando limites vs uso real.
 
 ### 🛡️ Segurança
 - `ssh-key-manager.sh`: Geração, listagem, rotação e distribuição de chaves SSH entre hosts.
