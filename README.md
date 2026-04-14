@@ -58,6 +58,42 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `wifi-scanner.sh`: Escaneamento de redes Wi-Fi e sugestão de canais.
 - `clipboard-manager.sh`: Histórico do clipboard com busca e persistência.
 
+### 🔢 Calculadoras e Conversores
+- `calculator.sh`: Calculadora interativa com histórico e suporte a expressões (bc).
+- `unit-converter.sh`: Conversão entre unidades (temperatura, comprimento, peso, volume, velocidade, área, tempo).
+- `currency-converter.sh`: Cotação de moedas em tempo real via API.
+- `subnet-calc.sh`: Calculadora de sub-redes IPv4/CIDR.
+- `color-converter.sh`: Conversão entre HEX, RGB, HSL e nome de cor com preview.
+
+### 🕐 Tempo e Relógio
+- `weather.sh`: Previsão do tempo via wttr.in com localização automática.
+- `world-clock.sh`: Relógio com múltiplos fusos horários configuráveis.
+- `alarm.sh`: Alarme/cronômetro com notificações no tempo alvo.
+- `stopwatch.sh`: Cronômetro com voltas (laps).
+- `calendar.sh`: Calendário mensal com marcação de eventos.
+
+### 📝 Produtividade e Notas
+- `todo.sh`: Lista de tarefas com prioridades, categorias e persistência.
+- `quick-notes.sh`: Bloco de notas rápido com busca e tags.
+- `password-gen.sh`: Gerador de senhas configurável (tamanho, chars, quantidade, passphrase).
+- `qr-gen.sh`: Gera QR Code no terminal ou salva como PNG.
+- `base64-tool.sh`: Codifica/decodifica Base64, URL encode, hex.
+- `uuid-gen.sh`: Gera UUIDs v4 (um ou em lote).
+
+### 🖥️ Sistema e Monitoramento
+- `battery-monitor.sh`: Status da bateria, alerta de nível baixo/crítico.
+- `brightness.sh`: Controle de brilho do monitor (up/down/set).
+- `screenshot.sh`: Captura de tela (full, area, window) com salvamento automático.
+- `volume.sh`: Controle de volume e mute via PulseAudio/PipeWire.
+- `media-control.sh`: Controla players MPRIS (play/pause/next/prev) + now playing.
+- `dark-mode.sh`: Alterna tema claro/escuro em GTK e terminais.
+
+### 🌐 Rede e Lookup
+- `ip-info.sh`: Info do IP público, ISP, localização geográfica.
+- `dns-lookup.sh`: Lookup DNS (A, AAAA, MX, NS, TXT, CNAME).
+- `port-check.sh`: Verifica se portas estão abertas em um host.
+- `whois.sh`: Consulta WHOIS de domínios.
+
 ## 🛠️ Instalação e Uso
 
 ### Instalação rápida (recomendado)
@@ -124,6 +160,14 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `ssh-key-manager.sh` | `ssh-keygen`, `ssh-copy-id` |
 | `clipboard-manager.sh` | `xclip` (X11) / `wl-clipboard` (Wayland) |
 | `package-list-backup.sh` | gerenciador de pacotes da distro |
+| `calculator.sh` | `bc` |
+| `currency-converter.sh` | `curl`, `jq` |
+| `qr-gen.sh` | `qrencode` |
+| `screenshot.sh` | `scrot` ou `maim` (+ `slop` para área) |
+| `media-control.sh` | `playerctl` |
+| `whois.sh` | `whois` |
+| `dns-lookup.sh` | `dig` (dnsutils/bind-utils) ou `nslookup` |
+| `ip-info.sh` | `curl` |
 
 ## 📝 Notas
 - A maioria dos scripts suporta a flag `--dry-run` para visualização das alterações antes de aplicá-las.

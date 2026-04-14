@@ -1,72 +1,92 @@
 #!/bin/bash
-# menu-launcher.sh — Menu interativo para execução de scripts do repositório (Linux/macOS)
-# Uso: ./menu-launcher.sh [opcoes]
+# menu-launcher.sh — Menu interativo com barra luminosa para selecao de scripts
+# Uso: ./menu-launcher.sh
 
 set -eo pipefail
 
-# Cores
 GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
 BOLD='\033[1m'
+DIM='\033[0;90m'
 RESET='\033[0m'
 
-VERSION="1.1.0"
-
-DIM='\033[0;90m'
-
-log() { echo -e "${CYAN}[INFO]${RESET} $1"; }
-success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
-error() { echo -e "${RED}[ERROR]${RESET} $1"; }
+VERSION="2.0.0"
 
 declare -A SCRIPT_DESC
 SCRIPT_DESC=(
-    [clean-cache.sh]="Limpa arquivos temporários e caches de aplicações"
+    [clean-cache.sh]="Limpa arquivos temporarios e caches de aplicacoes"
     [clean-system.sh]="Limpeza profunda do sistema baseada na distro"
-    [clipboard-manager.sh]="Histórico do clipboard com busca e persistência"
-    [dependency-helper.sh]="Biblioteca de verificação e auto-instalação de dependências"
-    [disk-health.sh]="Monitora saúde SMART do disco"
+    [clipboard-manager.sh]="Historico do clipboard com busca e persistencia"
+    [dependency-helper.sh]="Biblioteca de verificacao e auto-instalacao de dependencias"
+    [disk-health.sh]="Monitora saude SMART do disco"
     [disk-scanner.sh]="Identifica os maiores arquivos e pastas no disco"
-    [docker-audit.sh]="Auditoria de segurança de containers Docker"
-    [docker-backup.sh]="Backup de volumes e configurações de containers"
-    [docker-clean.sh]="Limpa recursos não utilizados do Docker"
-    [docker-compose-manager.sh]="Gerencia múltiplos docker-compose.yml"
-    [docker-healthcheck.sh]="Verifica saúde e reinicia containers unhealthy"
-    [docker-image-slimmer.sh]="Analisa camadas de imagens e sugere reduções"
+    [docker-audit.sh]="Auditoria de seguranca de containers Docker"
+    [docker-backup.sh]="Backup de volumes e configuracoes de containers"
+    [docker-clean.sh]="Limpa recursos nao utilizados do Docker"
+    [docker-compose-manager.sh]="Gerencia multiplos docker-compose.yml"
+    [docker-healthcheck.sh]="Verifica saude e reinicia containers unhealthy"
+    [docker-image-slimmer.sh]="Analisa camadas de imagens e sugere reducoes"
     [docker-logs-watcher.sh]="Monitora logs de containers com filtros"
     [docker-network-manager.sh]="Gerencia redes Docker (criar, remover, conectar)"
     [docker-resource-alert.sh]="Alerta quando container ultrapassa limites de CPU/RAM"
-    [docker-restore.sh]="Restaura volumes e configurações de containers"
-    [docker-stats-history.sh]="Registra histórico de CPU/RAM dos containers em CSV"
+    [docker-restore.sh]="Restaura volumes e configuracoes de containers"
+    [docker-stats-history.sh]="Registra historico de CPU/RAM dos containers em CSV"
     [docker-status.sh]="Painel resumido do estado do Docker"
-    [docker-volume-mgr.sh]="Lista, identifica órfãos, faz backup e restaura volumes"
-    [env-manager.sh]="Orquestra dependências de projetos multiplataforma"
-    [folder-sync.sh]="Sincroniza diretórios com rsync"
-    [git-sync.sh]="Sincroniza múltiplos repositórios Git"
+    [docker-volume-mgr.sh]="Lista, identifica orfaos, faz backup e restaura volumes"
+    [env-manager.sh]="Orquestra dependencias de projetos multiplataforma"
+    [folder-sync.sh]="Sincroniza diretorios com rsync"
+    [git-sync.sh]="Sincroniza multiplos repositorios Git"
     [hunt-duplicates.sh]="Busca arquivos duplicados via SHA-256"
     [install-scripts.sh]="Instala scripts em ~/.local/bin e configura o PATH"
-    [menu-launcher.sh]="Menu interativo para execução de scripts"
-    [organize-downloads.sh]="Organiza arquivos por tipo de extensão"
+    [menu-launcher.sh]="Menu interativo para execucao de scripts"
+    [organize-downloads.sh]="Organiza arquivos por tipo de extensao"
     [package-list-backup.sh]="Exporta/importa lista de pacotes instalados"
-    [pomodor.sh]="Timer Pomodoro com notificações"
+    [pomodor.sh]="Timer Pomodoro com notificacoes"
     [quick-backup.sh]="Backup incremental com rsync"
     [setup-workspace.sh]="Gerenciador de layouts de multi-monitores"
     [snap-flatpak-manager.sh]="Lista, atualiza e limpa snaps e flatpaks"
-    [speedtest-log.sh]="Histórico de testes de velocidade da internet"
+    [speedtest-log.sh]="Historico de testes de velocidade da internet"
     [ssh-key-manager.sh]="Gerencia chaves SSH (gerar, listar, rotacionar)"
     [update-all.sh]="Atualiza pacotes do sistema e linguagens em um comando"
     [wifi-scanner.sh]="Escaneia redes Wi-Fi e sugere melhor canal"
+    [calculator.sh]="Calculadora interativa com historico e expressoes"
+    [unit-converter.sh]="Conversao entre unidades de medida"
+    [currency-converter.sh]="Cotacao de moedas em tempo real via API"
+    [subnet-calc.sh]="Calculadora de sub-redes IPv4/CIDR"
+    [color-converter.sh]="Conversao entre HEX, RGB, HSL e nome de cor"
+    [weather.sh]="Previsao do tempo via wttr.in"
+    [world-clock.sh]="Relogio com multiplos fusos horarios"
+    [alarm.sh]="Alarme/cronometro com notificacoes"
+    [stopwatch.sh]="Cronometro com voltas (laps)"
+    [calendar.sh]="Calendario mensal com marcacao de eventos"
+    [todo.sh]="Lista de tarefas com prioridades e categorias"
+    [quick-notes.sh]="Bloco de notas rapido com busca e tags"
+    [password-gen.sh]="Gerador de senhas configuravel"
+    [qr-gen.sh]="Gera QR Code no terminal ou salva como PNG"
+    [base64-tool.sh]="Codifica/decodifica Base64, URL e Hex"
+    [uuid-gen.sh]="Gera UUIDs v4 (um ou em lote)"
+    [battery-monitor.sh]="Status da bateria com alerta de nivel baixo"
+    [brightness.sh]="Controle de brilho do monitor"
+    [screenshot.sh]="Captura de tela com salvamento automatico"
+    [volume.sh]="Controle de volume e mute via PulseAudio/PipeWire"
+    [media-control.sh]="Controla players MPRIS e mostra now playing"
+    [dark-mode.sh]="Alterna tema claro/escuro em GTK e terminais"
+    [ip-info.sh]="Info do IP publico, ISP e localizacao geografica"
+    [dns-lookup.sh]="Lookup DNS (A, AAAA, MX, NS, TXT, CNAME)"
+    [port-check.sh]="Verifica se portas estao abertas em um host"
+    [whois.sh]="Consulta WHOIS de dominios"
 )
 
 declare -A SCRIPT_CATEGORY
 SCRIPT_CATEGORY=(
-    [clean-cache.sh]="Sistema e Manutenção"
-    [clean-system.sh]="Sistema e Manutenção"
+    [clean-cache.sh]="Sistema e Manutencao"
+    [clean-system.sh]="Sistema e Manutencao"
     [clipboard-manager.sh]="Produtividade"
     [dependency-helper.sh]="Infraestrutura"
-    [disk-health.sh]="Sistema e Manutenção"
-    [disk-scanner.sh]="Sistema e Manutenção"
+    [disk-health.sh]="Sistema e Manutencao"
+    [disk-scanner.sh]="Sistema e Manutencao"
     [docker-audit.sh]="Docker"
     [docker-backup.sh]="Docker"
     [docker-clean.sh]="Docker"
@@ -80,27 +100,67 @@ SCRIPT_CATEGORY=(
     [docker-stats-history.sh]="Docker"
     [docker-status.sh]="Docker"
     [docker-volume-mgr.sh]="Docker"
-    [env-manager.sh]="Instalação e Execução"
-    [folder-sync.sh]="Sincronização e Backup"
-    [git-sync.sh]="Sincronização e Backup"
-    [hunt-duplicates.sh]="Sistema e Manutenção"
-    [install-scripts.sh]="Instalação e Execução"
-    [menu-launcher.sh]="Instalação e Execução"
-    [organize-downloads.sh]="Sistema e Manutenção"
-    [package-list-backup.sh]="Sistema e Manutenção"
+    [env-manager.sh]="Instalacao e Execucao"
+    [folder-sync.sh]="Sincronizacao e Backup"
+    [git-sync.sh]="Sincronizacao e Backup"
+    [hunt-duplicates.sh]="Sistema e Manutencao"
+    [install-scripts.sh]="Instalacao e Execucao"
+    [menu-launcher.sh]="Instalacao e Execucao"
+    [organize-downloads.sh]="Sistema e Manutencao"
+    [package-list-backup.sh]="Sistema e Manutencao"
     [pomodor.sh]="Produtividade"
-    [quick-backup.sh]="Sincronização e Backup"
+    [quick-backup.sh]="Sincronizacao e Backup"
     [setup-workspace.sh]="Produtividade"
-    [snap-flatpak-manager.sh]="Sistema e Manutenção"
+    [snap-flatpak-manager.sh]="Sistema e Manutencao"
     [speedtest-log.sh]="Produtividade"
     [ssh-key-manager.sh]="Infraestrutura"
-    [update-all.sh]="Sistema e Manutenção"
+    [update-all.sh]="Sistema e Manutencao"
     [wifi-scanner.sh]="Produtividade"
+    [calculator.sh]="Calculadoras e Conversores"
+    [unit-converter.sh]="Calculadoras e Conversores"
+    [currency-converter.sh]="Calculadoras e Conversores"
+    [subnet-calc.sh]="Calculadoras e Conversores"
+    [color-converter.sh]="Calculadoras e Conversores"
+    [weather.sh]="Tempo e Relogio"
+    [world-clock.sh]="Tempo e Relogio"
+    [alarm.sh]="Tempo e Relogio"
+    [stopwatch.sh]="Tempo e Relogio"
+    [calendar.sh]="Tempo e Relogio"
+    [todo.sh]="Produtividade e Notas"
+    [quick-notes.sh]="Produtividade e Notas"
+    [password-gen.sh]="Produtividade e Notas"
+    [qr-gen.sh]="Produtividade e Notas"
+    [base64-tool.sh]="Produtividade e Notas"
+    [uuid-gen.sh]="Produtividade e Notas"
+    [battery-monitor.sh]="Sistema e Monitoramento"
+    [brightness.sh]="Sistema e Monitoramento"
+    [screenshot.sh]="Sistema e Monitoramento"
+    [volume.sh]="Sistema e Monitoramento"
+    [media-control.sh]="Sistema e Monitoramento"
+    [dark-mode.sh]="Sistema e Monitoramento"
+    [ip-info.sh]="Rede e Lookup"
+    [dns-lookup.sh]="Rede e Lookup"
+    [port-check.sh]="Rede e Lookup"
+    [whois.sh]="Rede e Lookup"
 )
 
-CATEGORY_ORDER=("Instalação e Execução" "Docker" "Sistema e Manutenção" "Sincronização e Backup" "Produtividade" "Infraestrutura")
+CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Produtividade" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup")
 
-# Identifica o diretório de instalação (seja local ou ~/.local/bin)
+CATEGORY_ICONS=()
+CATEGORY_ICONS_BY_NAME=()
+# Icons indexed by name using parallel arrays (bash 4 compatible)
+CAT_ICO_PKG="📦 Instalacao e Execucao"
+CAT_ICO_DKR="🐳 Docker"
+CAT_ICO_SYS="🛠  Sistema e Manutencao"
+CAT_ICO_BKP="📂 Sincronizacao e Backup"
+CAT_ICO_PRD="⚙  Produtividade"
+CAT_ICO_INF="🛡  Infraestrutura"
+CAT_ICO_CALC="🔢 Calculadoras e Conversores"
+CAT_ICO_TM="🕐 Tempo e Relogio"
+CAT_ICO_NOTES="📝 Produtividade e Notas"
+CAT_ICO_MON="🖥  Sistema e Monitoramento"
+CAT_ICO_NET="🌐 Rede e Lookup"
+
 if [[ "$(basename "$0")" == "menu-launcher.sh" ]]; then
     if [[ "$0" == *".local/bin"* ]]; then
         SCRIPT_DIR="$HOME/.local/bin"
@@ -109,67 +169,322 @@ if [[ "$(basename "$0")" == "menu-launcher.sh" ]]; then
     fi
 fi
 
-SCRIPTS_LIST=()
+# Build ordered arrays of categories and their scripts
+# CAT_NAMES[i] = category name, CAT_SCRIPTS[i] = "script1 script2 ..."
+CAT_NAMES=()
+CAT_SCRIPTS=()
+CAT_COUNTS=()
 
-show_menu() {
-    local idx=1
+build_categories() {
+    CAT_NAMES=()
+    CAT_SCRIPTS=()
+    CAT_COUNTS=()
     for cat in "${CATEGORY_ORDER[@]}"; do
-        local cat_scripts=()
+        scripts_for_cat=""
+        count=0
         for script in $(ls "$SCRIPT_DIR"/*.sh 2>/dev/null | sort | sed 's/.*\///'); do
             if [[ "${SCRIPT_CATEGORY[$script]}" == "$cat" ]]; then
-                cat_scripts+=("$script")
+                if [[ -n "$scripts_for_cat" ]]; then
+                    scripts_for_cat="$scripts_for_cat|$script"
+                else
+                    scripts_for_cat="$script"
+                fi
+                count=$((count + 1))
             fi
         done
-        if [[ ${#cat_scripts[@]} -eq 0 ]]; then
-            continue
+        if [[ $count -gt 0 ]]; then
+            CAT_NAMES+=("$cat")
+            CAT_SCRIPTS+=("$scripts_for_cat")
+            CAT_COUNTS+=("$count")
         fi
-        echo -e "\n  ${BOLD}${CYAN}── $cat ──${RESET}"
-        for script in "${cat_scripts[@]}"; do
-            local desc="${SCRIPT_DESC[$script]:-Sem descrição}"
-            printf "  ${GREEN}%2d${RESET}) %-30s ${DIM}%s${RESET}\n" "$idx" "$script" "$desc"
-            SCRIPTS_LIST[$idx]="$script"
-            ((idx++))
-        done
     done
-    echo -e "\n  ${BOLD} 0) Sair${RESET}"
+}
+
+get_cat_icon() {
+    case "$1" in
+        "Instalacao e Execucao") echo "📦" ;;
+        "Docker") echo "🐳" ;;
+        "Sistema e Manutencao") echo "🛠" ;;
+        "Sincronizacao e Backup") echo "📂" ;;
+        "Produtividade") echo "⚙" ;;
+        "Infraestrutura") echo "🛡" ;;
+        "Calculadoras e Conversores") echo "🔢" ;;
+        "Tempo e Relogio") echo "🕐" ;;
+        "Produtividade e Notas") echo "📝" ;;
+        "Sistema e Monitoramento") echo "🖥" ;;
+        "Rede e Lookup") echo "🌐" ;;
+        *) echo "📁" ;;
+    esac
+}
+
+get_term_height() { tput lines 2>/dev/null || echo 24; }
+get_term_width()  { tput cols 2>/dev/null || echo 80; }
+
+setup_terminal()   { tput smcup 2>/dev/null || true; stty -echo 2>/dev/null || true; }
+restore_terminal() { stty echo 2>/dev/null || true; tput rmcup 2>/dev/null || true; tput cnorm 2>/dev/null || true; }
+clear_screen()     { printf '\033[2J\033[H'; }
+hide_cursor()     { printf '\033[?25l'; }
+show_cursor()     { printf '\033[?25h'; }
+
+draw_header() {
+    local title="$1" subtitle="$2"
+    local width=$(get_term_width)
+    local line=""
+    for ((i=0; i<width; i++)); do line="${line}━"; done
+    echo -e "${CYAN}${line}${RESET}"
+    echo -e "  ${BOLD}${CYAN}dō${RESET}${BOLD}gu-sh${RESET}  ${DIM}│${RESET}  ${BOLD}${title}${RESET}"
+    [ -n "$subtitle" ] && echo -e "  ${DIM}${subtitle}${RESET}"
+    echo -e "${CYAN}${line}${RESET}"
     echo ""
 }
 
-# Main logic
-clear
-echo -e "${CYAN}${BOLD}=== My Util Scripts Launcher ===${RESET}"
-echo -e "Versão: $VERSION | Pasta: $SCRIPT_DIR"
+draw_footer() {
+    local hint="$1"
+    local width=$(get_term_width)
+    local line=""
+    for ((i=0; i<width; i++)); do line="${line}─"; done
+    echo ""
+    echo -e "${DIM}${line}${RESET}"
+    echo -e "  ${DIM}↑↓ navegar${RESET}  ${DIM}│${RESET}  ${GREEN}Enter${RESET} selecionar  ${DIM}│${RESET}  ${YELLOW}Esc${RESET} voltar/sair  ${DIM}│${RESET}  ${DIM}${hint}${RESET}"
+    echo -e "${DIM}${line}${RESET}"
+}
 
-if command -v fzf >/dev/null 2>&1; then
-    SELECTED=$(ls "$SCRIPT_DIR"/*.sh 2>/dev/null | sort | sed 's/.*\///' | fzf --prompt="🚀 Selecione um script: " --height=~50% --border --preview="head -5 $SCRIPT_DIR/{}")
-else
-    show_menu
-    read -p "Opção: " choice
-    if [[ "$choice" -gt 0 && "$choice" -le "${#SCRIPTS_LIST[@]}" ]]; then
-        SELECTED="${SCRIPTS_LIST[$choice]}"
+read_key() {
+    local key
+    IFS= read -rsn1 key 2>/dev/null || key=""
+    if [ -z "$key" ]; then
+        echo "enter"; return
     fi
-fi
+    case "$key" in
+        $'\x1b')
+            local seq=""
+            read -rsn2 -t0.05 seq 2>/dev/null || true
+            case "$seq" in
+                '[A'|'A') echo "up" ;;
+                '[B'|'B') echo "down" ;;
+                '[D'|'D') echo "left" ;;
+                '[C'|'C') echo "right" ;;
+                *) echo "esc" ;;
+            esac
+            ;;
+        q|Q) echo "esc" ;;
+        j) echo "down" ;;
+        k) echo "up" ;;
+        l) echo "right" ;;
+        h) echo "left" ;;
+        g) echo "home" ;;
+        G) echo "end" ;;
+        '') echo "space" ;;
+        *) echo "key:$key" ;;
+    esac
+}
 
-if [ -z "$SELECTED" ]; then
-    echo "Saindo..."
-    exit 0
-fi
+show_category_menu() {
+    local selected=0
+    local start=0
+    local total=${#CAT_NAMES[@]}
+    local redraw=true
 
-# Executa o script selecionado
-SCRIPT_PATH="$SCRIPT_DIR/$SELECTED"
-if [ -f "$SCRIPT_PATH" ]; then
-    echo -e "\n${YELLOW}Executando: $SELECTED${RESET}"
-    read -p "Deseja passar argumentos extras? (Enter para nenhum): " ARGS
-    
-    # Execução
-    chmod +x "$SCRIPT_PATH"
-    "$SCRIPT_PATH" $ARGS
-    
-    echo -e "\n${CYAN}--------------------------------------------------${RESET}"
-    echo "Script finalizado. Pressione Enter para voltar ao menu."
-    read
-    exec "$0" # Reinicia o menu
-else
-    error "Script não encontrado: $SCRIPT_PATH"
-    exit 1
-fi
+    while true; do
+        if $redraw; then
+            clear_screen
+            draw_header "Selecione uma categoria" "${total} categorias disponiveis"
+
+            local term_height=$(get_term_height)
+            local visible=$((term_height - 8))
+            [ $visible -lt 3 ] && visible=3
+            [ $visible -gt $total ] && visible=$total
+
+            [ $selected -lt $start ] && start=$selected
+            [ $selected -ge $((start + visible)) ] && start=$((selected - visible + 1))
+            [ $start -lt 0 ] && start=0
+
+            local end=$((start + visible - 1))
+            [ $end -ge $total ] && end=$((total - 1))
+
+            for ((i=start; i<=end; i++)); do
+                local cat="${CAT_NAMES[$i]}"
+                local icon=$(get_cat_icon "$cat")
+                local count="${CAT_COUNTS[$i]}"
+                local label="${icon}  ${cat}  ${DIM}(${count})${RESET}"
+                local width=$(get_term_width)
+                local padding=$((width - 4))
+
+                if [ "$i" -eq "$selected" ]; then
+                    printf "  \033[7m${BOLD} %-${padding}s\033[27m${RESET}\n" "$cat  (${count})"
+                else
+                    printf "  ${icon}  %-$((${padding} - 4))s ${DIM}(${count})${RESET}\n" "$cat"
+                fi
+            done
+
+            local scroll_hints=""
+            [ $start -gt 0 ] && scroll_hints="${scroll_hints}▲ mais acima  "
+            [ $end -lt $((total - 1)) ] && scroll_hints="${scroll_hints}▼ mais abaixo  "
+            draw_footer "$scroll_hints"
+            hide_cursor
+            redraw=false
+        fi
+
+        local key=$(read_key)
+        case "$key" in
+            up)    [ $selected -gt 0 ] && selected=$((selected - 1)); redraw=true ;;
+            down)  [ $selected -lt $((total - 1)) ] && selected=$((selected + 1)); redraw=true ;;
+            home)  selected=0; redraw=true ;;
+            end)   selected=$((total - 1)); redraw=true ;;
+            enter) echo "$selected"; return ;;
+            esc)   echo ""; return ;;
+        esac
+    done
+}
+
+show_script_menu() {
+    local cat_idx="$1"
+    local category="${CAT_NAMES[$cat_idx]}"
+    local scripts_str="${CAT_SCRIPTS[$cat_idx]}"
+    local -a scripts=()
+    local IFS_OLD="$IFS"
+    IFS='|'
+    read -ra scripts <<< "$scripts_str"
+    IFS="$IFS_OLD"
+    local selected=0
+    local start=0
+    local total=${#scripts[@]}
+    local redraw=true
+
+    while true; do
+        if $redraw; then
+            clear_screen
+            local icon=$(get_cat_icon "$category")
+            draw_header "${icon} ${category}" "${total} scripts disponiveis"
+
+            local term_height=$(get_term_height)
+            local visible=$((term_height - 8))
+            [ $visible -lt 3 ] && visible=3
+            [ $visible -gt $total ] && visible=$total
+
+            [ $selected -lt $start ] && start=$selected
+            [ $selected -ge $((start + visible)) ] && start=$((selected - visible + 1))
+            [ $start -lt 0 ] && start=0
+
+            local end=$((start + visible - 1))
+            [ $end -ge $total ] && end=$((total - 1))
+
+            for ((i=start; i<=end; i++)); do
+                local script="${scripts[$i]}"
+                local desc="${SCRIPT_DESC[$script]:-Sem descricao}"
+                local width=$(get_term_width)
+                local padding=$((width - 4))
+
+                if [ "$i" -eq "$selected" ]; then
+                    printf "  \033[7m${BOLD} %-${padding}s\033[27m${RESET}\n" "${script}  ${desc}"
+                else
+                    printf "  ${GREEN}%-28s${RESET} ${DIM}%-$((${padding} - 28))s${RESET}\n" "$script" "$desc"
+                fi
+            done
+
+            local scroll_hints=""
+            [ $start -gt 0 ] && scroll_hints="${scroll_hints}▲ mais acima  "
+            [ $end -lt $((total - 1)) ] && scroll_hints="${scroll_hints}▼ mais abaixo  "
+            draw_footer "$scroll_hints"
+            hide_cursor
+            redraw=false
+        fi
+
+        local key=$(read_key)
+        case "$key" in
+            up|left) [ $selected -gt 0 ] && selected=$((selected - 1)); redraw=true ;;
+            down)    [ $selected -lt $((total - 1)) ] && selected=$((selected + 1)); redraw=true ;;
+            home)    selected=0; redraw=true ;;
+            end)     selected=$((total - 1)); redraw=true ;;
+            esc)     echo ""; return ;;
+            enter)   echo "${scripts[$selected]}"; return ;;
+        esac
+    done
+}
+
+run_script() {
+    local script="$1"
+    local script_path="$SCRIPT_DIR/$script"
+    show_cursor
+    restore_terminal
+    clear_screen
+
+    echo ""
+    echo -e "  ${YELLOW}${BOLD}▶ Executando: ${script}${RESET}"
+    echo -e "  ${DIM}Descricao: ${SCRIPT_DESC[$script]:-}${RESET}"
+    echo ""
+
+    read -p "  Argumentos extras (Enter para nenhum): " args
+    echo ""
+
+    chmod +x "$script_path" 2>/dev/null
+    "$script_path" $args
+    local exit_code=$?
+
+    echo ""
+    echo -e "  ${DIM}────────────────────────────────────────────────────${RESET}"
+    if [ $exit_code -eq 0 ]; then
+        echo -e "  ${GREEN}${BOLD}✓${RESET} Script finalizado com sucesso"
+    else
+        echo -e "  ${RED}${BOLD}✗${RESET} Script finalizou com codigo ${exit_code}"
+    fi
+    echo -e "  ${DIM}────────────────────────────────────────────────────${RESET}"
+    echo ""
+    read -p "  Pressione Enter para voltar ao menu..." dummy
+}
+
+fzf_mode() {
+    local selected
+    selected=$(ls "$SCRIPT_DIR"/*.sh 2>/dev/null | sort | sed 's/.*\///' | \
+        fzf --prompt="dogu-sh> " \
+            --height=~80% \
+            --border \
+            --preview="head -8 $SCRIPT_DIR/{}" \
+            --preview-window='right:50%:wrap' 2>/dev/null)
+    echo "$selected"
+}
+
+main() {
+    build_categories
+
+    if [ ${#CAT_NAMES[@]} -eq 0 ]; then
+        echo -e "${RED}Nenhum script encontrado em: ${SCRIPT_DIR}${RESET}"
+        exit 1
+    fi
+
+    if command -v fzf &>/dev/null; then
+        local selected=$(fzf_mode)
+        if [ -z "$selected" ]; then
+            exit 0
+        fi
+        local script_path="$SCRIPT_DIR/$selected"
+        if [ -f "$script_path" ]; then
+            run_script "$selected"
+        fi
+        exec "$0"
+    fi
+
+    trap 'restore_terminal; show_cursor; echo ""; exit 0' INT TERM
+    setup_terminal
+    hide_cursor
+
+    while true; do
+        local chosen_idx
+        chosen_idx=$(show_category_menu)
+        [ -z "$chosen_idx" ] && break
+
+        local chosen_script
+        chosen_script=$(show_script_menu "$chosen_idx")
+        [ -z "$chosen_script" ] && continue
+
+        run_script "$chosen_script"
+    done
+
+    restore_terminal
+    show_cursor
+    clear_screen
+    echo -e "  ${DIM}Ate logo!${RESET}"
+    echo ""
+}
+
+main
