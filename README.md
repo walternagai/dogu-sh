@@ -1,12 +1,14 @@
-# my_util_scripts
+# dōgu-sh · 道具
 
-Uma coleção de scripts utilitários em Bash para automação, manutenção do sistema e gerenciamento de Docker em ambiente Linux.
+> **dōgu** (道具) — *substantivo japonês*: ferramenta, instrumento, utensílio.
+
+Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sistema, não é uma plataforma — é o seu kit de ferramentas Bash para automação, manutenção e Docker em Linux.
 
 ## 🚀 Funcionalidades
 
 ### 📦 Instalação e Execução
 - `install-scripts.sh`: Instala todos os scripts em `~/.local/bin` e configura o PATH automaticamente.
-- `menu-launcher.sh`: Menu interativo (com suporte a `fzf`) para executar qualquer script do repositório.
+- `menu-launcher.sh`: Menu interativo (com suporte a `fzf`) para executar qualquer ferramenta do kit.
 - `env-manager.sh`: Orquestrador de ambientes que detecta e instala dependências de projetos (npm, pip, cargo, maven, gradle, composer, bundler, brew, apt).
 - `dependency-helper.sh`: Biblioteca compartilhada de verificação e auto-instalação de dependências usada por todos os scripts.
 
@@ -44,8 +46,8 @@ Uma coleção de scripts utilitários em Bash para automação, manutenção do 
 ### Instalação rápida (recomendado)
 
 ```bash
-git clone <url-do-repo>
-cd my_util_scripts
+git clone https://github.com/walternagai/dogu-sh.git
+cd dogu-sh
 chmod +x install-scripts.sh
 ./install-scripts.sh
 ```
