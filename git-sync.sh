@@ -409,7 +409,8 @@ count_error=0
 while IFS= read -r repo_path; do
     [ -z "$repo_path" ] && continue
 
-    repo_name=$(echo "$repo_path" | sed "s|$BASE_DIR/||" | sed "s|$BASE_DIR||")
+    repo_name="${repo_path#$BASE_DIR/}"
+    repo_name="${repo_name#$BASE_DIR}"
 
     if ! cd "$repo_path" 2>/dev/null; then
         echo -e "  ${RED}✗${RESET} $repo_name  ${DIM}(erro ao acessar)${RESET}"
