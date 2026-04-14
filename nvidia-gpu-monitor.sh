@@ -13,6 +13,15 @@
 
 set -eo pipefail
 
+NVIDIA_PATHS="/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/snap/bin:/opt/nvidia/bin"
+for p in ${NVIDIA_PATHS//:/ }; do
+    case ":$PATH:" in
+        *":$p:"*) ;;
+        *) PATH="$PATH:$p" ;;
+    esac
+done
+export PATH
+
 VERSION="1.0.0"
 
 GREEN='\033[1;32m'
@@ -90,7 +99,15 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-if ! command -v nvidia-smi &>/dev/null; then
+NVIDIA_SMI=""
+for candidate in nvidia-smi /usr/bin/nvidia-smi /usr/sbin/nvidia-smi /usr/local/bin/nvidia-smi /snap/bin/nvidia-smi; do
+    if command -v "$candidate" &>/dev/null; then
+        NVIDIA_SMI="$candidate"
+        break
+    fi
+done
+
+if [ -z "$NVIDIA_SMI" ]; then
     echo -e "  ${RED}Error: nvidia-smi not found.${RESET}" >&2
     echo -e "  Install NVIDIA drivers:" >&2
     echo -e "    sudo apt install nvidia-driver-535   # Debian/Ubuntu" >&2
@@ -99,7 +116,7 @@ if ! command -v nvidia-smi &>/dev/null; then
     exit 1
 fi
 
-if ! nvidia-smi &>/dev/null; then
+if ! "$NVIDIA_SMI" &>/dev/null; then
     echo -e "  ${RED}Error: nvidia-smi failed. No NVIDIA GPU detected or driver issue.${RESET}" >&2
     exit 1
 fi
@@ -142,7 +159,7 @@ format_bar() {
 
 collect_gpu_data() {
     local query_output
-    query_output=$(nvidia-smi \
+    query_output=$("$NVIDIA_SMI" \
         --query-gpu=index,name,utilization.gpu,utilization.memory,memory.used,memory.total,memory.free,temperature.gpu,fan.speed,power.draw,power.limit,clocks.current.sm,clocks.current.mem,clocks.max.sm,clocks.max.mem,pstate,uuid,driver_version,vbios_version \
         --format=csv,noheader,nounits 2>/dev/null) || return 1
 
@@ -150,7 +167,7 @@ collect_gpu_data() {
 }
 
 collect_process_data() {
-    nvidia-smi --query-compute-apps=pid,gpu_uuid,process_name,used_memory --format=csv,noheader,nounits 2>/dev/null || echo ""
+    "$NVIDIA_SMI" --query-compute-apps=pid,gpu_uuid,process_name,used_memory --format=csv,noheader,nounits 2>/dev/null || echo ""
 }
 
 log_alert() {
