@@ -29,15 +29,19 @@ RESET='\033[0m'
 DRY_RUN=false
 DO_PUSH=false
 DO_FETCH_ONLY=false
+DO_COMMIT=false
 CLEAN_ALL=false
 MAX_DEPTH=5
 POSITIONAL_ARGS=()
+
+COMMIT_TAGS="feat fix docs style refactor perf test chore"
 
 while [ $# -gt 0 ]; do
     case "$1" in
         --dry-run) DRY_RUN=true; shift ;;
         --push|-p) DO_PUSH=true; shift ;;
         --fetch|-f) DO_FETCH_ONLY=true; shift ;;
+        --commit|-C) DO_COMMIT=true; shift ;;
         --all|-a) CLEAN_ALL=true; shift ;;
         --depth) MAX_DEPTH="${2:-5}"; shift 2 ;;
         --help|-h)
@@ -53,6 +57,7 @@ while [ $# -gt 0 ]; do
             echo "    --dry-run       Preview sem fazer fetch/pull/push"
             echo "    --push          Faz push apos pull (apenas se sem conflito)"
             echo "    --fetch         Apenas fetch, sem pull/push"
+            echo "    --commit        Oferece commit para repos modificados"
             echo "    --all           Executa sem confirmacao"
             echo "    --depth N       Profundidade maxima de busca (padrao: 5)"
             echo "    --help          Mostra esta ajuda"
@@ -62,6 +67,13 @@ while [ $# -gt 0 ]; do
             echo "    ./git-sync.sh ~/Projects"
             echo "    ./git-sync.sh --dry-run --fetch ~/repos"
             echo "    ./git-sync.sh --push --all ."
+            echo "    ./git-sync.sh --commit ~/Projects"
+            echo ""
+            echo "  Tags de commit disponiveis:"
+            echo "    feat fix docs style refactor perf test chore"
+            echo ""
+            echo "  Variavel de ambiente:"
+            echo "    OLLAMA_DEFAULT_MODEL  Modelo padrao do Ollama (ex: llama3, mistral)"
             echo ""
             exit 0
             ;;
@@ -70,6 +82,289 @@ while [ $# -gt 0 ]; do
         *) POSITIONAL_ARGS+=("$1"); shift ;;
     esac
 done
+
+check_ollama_model() {
+    if ! command -v ollama &>/dev/null; then
+        return 1
+    fi
+    if ! ollama list &>/dev/null; then
+        echo -e "  ${YELLOW}Aviso: Ollama instalado mas nao esta em execucao.${RESET}" >&2
+        return 1
+    fi
+    if [ -n "$OLLAMA_DEFAULT_MODEL" ]; then
+        OLLAMA_MODEL="$OLLAMA_DEFAULT_MODEL"
+    else
+        echo ""
+        echo -e "  ${BOLD}Modelos Ollama disponiveis:${RESET}"
+        models=$(ollama list 2>/dev/null | tail -n +2 | awk '{print "    - " $1}')
+        if [ -n "$models" ]; then
+            echo "$models"
+        else
+            echo "    (nenhum modelo encontrado)"
+        fi
+        echo ""
+        printf "  Informe o modelo padrao para commits: "
+        read -r OLLAMA_MODEL < /dev/tty 2>/dev/null || OLLAMA_MODEL=""
+        if [ -z "$OLLAMA_MODEL" ]; then
+            echo -e "  ${RED}Erro: Nenhum modelo informado.${RESET}" >&2
+            return 1
+        fi
+        export OLLAMA_DEFAULT_MODEL="$OLLAMA_MODEL"
+    fi
+    return 0
+}
+
+generate_commit_message() {
+    local diff_output
+    diff_output=$(git diff --stat 2>/dev/null)
+    local diff_full
+    diff_full=$(git diff 2>/dev/null | head -200)
+
+    if command -v ollama &>/dev/null && [ -n "$OLLAMA_MODEL" ]; then
+        echo -e "    ${DIM}→ Gerando commit com Ollama ($OLLAMA_MODEL)...${RESET}"
+        local prompt
+        prompt="Analyze this git diff and generate a concise commit message using Conventional Commits format. Use one of these tags: feat, fix, docs, style, refactor, perf, test, chore. Format: tag: description. Return ONLY the commit message, nothing else. Diff stats: ${diff_output}. Diff: ${diff_full}"
+        local msg
+        msg=$(ollama run "$OLLAMA_MODEL" "$prompt" 2>/dev/null | head -5 | sed '/^$/d' | head -1)
+        if [ -n "$msg" ]; then
+            msg=$(echo "$msg" | sed 's/^[`"'"'"']//;s/[`"'"'"']$//' | head -c 200)
+            echo -e "    ${GREEN}Mensagem sugerida:${RESET} $msg"
+            printf "    Usar esta mensagem? [S/n/e=editar]: "
+            read -r choice < /dev/tty 2>/dev/null || choice="s"
+            case "$choice" in
+                [nN]*)
+                    echo -e "    ${BOLD}Tags disponiveis:${RESET} $COMMIT_TAGS"
+                    printf "    Digite a mensagem de commit: "
+                    read -r msg < /dev/tty 2>/dev/null || msg=""
+                    ;;
+                [eE]*)
+                    printf "    Edite a mensagem: " 
+                    read -r msg < /dev/tty 2>/dev/null -i "$msg" || msg="$msg"
+                    ;;
+            esac
+            echo "$msg"
+        else
+            echo -e "    ${YELLOW}Ollama nao retornou mensagem.${RESET}"
+            echo -e "    ${BOLD}Tags disponiveis:${RESET} $COMMIT_TAGS"
+            printf "    Digite a mensagem de commit: "
+            read -r msg < /dev/tty 2>/dev/null || msg=""
+            echo "$msg"
+        fi
+    else
+        echo -e "    ${BOLD}Tags de commit:${RESET} $COMMIT_TAGS"
+        printf "    Digite a mensagem de commit: "
+        read -r msg < /dev/tty 2>/dev/null || msg=""
+        echo "$msg"
+    fi
+}
+
+MAGENTA='\033[1;35m'
+
+resolve_merge_conflicts() {
+    local conflicted
+    conflicted=$(git diff --name-only --diff-filter=U 2>/dev/null)
+    if [ -z "$conflicted" ]; then
+        return 0
+    fi
+
+    local file_count
+    file_count=$(echo "$conflicted" | wc -l | tr -d ' ')
+    echo -e "    ${RED}${file_count} arquivo(s) com conflito:${RESET}"
+    echo "$conflicted" | while IFS= read -r f; do
+        echo -e "      ${RED}•${RESET} $f"
+    done
+    echo ""
+
+    while true; do
+        echo -e "    ${BOLD}Opcoes de resolucao:${RESET}"
+        echo -e "      ${CYAN}1${RESET} Aceitar versao local   (ours)"
+        echo -e "      ${CYAN}2${RESET} Aceitar versao remota  (theirs)"
+        echo -e "      ${CYAN}3${RESET} Abrir editor           (\$EDITOR)"
+        echo -e "      ${CYAN}4${RESET} Resolver arquivo por arquivo"
+        echo -e "      ${CYAN}0${RESET} Abortar e sair"
+        echo ""
+        printf "    Escolha [0-4]: "
+        read -r choice < /dev/tty 2>/dev/null || choice="0"
+
+        case "$choice" in
+            1)
+                echo "$conflicted" | while IFS= read -r f; do
+                    git checkout --ours -- "$f" 2>/dev/null
+                    git add -- "$f" 2>/dev/null
+                    echo -e "      ${GREEN}✓${RESET} nosso: $f"
+                done
+                return 0
+                ;;
+            2)
+                echo "$conflicted" | while IFS= read -r f; do
+                    git checkout --theirs -- "$f" 2>/dev/null
+                    git add -- "$f" 2>/dev/null
+                    echo -e "      ${GREEN}✓${RESET} remoto: $f"
+                done
+                return 0
+                ;;
+            3)
+                local editor="${EDITOR:-nano}"
+                echo "$conflicted" | while IFS= read -r f; do
+                    $editor "$f" < /dev/tty
+                    git add -- "$f" 2>/dev/null
+                    echo -e "      ${GREEN}✓${RESET} editado: $f"
+                done
+                remaining=$(git diff --name-only --diff-filter=U 2>/dev/null | wc -l | tr -d ' ')
+                if [ "$remaining" -gt 0 ]; then
+                    echo -e "    ${YELLOW}Ainda ha ${remaining} conflito(s) nao resolvido(s).${RESET}"
+                    continue
+                fi
+                return 0
+                ;;
+            4)
+                echo "$conflicted" | while IFS= read -r f; do
+                    echo ""
+                    echo -e "      ${BOLD}Arquivo:${RESET} $f"
+                    echo -e "        ${CYAN}o${RESET}) ours   ${CYAN}t${RESET}) theirs   ${CYAN}e${RESET}) editor   ${CYAN}s${RESET}) pular"
+                    printf "        Resolucao para $f: "
+                    read -r fchoice < /dev/tty 2>/dev/null || fchoice="s"
+                    case "$fchoice" in
+                        [oO])
+                            git checkout --ours -- "$f" 2>/dev/null
+                            git add -- "$f" 2>/dev/null
+                            echo -e "        ${GREEN}✓${RESET} nosso: $f"
+                            ;;
+                        [tT])
+                            git checkout --theirs -- "$f" 2>/dev/null
+                            git add -- "$f" 2>/dev/null
+                            echo -e "        ${GREEN}✓${RESET} remoto: $f"
+                            ;;
+                        [eE])
+                            local editor="${EDITOR:-nano}"
+                            $editor "$f" < /dev/tty
+                            git add -- "$f" 2>/dev/null
+                            echo -e "        ${GREEN}✓${RESET} editado: $f"
+                            ;;
+                        *)
+                            echo -e "        ${DIM}Pulado: $f${RESET}"
+                            ;;
+                    esac
+                done
+                remaining=$(git diff --name-only --diff-filter=U 2>/dev/null | wc -l | tr -d ' ')
+                if [ "$remaining" -gt 0 ]; then
+                    echo -e "    ${YELLOW}Ainda ha ${remaining} conflito(s) nao resolvido(s).${RESET}"
+                    continue
+                fi
+                return 0
+                ;;
+            *)
+                echo -e "    ${RED}Abortando resolucao de conflitos.${RESET}"
+                git rebase --abort 2>/dev/null || git merge --abort 2>/dev/null || true
+                return 1
+                ;;
+        esac
+    done
+}
+
+resolve_diverged_repo() {
+    local repo_name="$1"
+    local branch="$2"
+    local ahead="$3"
+    local behind="$4"
+
+    echo -e "    ${RED}Repositorio divergiu: +${ahead} local / -${behind} remoto${RESET}"
+    echo -e "    ${BOLD}Opcoes:${RESET}"
+    echo -e "      ${CYAN}1${RESET} Rebase (reaplicar commits locais sobre remoto)"
+    echo -e "      ${CYAN}2${RESET} Merge  (criar merge commit)"
+    echo -e "      ${CYAN}3${RESET} Reset  (descartar commits locais, usar remoto)"
+    echo -e "      ${CYAN}0${RESET} Pular este repositorio"
+    echo ""
+    printf "    Escolha [0-3]: "
+    read -r choice < /dev/tty 2>/dev/null || choice="0"
+
+    case "$choice" in
+        1)
+            echo -e "    ${DIM}→ git pull --rebase${RESET}"
+            if ! git pull --rebase 2>/dev/null; then
+                if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                    echo -e "    ${YELLOW}Conflitos durante rebase. Resolvendo...${RESET}"
+                    if ! resolve_merge_conflicts; then
+                        return 1
+                    fi
+                    if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                        echo -e "    ${RED}Ainda ha conflitos apos resolucao. Abortando.${RESET}"
+                        git rebase --abort 2>/dev/null || true
+                        return 1
+                    fi
+                    git rebase --continue 2>/dev/null
+                    if [ $? -ne 0 ]; then
+                        echo -e "    ${RED}Falha ao continuar rebase. Abortando.${RESET}"
+                        git rebase --abort 2>/dev/null || true
+                        return 1
+                    fi
+                else
+                    echo -e "    ${RED}Falha no rebase sem conflitos de arquivo. Abortando.${RESET}"
+                    git rebase --abort 2>/dev/null || true
+                    return 1
+                fi
+            fi
+            echo -e "    ${GREEN}✓ rebase concluido${RESET}"
+            return 0
+            ;;
+        2)
+            echo -e "    ${DIM}→ git pull (merge)${RESET}"
+            if ! git pull --no-rebase 2>/dev/null; then
+                if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                    echo -e "    ${YELLOW}Conflitos durante merge. Resolvendo...${RESET}"
+                    if ! resolve_merge_conflicts; then
+                        return 1
+                    fi
+                    if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                        echo -e "    ${RED}Ainda ha conflitos apos resolucao. Abortando.${RESET}"
+                        git merge --abort 2>/dev/null || true
+                        return 1
+                    fi
+                    git commit --no-edit 2>/dev/null
+                else
+                    echo -e "    ${RED}Falha no merge sem conflitos de arquivo. Abortando.${RESET}"
+                    git merge --abort 2>/dev/null || true
+                    return 1
+                fi
+            fi
+            echo -e "    ${GREEN}✓ merge concluido${RESET}"
+            return 0
+            ;;
+        3)
+            echo -e "    ${RED}ATENCAO: Isso descartara ${ahead} commit(s) local(is)!${RESET}"
+            printf "    Confirmar reset para remoto? [s/N]: "
+            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+            case "$confirm" in
+                [sS]|[yY]*)
+                    git reset --hard "@{upstream}" 2>/dev/null
+                    echo -e "    ${GREEN}✓ resetado para remoto${RESET}"
+                    return 0
+                    ;;
+                *)
+                    echo -e "    ${DIM}Reset cancelado.${RESET}"
+                    return 2
+                    ;;
+            esac
+            ;;
+        *)
+            echo -e "    ${DIM}Repositorio pulado.${RESET}"
+            return 2
+            ;;
+    esac
+}
+
+count_diverged=0
+
+if $DO_COMMIT; then
+    ollama_available=false
+    if check_ollama_model; then
+        ollama_available=true
+        echo -e "  ${GREEN}Ollama disponivel${RESET} — modelo: ${CYAN}$OLLAMA_MODEL${RESET}"
+    else
+        echo -e "  ${YELLOW}Ollama nao disponivel${RESET} — commit sera manual"
+    fi
+    echo -e "  ${BOLD}Tags de commit:${RESET} $COMMIT_TAGS"
+fi
 
 BASE_DIR="${POSITIONAL_ARGS[0]:-.}"
 BASE_DIR="${BASE_DIR%/}"
@@ -109,7 +404,6 @@ count_clean=0
 count_dirty=0
 count_ahead=0
 count_behind=0
-count_diverged=0
 count_error=0
 
 while IFS= read -r repo_path; do
@@ -148,6 +442,33 @@ while IFS= read -r repo_path; do
         dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
         if [ "$dirty" -gt 0 ]; then
             echo -e "  ${YELLOW}■${RESET} $repo_name  ${DIM}[$branch] ${dirty} alteracao(oes) (sem remote)${RESET}"
+            if $DO_COMMIT && ! $DRY_RUN && ! $DO_FETCH_ONLY; then
+                if $CLEAN_ALL; then
+                    commit_msg=$(generate_commit_message)
+                    if [ -n "$commit_msg" ]; then
+                        git add -A 2>/dev/null
+                        git commit -m "$commit_msg" 2>/dev/null && \
+                            echo -e "    ${GREEN}✓ commit: ${DIM}${commit_msg}${RESET}" || \
+                            echo -e "    ${RED}✗ falha no commit${RESET}"
+                    fi
+                else
+                    printf "    Fazer commit de %s alteracao(oes)? [s/N]: " "$dirty"
+                    read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+                    case "$confirm" in
+                        [sS]|[yY]*)
+                            commit_msg=$(generate_commit_message)
+                            if [ -n "$commit_msg" ]; then
+                                git add -A 2>/dev/null
+                                git commit -m "$commit_msg" 2>/dev/null && \
+                                    echo -e "    ${GREEN}✓ commit: ${DIM}${commit_msg}${RESET}" || \
+                                    echo -e "    ${RED}✗ falha no commit${RESET}"
+                            else
+                                echo -e "    ${YELLOW}Commit cancelado (mensagem vazia).${RESET}"
+                            fi
+                            ;;
+                    esac
+                fi
+            fi
             count_dirty=$((count_dirty + 1))
         else
             echo -e "  ${DIM}○${RESET} $repo_name  ${DIM}[$branch] (sem remote)${RESET}"
@@ -176,10 +497,34 @@ while IFS= read -r repo_path; do
         needs_action=false
         count_dirty=$((count_dirty + 1))
     elif [ "$ahead" -gt 0 ] && [ "$behind" -gt 0 ]; then
-        status_icon="${RED}↕${RESET}"
-        status_detail="${RED}divergiu (+${ahead}/-${behind})${RESET}"
-        needs_action=false
+        echo -e "  ${RED}↕${RESET} $repo_name  ${DIM}[$branch]${RESET}  ${RED}divergiu (+${ahead}/-${behind})${RESET}"
         count_diverged=$((count_diverged + 1))
+        if ! $DRY_RUN && ! $DO_FETCH_ONLY; then
+            if $CLEAN_ALL; then
+                echo -e "    ${DIM}→ tentando rebase automatico${RESET}"
+                if ! git pull --rebase 2>/dev/null; then
+                    if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                        echo -e "    ${RED}Conflitos no rebase. Use modo interativo para resolver.${RESET}"
+                        echo -e "    ${RED}Execute: ./git-sync.sh $BASE_DIR${RESET}"
+                        echo ""
+                        exit 1
+                    else
+                        git rebase --abort 2>/dev/null || true
+                        echo -e "    ${RED}Falha no rebase. Aborting.${RESET}"
+                        echo ""
+                        exit 1
+                    fi
+                fi
+                echo -e "    ${GREEN}  ✓ rebase concluido${RESET}"
+            else
+                resolve_diverged_repo "$repo_name" "$branch" "$ahead" "$behind"
+                resolve_result=$?
+                if [ "$resolve_result" -eq 1 ]; then
+                    echo ""
+                    exit 1
+                fi
+            fi
+        fi
     elif [ "$ahead" -gt 0 ]; then
         status_icon="${CYAN}↑${RESET}"
         status_detail="${CYAN}+${ahead} nao enviado${RESET}"
@@ -198,38 +543,194 @@ while IFS= read -r repo_path; do
 
     echo -e "  $status_icon $repo_name  ${DIM}[$branch]${RESET}  $status_detail"
 
+    if [ "$dirty" -gt 0 ] && $DO_COMMIT && ! $DRY_RUN && ! $DO_FETCH_ONLY; then
+        if $CLEAN_ALL; then
+            commit_msg=$(generate_commit_message)
+            if [ -n "$commit_msg" ]; then
+                git add -A 2>/dev/null
+                git commit -m "$commit_msg" 2>/dev/null && \
+                    echo -e "    ${GREEN}✓ commit: ${DIM}${commit_msg}${RESET}" || \
+                    echo -e "    ${RED}✗ falha no commit${RESET}"
+            fi
+        else
+            printf "    Fazer commit de %s alteracao(oes)? [s/N]: " "$dirty"
+            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+            case "$confirm" in
+                [sS]|[yY]*)
+                    commit_msg=$(generate_commit_message)
+                    if [ -n "$commit_msg" ]; then
+                        git add -A 2>/dev/null
+                        git commit -m "$commit_msg" 2>/dev/null && \
+                            echo -e "    ${GREEN}✓ commit: ${DIM}${commit_msg}${RESET}" || \
+                            echo -e "    ${RED}✗ falha no commit${RESET}"
+                    else
+                        echo -e "    ${YELLOW}Commit cancelado (mensagem vazia).${RESET}"
+                    fi
+                    ;;
+            esac
+        fi
+    fi
+
     if $needs_action && ! $DRY_RUN && ! $DO_FETCH_ONLY; then
         if [ "$behind" -gt 0 ] && [ "$ahead" -eq 0 ]; then
             if $CLEAN_ALL; then
                 echo -e "    ${DIM}→ git pull${RESET}"
-                git pull --ff-only 2>/dev/null && \
-                    echo -e "    ${GREEN}  ✓ atualizado${RESET}" || \
-                    echo -e "    ${RED}  ✗ falha no pull${RESET}"
+                if ! git pull --ff-only 2>/dev/null; then
+                    echo -e "    ${YELLOW}ff-only falhou. Tentando rebase...${RESET}"
+                    if ! git pull --rebase 2>/dev/null; then
+                        if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                            echo -e "    ${YELLOW}Conflitos durante rebase. Resolvendo...${RESET}"
+                            if ! resolve_merge_conflicts; then
+                                echo ""
+                                exit 1
+                            fi
+                            if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                                echo -e "    ${RED}Conflitos remanescentes. Abortando.${RESET}"
+                                git rebase --abort 2>/dev/null || true
+                                echo ""
+                                exit 1
+                            fi
+                            git rebase --continue 2>/dev/null || true
+                        else
+                            echo -e "    ${RED}✗ CONFLITO: falha no pull de ${repo_name}${RESET}"
+                            echo -e "    ${RED}Resolva o conflito manualmente.${RESET}"
+                            echo ""
+                            exit 1
+                        fi
+                    fi
+                    echo -e "    ${GREEN}  ✓ atualizado via rebase${RESET}"
+                else
+                    echo -e "    ${GREEN}  ✓ atualizado${RESET}"
+                fi
             else
                 printf "    Puxar atualizacoes? [s/N]: "
                 read -r confirm < /dev/tty 2>/dev/null || confirm="n"
                 case "$confirm" in
                     [sS]|[yY]*)
-                        git pull --ff-only 2>/dev/null && \
-                            echo -e "    ${GREEN}  ✓ atualizado${RESET}" || \
-                            echo -e "    ${RED}  ✗ falha no pull${RESET}"
+                        if ! git pull --ff-only 2>/dev/null; then
+                            echo -e "    ${YELLOW}ff-only falhou. Tentando rebase...${RESET}"
+                            if ! git pull --rebase 2>/dev/null; then
+                                if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                                    echo -e "    ${YELLOW}Conflitos durante rebase. Resolvendo...${RESET}"
+                                    if ! resolve_merge_conflicts; then
+                                        echo ""
+                                        exit 1
+                                    fi
+                                    if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                                        echo -e "    ${RED}Conflitos remanescentes. Abortando.${RESET}"
+                                        git rebase --abort 2>/dev/null || true
+                                        echo ""
+                                        exit 1
+                                    fi
+                                    git rebase --continue 2>/dev/null || true
+                                    echo -e "    ${GREEN}  ✓ atualizado via rebase${RESET}"
+                                else
+                                    echo -e "    ${RED}✗ CONFLITO: falha no pull de ${repo_name}${RESET}"
+                                    echo -e "    ${RED}Resolva o conflito manualmente.${RESET}"
+                                    echo ""
+                                    exit 1
+                                fi
+                            else
+                                echo -e "    ${GREEN}  ✓ atualizado via rebase${RESET}"
+                            fi
+                        else
+                            echo -e "    ${GREEN}  ✓ atualizado${RESET}"
+                        fi
                         ;;
                 esac
             fi
         elif [ "$ahead" -gt 0 ] && [ "$behind" -eq 0 ] && $DO_PUSH; then
             if $CLEAN_ALL; then
                 echo -e "    ${DIM}→ git push${RESET}"
-                git push 2>/dev/null && \
-                    echo -e "    ${GREEN}  ✓ enviado${RESET}" || \
-                    echo -e "    ${RED}  ✗ falha no push${RESET}"
+                if ! git push 2>/dev/null; then
+                    echo -e "    ${YELLOW}Push rejeitado. Tentando pull --rebase...${RESET}"
+                    if git pull --rebase 2>/dev/null; then
+                        echo -e "    ${DIM}→ retry git push${RESET}"
+                        if ! git push 2>/dev/null; then
+                            echo -e "    ${RED}✗ CONFLITO: falha no push de ${repo_name} apos rebase${RESET}"
+                            echo -e "    ${RED}Resolva o conflito manualmente.${RESET}"
+                            echo ""
+                            exit 1
+                        fi
+                        echo -e "    ${GREEN}  ✓ enviado via rebase${RESET}"
+                    else
+                        if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                            echo -e "    ${YELLOW}Conflitos durante rebase. Resolvendo...${RESET}"
+                            if ! resolve_merge_conflicts; then
+                                echo ""
+                                exit 1
+                            fi
+                            if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                                echo -e "    ${RED}Conflitos remanescentes. Abortando.${RESET}"
+                                git rebase --abort 2>/dev/null || true
+                                echo ""
+                                exit 1
+                            fi
+                            git rebase --continue 2>/dev/null || true
+                            echo -e "    ${DIM}→ retry git push${RESET}"
+                            if ! git push 2>/dev/null; then
+                                echo -e "    ${RED}✗ CONFLITO: falha no push de ${repo_name} apos resolucao${RESET}"
+                                echo ""
+                                exit 1
+                            fi
+                            echo -e "    ${GREEN}  ✓ enviado apos resolucao${RESET}"
+                        else
+                            echo -e "    ${RED}✗ CONFLITO: falha no push de ${repo_name}${RESET}"
+                            echo -e "    ${RED}Resolva o conflito manualmente.${RESET}"
+                            echo ""
+                            exit 1
+                        fi
+                    fi
+                else
+                    echo -e "    ${GREEN}  ✓ enviado${RESET}"
+                fi
             else
                 printf "    Enviar commits? [s/N]: "
                 read -r confirm < /dev/tty 2>/dev/null || confirm="n"
                 case "$confirm" in
                     [sS]|[yY]*)
-                        git push 2>/dev/null && \
-                            echo -e "    ${GREEN}  ✓ enviado${RESET}" || \
-                            echo -e "    ${RED}  ✗ falha no push${RESET}"
+                        if ! git push 2>/dev/null; then
+                            echo -e "    ${YELLOW}Push rejeitado. Tentando pull --rebase...${RESET}"
+                            if git pull --rebase 2>/dev/null; then
+                                echo -e "    ${DIM}→ retry git push${RESET}"
+                                if ! git push 2>/dev/null; then
+                                    echo -e "    ${RED}✗ CONFLITO: falha no push de ${repo_name}apos rebase${RESET}"
+                                    echo -e "    ${RED}Resolva o conflito manualmente.${RESET}"
+                                    echo ""
+                                    exit 1
+                                fi
+                                echo -e "    ${GREEN}  ✓ enviado via rebase${RESET}"
+                            else
+                                if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                                    echo -e "    ${YELLOW}Conflitos durante rebase. Resolvendo...${RESET}"
+                                    if ! resolve_merge_conflicts; then
+                                        echo ""
+                                        exit 1
+                                    fi
+                                    if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                                        echo -e "    ${RED}Conflitos remanescentes. Abortando.${RESET}"
+                                        git rebase --abort 2>/dev/null || true
+                                        echo ""
+                                        exit 1
+                                    fi
+                                    git rebase --continue 2>/dev/null || true
+                                    echo -e "    ${DIM}→ retry git push${RESET}"
+                                    if ! git push 2>/dev/null; then
+                                        echo -e "    ${RED}✗ CONFLITO: falha no push apos resolucao${RESET}"
+                                        echo ""
+                                        exit 1
+                                    fi
+                                    echo -e "    ${GREEN}  ✓ enviado apos resolucao${RESET}"
+                                else
+                                    echo -e "    ${RED}✗ CONFLITO: falha no push de ${repo_name}${RESET}"
+                                    echo -e "    ${RED}Resolva o conflito manualmente.${RESET}"
+                                    echo ""
+                                    exit 1
+                                fi
+                            fi
+                        else
+                            echo -e "    ${GREEN}  ✓ enviado${RESET}"
+                        fi
                         ;;
                 esac
             fi
@@ -245,7 +746,9 @@ echo -e "  ${GREEN}✓${RESET} Atualizados:   ${GREEN}${BOLD}$count_clean${RESET
 echo -e "  ${CYAN}↑${RESET} Nao enviado:   ${CYAN}${BOLD}$count_ahead${RESET}"
 echo -e "  ${YELLOW}↓${RESET} Atrasados:     ${YELLOW}${BOLD}$count_behind${RESET}"
 echo -e "  ${YELLOW}■${RESET} Modificados:   ${YELLOW}${BOLD}$count_dirty${RESET}"
-echo -e "  ${RED}↕${RESET} Divergidos:     ${RED}${BOLD}$count_diverged${RESET}"
+if [ "$count_diverged" -gt 0 ]; then
+    echo -e "  ${RED}↕${RESET} Divergidos:     ${RED}${BOLD}$count_diverged${RESET}"
+fi
 
 if [ "$count_error" -gt 0 ]; then
     echo -e "  ${RED}✗${RESET} Erros:          ${RED}${BOLD}$count_error${RESET}"
@@ -255,6 +758,10 @@ echo "  ────────────────────────
 
 if $DO_PUSH; then
     echo -e "  ${DIM}Dica: use --push --all para sincronizar tudo automaticamente.${RESET}"
+fi
+
+if $DO_COMMIT; then
+    echo -e "  ${DIM}Dica: use --commit --all para commitar tudo automaticamente.${RESET}"
 fi
 
 echo ""
