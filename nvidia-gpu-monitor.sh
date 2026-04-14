@@ -11,9 +11,9 @@
 #   --help          Show this help
 #   --version       Show version
 
-set -eo pipefail
+set -uo pipefail
 
-NVIDIA_PATHS="/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/snap/bin:/opt/nvidia/bin"
+NVIDIA_PATHS="/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/snap/bin:/opt/nvidia/bin:/usr/lib/wsl/lib"
 for p in ${NVIDIA_PATHS//:/ }; do
     case ":$PATH:" in
         *":$p:"*) ;;
@@ -21,6 +21,8 @@ for p in ${NVIDIA_PATHS//:/ }; do
     esac
 done
 export PATH
+
+ERR_FILE="/tmp/nvidia-gpu-monitor-err.log"
 
 VERSION="1.0.0"
 
@@ -39,6 +41,7 @@ TEMP_THRESHOLD=80
 RETENTION_DAYS=7
 ONCE=false
 USE_NOTIFY=false
+DAEMON=false
 PID_FILE="/tmp/nvidia-gpu-monitor.pid"
 
 while [ $# -gt 0 ]; do
@@ -49,6 +52,7 @@ while [ $# -gt 0 ]; do
         --retention|-r) RETENTION_DAYS="${2:-7}"; shift 2 ;;
         --once|-1) ONCE=true; shift ;;
         --notify|-n) USE_NOTIFY=true; shift ;;
+        --daemon|-d) DAEMON=true; shift ;;
         --help|-h)
             echo ""
             echo "  nvidia-gpu-monitor.sh — Monitor NVIDIA GPU activity in background"
@@ -62,12 +66,14 @@ while [ $# -gt 0 ]; do
             echo "    --retention N   Log retention in days (default: 7)"
             echo "    --once          Collect once and exit"
             echo "    --notify        Desktop notification on alerts"
+            echo "    --daemon        Run as daemon (redirect output to log file)"
             echo "    --stop          Stop background monitor"
             echo "    --help          Show this help"
             echo "    --version       Show version"
             echo ""
             echo "  Background usage:"
             echo "    nohup ./nvidia-gpu-monitor.sh &"
+            echo "    ./nvidia-gpu-monitor.sh --daemon            (recommended)"
             echo "    nohup ./nvidia-gpu-monitor.sh --interval 10 --temp 75 &"
             echo ""
             echo "  Stop background monitor:"
@@ -100,8 +106,8 @@ while [ $# -gt 0 ]; do
 done
 
 NVIDIA_SMI=""
-for candidate in nvidia-smi /usr/bin/nvidia-smi /usr/sbin/nvidia-smi /usr/local/bin/nvidia-smi /snap/bin/nvidia-smi; do
-    if command -v "$candidate" &>/dev/null; then
+for candidate in /usr/bin/nvidia-smi /usr/sbin/nvidia-smi /usr/local/bin/nvidia-smi /snap/bin/nvidia-smi /usr/lib/wsl/lib/nvidia-smi nvidia-smi; do
+    if [ -x "$candidate" ] 2>/dev/null; then
         NVIDIA_SMI="$candidate"
         break
     fi
@@ -109,6 +115,7 @@ done
 
 if [ -z "$NVIDIA_SMI" ]; then
     echo -e "  ${RED}Error: nvidia-smi not found.${RESET}" >&2
+    echo -e "  PATH searched: $PATH" >&2
     echo -e "  Install NVIDIA drivers:" >&2
     echo -e "    sudo apt install nvidia-driver-535   # Debian/Ubuntu" >&2
     echo -e "    sudo dnf install xorg-x11-drv-nvidia # Fedora" >&2
@@ -118,6 +125,9 @@ fi
 
 if ! "$NVIDIA_SMI" &>/dev/null; then
     echo -e "  ${RED}Error: nvidia-smi failed. No NVIDIA GPU detected or driver issue.${RESET}" >&2
+    "$NVIDIA_SMI" &>"$ERR_FILE" || true
+    echo -e "  Details logged to: $ERR_FILE" >&2
+    cat "$ERR_FILE" >&2
     exit 1
 fi
 
@@ -278,7 +288,7 @@ cleanup() {
 
 trap cleanup SIGINT SIGTERM SIGHUP
 
-if ! $ONCE; then
+if ! $ONCE && ! $DAEMON; then
     if [ -f "$PID_FILE" ]; then
         OLD_PID=$(cat "$PID_FILE")
         if kill -0 "$OLD_PID" 2>/dev/null; then
@@ -291,20 +301,44 @@ if ! $ONCE; then
     echo $$ > "$PID_FILE"
 fi
 
+if $DAEMON; then
+    if [ -f "$PID_FILE" ]; then
+        OLD_PID=$(cat "$PID_FILE")
+        if kill -0 "$OLD_PID" 2>/dev/null; then
+            echo -e "  ${YELLOW}nvidia-gpu-monitor already running (PID $OLD_PID)${RESET}" >&2
+            echo -e "  Use --stop to stop it first." >&2
+            exit 1
+        fi
+        rm -f "$PID_FILE"
+    fi
+    echo $$ > "$PID_FILE"
+    echo -e "  ${GREEN}Starting nvidia-gpu-monitor in daemon mode (PID $$)${RESET}"
+    echo -e "  ${DIM}Log: ${LOG_FILE}${RESET}"
+    echo -e "  ${DIM}Stop with: ./nvidia-gpu-monitor.sh --stop${RESET}"
+    exec >> "$LOG_FILE" 2>&1
+    disown 2>/dev/null || true
+fi
+
 rotate_logs "$LOG_FILE" "$RETENTION_DAYS"
 rotate_logs "$ALERT_LOG" "$RETENTION_DAYS"
 
-echo -e "  ${BOLD}nvidia-gpu-monitor.sh v${VERSION}${RESET}" | tee -a "$LOG_FILE"
-echo -e "  ${DIM}Interval: ${INTERVAL}s | Temp alert: ${TEMP_THRESHOLD}°C | Retention: ${RETENTION_DAYS} days${RESET}" | tee -a "$LOG_FILE"
-echo -e "  ${DIM}Log: ${LOG_FILE}${RESET}" | tee -a "$LOG_FILE"
-echo -e "  ${DIM}Alert log: ${ALERT_LOG}${RESET}" | tee -a "$LOG_FILE"
+log_both() {
+    local msg="$1"
+    echo -e "$msg"
+    echo -e "$msg" >> "$LOG_FILE"
+}
+
+log_both "  ${BOLD}nvidia-gpu-monitor.sh v${VERSION}${RESET}"
+log_both "  ${DIM}Interval: ${INTERVAL}s | Temp alert: ${TEMP_THRESHOLD}°C | Retention: ${RETENTION_DAYS} days${RESET}"
+log_both "  ${DIM}Log: ${LOG_FILE}${RESET}"
+log_both "  ${DIM}Alert log: ${ALERT_LOG}${RESET}"
 
 if ! $ONCE; then
-    echo -e "  ${DIM}PID: $$ (PID file: ${PID_FILE})${RESET}" | tee -a "$LOG_FILE"
-    echo -e "  ${DIM}Stop with: kill \$\$ or ./nvidia-gpu-monitor.sh --stop${RESET}" | tee -a "$LOG_FILE"
+    log_both "  ${DIM}PID: $$ (PID file: ${PID_FILE})${RESET}"
+    log_both "  ${DIM}Stop with: kill \$\$ or ./nvidia-gpu-monitor.sh --stop${RESET}"
 fi
 
-echo "" | tee -a "$LOG_FILE"
+log_both ""
 
 monitor_loop() {
     while true; do
