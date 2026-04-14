@@ -368,6 +368,7 @@ fi
 
 BASE_DIR="${POSITIONAL_ARGS[0]:-.}"
 BASE_DIR="${BASE_DIR%/}"
+BASE_DIR="$(cd "$BASE_DIR" && pwd)"
 
 if [ ! -d "$BASE_DIR" ]; then
     echo "Erro: '$BASE_DIR' nao e um diretorio valido." >&2
