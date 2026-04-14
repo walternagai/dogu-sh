@@ -121,38 +121,38 @@ generate_commit_message() {
     diff_full=$(git diff 2>/dev/null | head -200)
 
     if command -v ollama &>/dev/null && [ -n "$OLLAMA_MODEL" ]; then
-        echo -e "    ${DIM}→ Gerando commit com Ollama ($OLLAMA_MODEL)...${RESET}"
+        echo -e "    ${DIM}→ Gerando commit com Ollama ($OLLAMA_MODEL)...${RESET}" >&2
         local prompt
         prompt="Analyze this git diff and generate a concise commit message using Conventional Commits format. Use one of these tags: feat, fix, docs, style, refactor, perf, test, chore. Format: tag: description. Return ONLY the commit message, nothing else. Diff stats: ${diff_output}. Diff: ${diff_full}"
         local msg
         msg=$(ollama run "$OLLAMA_MODEL" "$prompt" 2>/dev/null | head -5 | sed '/^$/d' | head -1)
         if [ -n "$msg" ]; then
             msg=$(echo "$msg" | sed 's/^[`"'"'"']//;s/[`"'"'"']$//' | head -c 200)
-            echo -e "    ${GREEN}Mensagem sugerida:${RESET} $msg"
-            printf "    Usar esta mensagem? [S/n/e=editar]: "
+            echo -e "    ${GREEN}Mensagem sugerida:${RESET} $msg" >&2
+            printf "    Usar esta mensagem? [S/n/e=editar]: " >&2
             read -r choice < /dev/tty 2>/dev/null || choice="s"
             case "$choice" in
                 [nN]*)
-                    echo -e "    ${BOLD}Tags disponiveis:${RESET} $COMMIT_TAGS"
-                    printf "    Digite a mensagem de commit: "
+                    echo -e "    ${BOLD}Tags disponiveis:${RESET} $COMMIT_TAGS" >&2
+                    printf "    Digite a mensagem de commit: " >&2
                     read -r msg < /dev/tty 2>/dev/null || msg=""
                     ;;
                 [eE]*)
-                    printf "    Edite a mensagem: " 
+                    printf "    Edite a mensagem: " >&2
                     read -r msg < /dev/tty 2>/dev/null -i "$msg" || msg="$msg"
                     ;;
             esac
             echo "$msg"
         else
-            echo -e "    ${YELLOW}Ollama nao retornou mensagem.${RESET}"
-            echo -e "    ${BOLD}Tags disponiveis:${RESET} $COMMIT_TAGS"
-            printf "    Digite a mensagem de commit: "
+            echo -e "    ${YELLOW}Ollama nao retornou mensagem.${RESET}" >&2
+            echo -e "    ${BOLD}Tags disponiveis:${RESET} $COMMIT_TAGS" >&2
+            printf "    Digite a mensagem de commit: " >&2
             read -r msg < /dev/tty 2>/dev/null || msg=""
             echo "$msg"
         fi
     else
-        echo -e "    ${BOLD}Tags de commit:${RESET} $COMMIT_TAGS"
-        printf "    Digite a mensagem de commit: "
+        echo -e "    ${BOLD}Tags de commit:${RESET} $COMMIT_TAGS" >&2
+        printf "    Digite a mensagem de commit: " >&2
         read -r msg < /dev/tty 2>/dev/null || msg=""
         echo "$msg"
     fi
@@ -480,8 +480,24 @@ while IFS= read -r repo_path; do
     fi
 
     dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
-    ahead=$(git rev-list --count "@{upstream}..HEAD" 2>/dev/null || echo 0)
-    behind=$(git rev-list --count "HEAD..@{upstream}" 2>/dev/null || echo 0)
+
+    # Resolve upstream tracking ref explicitly (evita falha silenciosa de @{upstream})
+    upstream_ref=$(git rev-parse --abbrev-ref --symbolic-full-name "@{upstream}" 2>/dev/null)
+    if [ -z "$upstream_ref" ] || [ "$upstream_ref" = "@{upstream}" ]; then
+        _remote=$(git config "branch.${branch}.remote" 2>/dev/null || echo "")
+        _merge=$(git config "branch.${branch}.merge" 2>/dev/null || echo "")
+        if [ -n "$_remote" ] && [ -n "$_merge" ]; then
+            upstream_ref="${_remote}/${_merge#refs/heads/}"
+        fi
+    fi
+
+    if [ -n "$upstream_ref" ] && git rev-parse "$upstream_ref" &>/dev/null; then
+        ahead=$(git rev-list --count "${upstream_ref}..HEAD" 2>/dev/null || echo 0)
+        behind=$(git rev-list --count "HEAD..${upstream_ref}" 2>/dev/null || echo 0)
+    else
+        ahead=0
+        behind=0
+    fi
 
     ahead=$(echo "$ahead" | tr -d '[:space:]')
     behind=$(echo "$behind" | tr -d '[:space:]')
@@ -545,14 +561,22 @@ while IFS= read -r repo_path; do
 
     echo -e "  $status_icon $repo_name  ${DIM}[$branch]${RESET}  $status_detail"
 
-    if [ "$dirty" -gt 0 ] && $DO_COMMIT && ! $DRY_RUN && ! $DO_FETCH_ONLY; then
+    if [ "$dirty" -gt 0 ] && ($DO_COMMIT || ($DO_PUSH && $CLEAN_ALL)) && ! $DRY_RUN && ! $DO_FETCH_ONLY; then
         if $CLEAN_ALL; then
             commit_msg=$(generate_commit_message)
             if [ -n "$commit_msg" ]; then
                 git add -A 2>/dev/null
-                git commit -m "$commit_msg" 2>/dev/null && \
-                    echo -e "    ${GREEN}✓ commit: ${DIM}${commit_msg}${RESET}" || \
+                if git commit -m "$commit_msg" 2>/dev/null; then
+                    echo -e "    ${GREEN}✓ commit: ${DIM}${commit_msg}${RESET}"
+                    if $DO_PUSH; then
+                        echo -e "    ${DIM}→ git push${RESET}"
+                        git push 2>/dev/null && \
+                            echo -e "    ${GREEN}✓ enviado${RESET}" || \
+                            echo -e "    ${RED}✗ falha no push${RESET}"
+                    fi
+                else
                     echo -e "    ${RED}✗ falha no commit${RESET}"
+                fi
             fi
         else
             printf "    Fazer commit de %s alteracao(oes)? [s/N]: " "$dirty"
