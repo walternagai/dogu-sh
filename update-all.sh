@@ -100,14 +100,20 @@ run_or_dry() {
         printf "  ${DIM}[dry-run]${RESET} %-50s\n" "$label"
         return 0
     fi
-    "$@" 2>/dev/null
-    local rc=$?
-    if [ $rc -eq 0 ]; then
+    local errout
+    errout=$(mktemp)
+    if "$@" 2>"$errout"; then
         printf "  ${GREEN}✓${RESET} %-50s\n" "$label"
+        rm -f "$errout"
     else
         printf "  ${RED}✗${RESET} %-50s ${DIM}(falha)${RESET}\n" "$label"
+        if [ -s "$errout" ]; then
+            head -3 "$errout" | while IFS= read -r line; do
+                echo -e "    ${DIM}$line${RESET}"
+            done
+        fi
+        rm -f "$errout"
     fi
-    return $rc
 }
 
 DISTRO=$(detect_distro)

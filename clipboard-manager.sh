@@ -20,7 +20,6 @@ if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; fi
 VERSION="1.0.0"
 
 GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
 BOLD='\033[1m'
@@ -158,9 +157,17 @@ case "$ACTION" in
                 [[ "$existing" =~ ^[0-9]+$ ]] || existing=0
 
                 if [ "$existing" -eq 0 ]; then
-                    echo "${content_hash}|${timestamp}|${preview}" >> "$HISTORY_FILE"
+                    b64_content=$(echo -n "$current_content" | base64 -w0 2>/dev/null || echo -n "$current_content" | base64)
+                    echo "${content_hash}|${timestamp}|${preview}|${b64_content}" >> "$HISTORY_FILE"
                     watch_count=$((watch_count + 1))
                     echo -e "  ${GREEN}#${watch_count}${RESET} ${DIM}${timestamp}${RESET} ${CYAN}${preview}${RESET}"
+
+                    line_count=$(wc -l < "$HISTORY_FILE" | tr -d ' ')
+                    [[ "$line_count" =~ ^[0-9]+$ ]] || line_count=0
+                    if [ "$line_count" -gt "$MAX_HISTORY" ]; then
+                        tail -n "$MAX_HISTORY" "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" 2>/dev/null
+                        mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE" 2>/dev/null
+                    fi
                 fi
             fi
 
@@ -277,13 +284,24 @@ case "$ACTION" in
         fi
 
         line_content=$(sed -n "${line_num}p" "$HISTORY_FILE")
-        content_hash=$(echo "$line_content" | cut -d'|' -f1)
         timestamp=$(echo "$line_content" | cut -d'|' -f2)
+        preview=$(echo "$line_content" | cut -d'|' -f3)
+        b64_content=$(echo "$line_content" | cut -d'|' -f4-)
 
         echo -e "  Restaurando item ${CYAN}#$RESTORE_INDEX${RESET} (${DIM}$timestamp${RESET})"
-        echo -e "  ${DIM}Conteudo sera copiado para o clipboard.${RESET}"
+        echo -e "  ${DIM}Preview: $preview${RESET}"
 
-        echo -e "  ${GREEN}✓${RESET} Item restaurado para o clipboard"
+        if [ -n "$b64_content" ]; then
+            restored_content=$(echo "$b64_content" | base64 -d 2>/dev/null)
+            if [ -n "$restored_content" ]; then
+                set_clipboard "$restored_content"
+                echo -e "  ${GREEN}✓${RESET} Item restaurado para o clipboard"
+            else
+                echo -e "  ${RED}✗${RESET} Falha ao decodificar conteudo — item muito antigo (sem base64)"
+            fi
+        else
+            echo -e "  ${RED}✗${RESET} Conteudo nao disponivel para restauracao (formato antigo)"
+        fi
         ;;
 
     clear)

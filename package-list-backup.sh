@@ -301,6 +301,8 @@ if [ "$ACTION" = "export" ]; then
         echo "" >> "$BACKUP_FILE"
         echo "}" >> "$BACKUP_FILE"
 
+        sed -i 's/,\(\s*\]\)/\1/g' "$BACKUP_FILE" 2>/dev/null || true
+
     else
         echo "# Package List Backup — $(date -Iseconds)" > "$BACKUP_FILE"
         echo "# Distro: $DISTRO" >> "$BACKUP_FILE"

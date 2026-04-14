@@ -252,14 +252,12 @@ analyze_image() {
         echo -e "  ${DIM}Portas expostas: $exposed_ports${RESET}"
     fi
 
-    local entrypoint
     entrypoint=$(docker inspect --format '{{.Config.Entrypoint}}' "$img" 2>/dev/null)
-    local cmd
     cmd=$(docker inspect --format '{{.Config.Cmd}}' "$img" 2>/dev/null)
-    if [ -n "$entrypoint" ] && [ "$entrypoint" != "[]" ; then
+    if [ -n "$entrypoint" ] && [ "$entrypoint" != "[]" ]; then
         echo -e "  ${DIM}Entrypoint: $entrypoint${RESET}"
     fi
-    if [ -n "$cmd" ] && [ "$cmd" != "[]" ; then
+    if [ -n "$cmd" ] && [ "$cmd" != "[]" ]; then
         echo -e "  ${DIM}Cmd: $cmd${RESET}"
     fi
 

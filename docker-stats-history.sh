@@ -18,7 +18,6 @@ if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer
 VERSION="1.0.0"
 
 GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
 BOLD='\033[1m'

@@ -213,12 +213,14 @@ case "$ACTION" in
             echo -e "  ${DIM}[dry-run] $gen_cmd${RESET}"
         else
             if [ "$KEY_TYPE" = "rsa" ]; then
-                ssh-keygen -t "$KEY_TYPE" -b "$KEY_BITS" -C "$KEY_COMMENT" -f "$KEY_PATH" -N "" &>/dev/null
+                gen_ok=false
+                ssh-keygen -t "$KEY_TYPE" -b "$KEY_BITS" -C "$KEY_COMMENT" -f "$KEY_PATH" -N "" &>/dev/null && gen_ok=true
             else
-                ssh-keygen -t "$KEY_TYPE" -C "$KEY_COMMENT" -f "$KEY_PATH" -N "" &>/dev/null
+                gen_ok=false
+                ssh-keygen -t "$KEY_TYPE" -C "$KEY_COMMENT" -f "$KEY_PATH" -N "" &>/dev/null && gen_ok=true
             fi
 
-            if [ $? -eq 0 ]; then
+            if $gen_ok; then
                 echo -e "  ${GREEN}✓${RESET} Chave gerada com sucesso"
                 echo ""
                 echo -e "  Privada: ${BOLD}${KEY_PATH}${RESET}"
@@ -282,12 +284,14 @@ case "$ACTION" in
                 echo -e "  ${YELLOW}Chave antiga salva em: ${backup_path}${RESET}"
 
                 if [ "$KEY_TYPE" = "rsa" ]; then
-                    ssh-keygen -t "$KEY_TYPE" -b "$KEY_BITS" -C "$KEY_COMMENT" -f "$KEY_PATH" -N "" &>/dev/null
+                    gen_ok=false
+                    ssh-keygen -t "$KEY_TYPE" -b "$KEY_BITS" -C "$KEY_COMMENT" -f "$KEY_PATH" -N "" &>/dev/null && gen_ok=true
                 else
-                    ssh-keygen -t "$KEY_TYPE" -C "$KEY_COMMENT" -f "$KEY_PATH" -N "" &>/dev/null
+                    gen_ok=false
+                    ssh-keygen -t "$KEY_TYPE" -C "$KEY_COMMENT" -f "$KEY_PATH" -N "" &>/dev/null && gen_ok=true
                 fi
 
-                if [ $? -eq 0 ]; then
+                if $gen_ok; then
                     echo -e "  ${GREEN}✓${RESET} Nova chave gerada com sucesso"
                     echo ""
                     echo -e "  Nova fingerprint:"
@@ -326,8 +330,7 @@ case "$ACTION" in
             echo -e "  ${DIM}[dry-run] ssh-copy-id -i ${pub_key} ${DEPLOY_HOST}${RESET}"
         else
             if command -v ssh-copy-id &>/dev/null; then
-                ssh-copy-id -i "$pub_key" "$DEPLOY_HOST" 2>/dev/null
-                if [ $? -eq 0 ]; then
+                if ssh-copy-id -i "$pub_key" "$DEPLOY_HOST" 2>/dev/null; then
                     echo -e "  ${GREEN}✓${RESET} Chave distribuida com sucesso para ${CYAN}${DEPLOY_HOST}${RESET}"
                 else
                     echo -e "  ${RED}✗${RESET} Falha ao distribuir chave para ${DEPLOY_HOST}"
@@ -336,9 +339,7 @@ case "$ACTION" in
                 fi
             else
                 echo -e "  ${YELLOW}ssh-copy-id nao encontrado. Tentando metodo manual...${RESET}"
-                pub_content=$(cat "$pub_key")
-                ssh "$DEPLOY_HOST" "mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo '${pub_content}' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys" 2>/dev/null
-                if [ $? -eq 0 ]; then
+                if cat "$pub_key" | ssh "$DEPLOY_HOST" "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys" 2>/dev/null; then
                     echo -e "  ${GREEN}✓${RESET} Chave adicionada manualmente a ${CYAN}${DEPLOY_HOST}${RESET}"
                 else
                     echo -e "  ${RED}✗${RESET} Falha ao distribuir chave"

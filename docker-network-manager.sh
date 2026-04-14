@@ -245,14 +245,16 @@ case "$ACTION" in
         echo -e "  ${BOLD}── Inspecao: ${NETWORK_NAME} ──${RESET}"
         echo ""
 
-        docker network inspect "$NETWORK_NAME" 2>/dev/null | while IFS= read -r line; do
-            echo -e "  $line"
-        done
-
-        if [ $? -ne 0 ]; then
+        inspect_ok=false
+        docker network inspect "$NETWORK_NAME" 2>/dev/null && inspect_ok=true
+        if ! $inspect_ok; then
             echo -e "  ${RED}Rede '${NETWORK_NAME}' nao encontrada.${RESET}"
             exit 1
         fi
+
+        docker network inspect "$NETWORK_NAME" 2>/dev/null | while IFS= read -r line; do
+            echo -e "  $line"
+        done
         ;;
 
     prune)

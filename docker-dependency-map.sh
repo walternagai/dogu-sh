@@ -95,8 +95,7 @@ while IFS='|' read -r cid cname cstatus cimage; do
 
     networks=$(docker inspect --format '{{range $net, $conf := .NetworkSettings.Networks}}{{$net}}|{{end}}' "$cid" 2>/dev/null)
     volumes=$(docker inspect --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}}|{{end}}{{end}}' "$cid" 2>/dev/null)
-    links=$(docker inspect --format '{{range $net, $conf := .NetworkSettings.Networks}}{{$conf.Links}}{{end}}' "$cid" 2>/dev/null)
-    depends=$(docker inspect --format '{{.Config.Labels}}' "$cid" 2>/dev/null | grep -oP 'com.docker.compose.depends_on:\K[^ ]+' || true)
+    depends=$(docker inspect --format '{{.Config.Labels}}' "$cid" 2>/dev/null | grep -oE 'com\.docker\.compose\.depends_on:[^ ]+' | sed 's/com.docker.compose.depends_on://' || true)
 
     for net in $(echo "$networks" | tr '|' '\n' | grep -v '^$'); do
         if [ -z "$FILTER_NETWORK" ] || [ "$net" = "$FILTER_NETWORK" ]; then
@@ -206,7 +205,7 @@ if $SHOW_TREE; then
 
     while IFS='|' read -r cid cname cstatus cimage; do
         [ -z "$cid" ] && continue
-        local is_running=false
+        is_running=false
         case "$cstatus" in
             Up*) is_running=true ;;
         esac

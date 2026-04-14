@@ -119,11 +119,6 @@ if $CHECK_HOST; then
         echo ""
     fi
 
-    running_as_root=false
-    if [ "$(id -u)" -eq 0 ]; then
-        running_as_root=true
-    fi
-
     if [ -f /etc/docker/daemon.json ]; then
         add_result "1.1" "daemon.json existe" "pass" "/etc/docker/daemon.json" "host"
     else

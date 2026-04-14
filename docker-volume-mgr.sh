@@ -87,7 +87,7 @@ if ! command -v docker &>/dev/null || ! docker info &>/dev/null; then
 fi
 
 format_bytes() {
-    local bytes=$1
+    bytes=$1
     bytes=$(echo "$bytes" | tr -d '[:space:]')
     if ! [[ "$bytes" =~ ^[0-9]+$ ]]; then echo "0 B"; return; fi
     if [ "$bytes" -ge 1073741824 ]; then echo "$(echo "scale=1; $bytes / 1073741824" | bc)GB"
@@ -98,11 +98,11 @@ format_bytes() {
 }
 
 get_volume_size() {
-    local vname="$1"
-    local mountpoint
+    vname="$1"
+    mountpoint
     mountpoint=$(docker volume inspect --format '{{.Mountpoint}}' "$vname" 2>/dev/null)
     if [ -d "$mountpoint" ] 2>/dev/null; then
-        local sz
+        sz
         sz=$(sudo du -sb "$mountpoint" 2>/dev/null | awk '{print $1}')
         if [ -n "$sz" ] && [[ "$sz" =~ ^[0-9]+$ ]]; then
             echo "$sz"
@@ -115,8 +115,8 @@ get_volume_size() {
 }
 
 is_orphan() {
-    local vname="$1"
-    local count
+    vname="$1"
+    count
     count=$(docker ps -a --filter "volume=$vname" -q 2>/dev/null | wc -l | tr -d ' ')
     [[ "$count" =~ ^[0-9]+$ ]] || count=0
     [ "$count" -eq 0 ]
@@ -153,22 +153,22 @@ case "$ACTION" in
 
             while IFS= read -r vname; do
                 [ -z "$vname" ] && continue
-                local driver
+                driver
                 driver=$(docker volume inspect --format '{{.Driver}}' "$vname" 2>/dev/null)
-                local mountpoint
+                mountpoint
                 mountpoint=$(docker volume inspect --format '{{.Mountpoint}}' "$vname" 2>/dev/null)
-                local short_name=$(echo "$vname" | cut -c1-28)
-                local short_mount=$(echo "$mountpoint" | cut -c1-28)
-                local orphan_label="nao"
-                local orphan_style="${DIM}"
+                short_name=$(echo "$vname" | cut -c1-28)
+                short_mount=$(echo "$mountpoint" | cut -c1-28)
+                orphan_label="nao"
+                orphan_style="${DIM}"
                 if is_orphan "$vname"; then
                     orphan_label="sim"
                     orphan_style="${YELLOW}"
                 fi
 
                 if $SHOW_SIZE; then
-                    local sz=$(get_volume_size "$vname")
-                    local size_str=$(format_bytes "$sz")
+                    sz=$(get_volume_size "$vname")
+                    size_str=$(format_bytes "$sz")
                     printf "  %-30s %-12s %-10s ${orphan_style}%-12s${RESET} %s\n" "$short_name" "$driver" "$size_str" "$orphan_label" "$short_mount"
                 else
                     printf "  %-30s %-12s ${orphan_style}%-10s${RESET} %s\n" "$short_name" "$driver" "$orphan_label" "$short_mount"
@@ -213,10 +213,10 @@ case "$ACTION" in
 
             echo -ne "$orphan_list" | while IFS= read -r vname; do
                 [ -z "$vname" ] && continue
-                local driver
+                driver
                 driver=$(docker volume inspect --format '{{.Driver}}' "$vname" 2>/dev/null)
-                local short_name=$(echo "$vname" | cut -c1-28)
-                local sz="?"
+                short_name=$(echo "$vname" | cut -c1-28)
+                sz="?"
                 if $SHOW_SIZE; then
                     sz=$(format_bytes "$(get_volume_size "$vname")")
                 fi
@@ -301,7 +301,7 @@ case "$ACTION" in
 
         mkdir -p "$OUTPUT_DIR" 2>/dev/null || true
 
-        local output_file="${OUTPUT_DIR}/${VOLUME_NAME}_$(date +%Y%m%d_%H%M%S).tar.gz"
+        output_file="${OUTPUT_DIR}/${VOLUME_NAME}_$(date +%Y%m%d_%H%M%S).tar.gz"
 
         echo -e "  Backup de ${CYAN}${VOLUME_NAME}${RESET}"
         echo -e "  Destino: ${BOLD}$output_file${RESET}"
@@ -310,13 +310,13 @@ case "$ACTION" in
         if $DRY_RUN; then
             echo -e "  ${DIM}[dry-run] docker run --rm -v ${VOLUME_NAME}:/volume -v $(pwd):/backup alpine tar czf /backup/${output_file} -C /volume .${RESET}"
         else
+            backup_ok=false
             docker run --rm \
                 -v "${VOLUME_NAME}:/volume:ro" \
                 -v "$(cd "$OUTPUT_DIR" && pwd):/backup" \
-                alpine tar czf "/backup/$(basename "$output_file")" -C /volume . 2>/dev/null
+                alpine tar czf "/backup/$(basename "$output_file")" -C /volume . 2>/dev/null && backup_ok=true
 
-            if [ $? -eq 0 ]; then
-                local file_size
+            if $backup_ok; then
                 file_size=$(du -h "$output_file" 2>/dev/null | awk '{print $1}')
                 echo -e "  ${GREEN}✓${RESET} Backup criado: ${BOLD}$output_file${RESET} ($file_size)"
             else
@@ -338,7 +338,7 @@ case "$ACTION" in
             exit 1
         fi
 
-        local vol_exists
+        vol_exists
         vol_exists=$(docker volume ls -q -f name="^${VOLUME_NAME}$" 2>/dev/null | wc -l | tr -d ' ')
 
         if [ "$vol_exists" -eq 0 ]; then
@@ -354,14 +354,14 @@ case "$ACTION" in
         if $DRY_RUN; then
             echo -e "  ${DIM}[dry-run] docker run --rm -v ${VOLUME_NAME}:/volume -v ${RESTORE_FILE}:/backup.tar.gz alpine tar xzf /backup.tar.gz -C /volume${RESET}"
         else
-            local abs_restore
             abs_restore=$(readlink -f "$RESTORE_FILE")
+            restore_ok=false
             docker run --rm \
                 -v "${VOLUME_NAME}:/volume" \
                 -v "${abs_restore}:/backup.tar.gz:ro" \
-                alpine tar xzf /backup.tar.gz -C /volume 2>/dev/null
+                alpine tar xzf /backup.tar.gz -C /volume 2>/dev/null && restore_ok=true
 
-            if [ $? -eq 0 ]; then
+            if $restore_ok; then
                 echo -e "  ${GREEN}✓${RESET} Volume ${CYAN}${VOLUME_NAME}${RESET} restaurado com sucesso"
             else
                 echo -e "  ${RED}✗${RESET} Falha ao restaurar volume"

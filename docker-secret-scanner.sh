@@ -137,6 +137,12 @@ scan_env() {
             *aws_secret_access_key*)
                 add_finding "$cname" "env" "$key" "[redacted]" "high" "aws-secret-key"
                 ;;
+            *github_token*|*gh_token*|*gitlab_token*)
+                add_finding "$cname" "env" "$key" "[redacted]" "high" "vcs-token-in-env"
+                ;;
+            *slack_token*|*slack_webhook*|*discord_token*|*discord_webhook*)
+                add_finding "$cname" "env" "$key" "[redacted]" "medium" "chat-token-in-env"
+                ;;
             *secret_key*|*secretkey*|*secret_token*)
                 add_finding "$cname" "env" "$key" "[redacted]" "high" "generic-secret"
                 ;;
@@ -153,31 +159,21 @@ scan_env() {
                     add_finding "$cname" "env" "$key" "[creds-in-url]" "high" "credentials-in-connection-string"
                 fi
                 ;;
+            *ssh_key*|*sshkey*)
+                add_finding "$cname" "env" "$key" "[redacted]" "high" "ssh-key-in-env"
+                ;;
+            *private_key*|*privatekey*|*priv_key*)
+                add_finding "$cname" "env" "$key" "[redacted]" "high" "private-key-reference"
+                ;;
             *token*|*jwt*|*bearer*)
                 if echo "$value" | grep -qE '^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$' && [ ${#value} -gt 30 ]; then
                     add_finding "$cname" "env" "$key" "[jwt-like]" "medium" "jwt-token-in-env"
                 fi
                 ;;
-            *private_key*|*privatekey*|*priv_key*)
-                add_finding "$cname" "env" "$key" "[redacted]" "high" "private-key-reference"
-                ;;
-            *github_token*|*gh_token*|*gitlab_token*)
-                add_finding "$cname" "env" "$key" "[redacted]" "high" "vcs-token-in-env"
-                ;;
-            *slack_token*|*slack_webhook*|*discord_token*|*discord_webhook*)
-                add_finding "$cname" "env" "$key" "[redacted]" "medium" "chat-token-in-env"
-                ;;
-            *ssh_key*|*sshkey*)
-                add_finding "$cname" "env" "$key" "[redacted]" "high" "ssh-key-in-env"
-                ;;
         esac
 
         if echo "$value" | grep -qE '^(sk-|pk_)[a-zA-Z0-9]{20,}'; then
             add_finding "$cname" "env" "$key" "[stripe/openai-key-like]" "high" "api-key-pattern"
-        fi
-
-        if echo "$value" | grep -qE '-----BEGIN [A-Z ]*PRIVATE KEY-----'; then
-            add_finding "$cname" "env" "$key" "[private-key-block]" "high" "private-key-in-env"
         fi
     done
 }
