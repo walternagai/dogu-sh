@@ -172,23 +172,28 @@ format_bar() {
 }
 
 collect_gpu_data() {
-    local query_output
-    local rc
-    query_output=$("$NVIDIA_SMI" \
-        --query-gpu=index,name,utilization.gpu,utilization.memory,memory.used,memory.total,memory.free,temperature.gpu,fan.speed,power.draw,power.limit,clocks.current.sm,clocks.current.mem,clocks.max.sm,clocks.max.mem,pstate,uuid,driver_version,vbios_version \
-        --format=csv,noheader,nounits 2>"$ERR_FILE")
+    local core_output extended_output rc
+    core_output=$("$NVIDIA_SMI" \
+        --query-gpu=index,name,utilization.gpu,utilization.memory,memory.used,memory.total,memory.free,temperature.gpu,pstate,uuid,driver_version,vbios_version \
+        --format=csv,noheader 2>"$ERR_FILE")
     rc=$?
-    if [ $rc -ne 0 ] || [ -z "$query_output" ]; then
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: nvidia-smi query failed (rc=$rc)" >> "$LOG_FILE"
+    if [ $rc -ne 0 ] || [ -z "$core_output" ]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: nvidia-smi core query failed (rc=$rc)" >> "$LOG_FILE"
         [ -s "$ERR_FILE" ] && cat "$ERR_FILE" >> "$LOG_FILE"
+        : > "$ERR_FILE"
         return 1
     fi
+    : > "$ERR_FILE"
 
-    echo "$query_output"
+    extended_output=$("$NVIDIA_SMI" \
+        --query-gpu=index,fan.speed,power.draw,power.limit,clocks.current.sm,clocks.current.mem,clocks.max.sm,clocks.max.mem \
+        --format=csv,noheader 2>>"$ERR_FILE") || true
+
+    echo "CORE<<${core_output}>>EXT<<${extended_output}>>"
 }
 
 collect_process_data() {
-    "$NVIDIA_SMI" --query-compute-apps=pid,gpu_uuid,process_name,used_memory --format=csv,noheader,nounits 2>/dev/null || echo ""
+    "$NVIDIA_SMI" --query-compute-apps=pid,gpu_uuid,process_name,used_memory --format=csv,noheader 2>/dev/null || echo ""
 }
 
 log_alert() {
@@ -225,6 +230,7 @@ log_alert() {
         if [ -n "$processes" ]; then
             echo "  Active Processes:"
             echo "$processes" | while IFS=, read -r pid uuid pname pmem; do
+                pmem=$(echo "$pmem" | sed 's/ MiB//' | xargs)
                 printf "    PID %-8s  %-30s  %s MiB\n" "$pid" "$pname" "$pmem"
             done
         else
@@ -356,53 +362,72 @@ monitor_loop() {
         local timestamp
         timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
-        local gpu_data
-        gpu_data=$(collect_gpu_data) || {
+        local raw_data
+        raw_data=$(collect_gpu_data) || {
             sleep "$INTERVAL"
             continue
         }
 
+        local core_data ext_data
+        core_data=$(echo "$raw_data" | sed -n 's/.*CORE<<\(.*\)>>EXT.*/\1/p')
+        ext_data=$(echo "$raw_data" | sed -n 's/.*>>EXT<<\(.*\)>>/\1/p')
+
         local process_data
         process_data=$(collect_process_data)
 
-        while IFS=, read -r idx name gpu_util mem_util mem_used mem_total mem_free temp fan_speed power_draw power_limit sm_clock mem_clock max_sm max_mem pstate uuid driver vbios; do
-            sanitize() { echo "$1" | sed 's/\[N\/A\]//g; s/ //g' | xargs; }
-            idx=$(sanitize "$idx")
+        local idx name gpu_util_pct mem_util_pct mem_used_mb mem_total_mb mem_free_mb temp_c pstate uuid driver vbios
+        local fan_speed="N/A" power_draw="N/A" power_limit="N/A"
+        local sm_clock="N/A" mem_clock="N/A" max_sm="N/A" max_mem="N/A"
+
+        while IFS=',' read -r idx name gpu_util_pct mem_util_pct mem_used_mb mem_total_mb mem_free_mb temp_c pstate uuid driver vbios; do
+            idx=$(echo "$idx" | xargs)
             name=$(echo "$name" | xargs)
-            gpu_util=$(sanitize "$gpu_util"); gpu_util=${gpu_util:-0}
-            mem_util=$(sanitize "$mem_util"); mem_util=${mem_util:-0}
-            mem_used=$(sanitize "$mem_used"); mem_used=${mem_used:-0}
-            mem_total=$(sanitize "$mem_total"); mem_total=${mem_total:-0}
-            mem_free=$(sanitize "$mem_free"); mem_free=${mem_free:-0}
-            temp=$(sanitize "$temp"); temp=${temp:-0}
-            fan_speed=$(sanitize "$fan_speed"); fan_speed=${fan_speed:-N/A}
-            power_draw=$(sanitize "$power_draw"); power_draw=${power_draw:-N/A}
-            power_limit=$(sanitize "$power_limit"); power_limit=${power_limit:-N/A}
-            sm_clock=$(sanitize "$sm_clock"); sm_clock=${sm_clock:-N/A}
-            mem_clock=$(sanitize "$mem_clock"); mem_clock=${mem_clock:-N/A}
-            max_sm=$(sanitize "$max_sm"); max_sm=${max_sm:-N/A}
-            max_mem=$(sanitize "$max_mem"); max_mem=${max_mem:-N/A}
+            gpu_util_pct=$(echo "$gpu_util_pct" | sed 's/ %//' | xargs); gpu_util_pct=${gpu_util_pct:-0}
+            mem_util_pct=$(echo "$mem_util_pct" | sed 's/ %//' | xargs); mem_util_pct=${mem_util_pct:-0}
+            mem_used_mb=$(echo "$mem_used_mb" | sed 's/ MiB//' | xargs); mem_used_mb=${mem_used_mb:-0}
+            mem_total_mb=$(echo "$mem_total_mb" | sed 's/ MiB//' | xargs); mem_total_mb=${mem_total_mb:-0}
+            mem_free_mb=$(echo "$mem_free_mb" | sed 's/ MiB//' | xargs); mem_free_mb=${mem_free_mb:-0}
+            temp_c=$(echo "$temp_c" | xargs); temp_c=${temp_c:-0}
             pstate=$(echo "$pstate" | xargs); pstate=${pstate:-N/A}
             uuid=$(echo "$uuid" | xargs)
             driver=$(echo "$driver" | xargs)
             vbios=$(echo "$vbios" | xargs)
 
+            if [ -n "$ext_data" ]; then
+                local ext_idx ext_fan ext_pwr_draw ext_pwr_limit ext_sm ext_mem ext_maxsm ext_maxmem
+                while IFS=',' read -r ext_idx ext_fan ext_pwr_draw ext_pwr_limit ext_sm ext_mem ext_maxsm ext_maxmem; do
+                    ext_idx=$(echo "$ext_idx" | xargs)
+                    if [ "$ext_idx" = "$idx" ]; then
+                        fan_speed=$(echo "$ext_fan" | sed 's/ %//' | xargs); fan_speed=${fan_speed:-N/A}
+                        power_draw=$(echo "$ext_pwr_draw" | sed 's/ W//' | xargs); power_draw=${power_draw:-N/A}
+                        power_limit=$(echo "$ext_pwr_limit" | sed 's/ W//' | xargs); power_limit=${power_limit:-N/A}
+                        sm_clock=$(echo "$ext_sm" | sed 's/ MHz//' | xargs); sm_clock=${sm_clock:-N/A}
+                        mem_clock=$(echo "$ext_mem" | sed 's/ MHz//' | xargs); mem_clock=${mem_clock:-N/A}
+                        max_sm=$(echo "$ext_maxsm" | sed 's/ MHz//' | xargs); max_sm=${max_sm:-N/A}
+                        max_mem=$(echo "$ext_maxmem" | sed 's/ MHz//' | xargs); max_mem=${max_mem:-N/A}
+                    fi
+                done <<< "$ext_data"
+            fi
+
             print_summary "$timestamp" "$idx" "$name" \
-                "$gpu_util" "$mem_util" "$mem_used" "$mem_total" "$mem_free" \
-                "$temp" "$fan_speed" "$power_draw" "$power_limit" \
+                "$gpu_util_pct" "$mem_util_pct" "$mem_used_mb" "$mem_total_mb" "$mem_free_mb" \
+                "$temp_c" "$fan_speed" "$power_draw" "$power_limit" \
                 "$sm_clock" "$mem_clock" "$max_sm" "$max_mem" \
                 "$pstate" "$uuid" "$driver" "$vbios"
 
-            if [[ "$temp" =~ ^[0-9]+$ ]] && [ "$temp" -ge "$TEMP_THRESHOLD" ]; then
-                log_alert "$timestamp" "$idx" "$name" "$temp" \
-                    "$gpu_util" "$mem_util" "$mem_used" "$mem_total" \
+            if [[ "$temp_c" =~ ^[0-9]+$ ]] && [ "$temp_c" -ge "$TEMP_THRESHOLD" ]; then
+                log_alert "$timestamp" "$idx" "$name" "$temp_c" \
+                    "$gpu_util_pct" "$mem_util_pct" "$mem_used_mb" "$mem_total_mb" \
                     "$power_draw" "$power_limit" "$fan_speed" \
                     "$sm_clock" "$mem_clock" "$pstate" "$process_data"
 
-                echo -e "  ${RED}${BOLD}⚠  TEMPERATURE ALERT: GPU ${idx} at ${temp}°C (threshold: ${TEMP_THRESHOLD}°C)${RESET}"
-                send_notify "GPU Temperature Alert" "GPU ${idx} (${name}) at ${temp}°C — exceeds ${TEMP_THRESHOLD}°C" "critical"
+                echo -e "  ${RED}${BOLD}⚠  TEMPERATURE ALERT: GPU ${idx} at ${temp_c}°C (threshold: ${TEMP_THRESHOLD}°C)${RESET}"
+                send_notify "GPU Temperature Alert" "GPU ${idx} (${name}) at ${temp_c}°C — exceeds ${TEMP_THRESHOLD}°C" "critical"
             fi
-        done <<< "$gpu_data"
+
+            fan_speed="N/A"; power_draw="N/A"; power_limit="N/A"
+            sm_clock="N/A"; mem_clock="N/A"; max_sm="N/A"; max_mem="N/A"
+        done <<< "$core_data"
 
         $ONCE && break
 
