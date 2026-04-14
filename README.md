@@ -21,6 +21,13 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `docker-resource-alert.sh`: Alertas de consumo de CPU/RAM.
 - `docker-audit.sh`: Auditoria de segurança de containers.
 - `docker-compose-manager.sh`: Gestão de múltiplos arquivos docker-compose.
+- `docker-image-slimmer.sh`: Análise de camadas de imagens e sugestões de otimização.
+- `docker-network-manager.sh`: Criação, remoção, conexão e inspeção de redes Docker.
+- `docker-volume-mgr.sh`: Listagem, identificação de órfãos, backup e restauração de volumes.
+- `docker-stats-history.sh`: Registro histórico de CPU/RAM dos containers em CSV.
+
+### 🛡️ Segurança
+- `ssh-key-manager.sh`: Geração, listagem, rotação e distribuição de chaves SSH entre hosts.
 
 ### 🛠️ Sistema e Manutenção
 - `clean-cache.sh`: Limpeza de arquivos temporários e caches de apps.
@@ -29,6 +36,11 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `disk-scanner.sh`: Identificação de arquivos e pastas volumosas.
 - `hunt-duplicates.sh`: Busca de arquivos duplicados via SHA-256.
 - `organize-downloads.sh`: Organização automática de arquivos por extensão.
+
+### 📦 Pacotes e Atualizações
+- `update-all.sh`: Atualiza pacotes do sistema + linguagens (npm, pip, cargo, brew) em um comando.
+- `package-list-backup.sh`: Exporta/importa lista de pacotes instalados para replicar máquina.
+- `snap-flatpak-manager.sh`: Lista, atualiza e limpa snaps e flatpaks.
 
 ### 📂 Sincronização e Backup
 - `quick-backup.sh`: Backup incremental via rsync.
@@ -40,6 +52,7 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `pomodor.sh`: Timer Pomodoro com notificações.
 - `speedtest-log.sh`: Histórico de testes de velocidade de internet em CSV.
 - `wifi-scanner.sh`: Escaneamento de redes Wi-Fi e sugestão de canais.
+- `clipboard-manager.sh`: Histórico do clipboard com busca e persistência.
 
 ## 🛠️ Instalação e Uso
 
@@ -104,6 +117,9 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `speedtest-log.sh` | `speedtest-cli` |
 | `wifi-scanner.sh` | `nmcli` (NetworkManager) / `iwlist` (wireless-tools) |
 | `git-sync.sh` | `git`, `ollama` (opcional, para commits com IA) |
+| `ssh-key-manager.sh` | `ssh-keygen`, `ssh-copy-id` |
+| `clipboard-manager.sh` | `xclip` (X11) / `wl-clipboard` (Wayland) |
+| `package-list-backup.sh` | gerenciador de pacotes da distro |
 
 ## 📝 Notas
 - A maioria dos scripts suporta a flag `--dry-run` para visualização das alterações antes de aplicá-las.
