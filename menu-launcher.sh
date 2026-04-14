@@ -161,13 +161,7 @@ CAT_ICO_NOTES="📝 Produtividade e Notas"
 CAT_ICO_MON="🖥  Sistema e Monitoramento"
 CAT_ICO_NET="🌐 Rede e Lookup"
 
-if [[ "$(basename "$0")" == "menu-launcher.sh" ]]; then
-    if [[ "$0" == *".local/bin"* ]]; then
-        SCRIPT_DIR="$HOME/.local/bin"
-    else
-        SCRIPT_DIR="$(pwd)"
-    fi
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Build ordered arrays of categories and their scripts
 # CAT_NAMES[i] = category name, CAT_SCRIPTS[i] = "script1 script2 ..."
@@ -452,16 +446,15 @@ main() {
         exit 1
     fi
 
-    if command -v fzf &>/dev/null; then
-        local selected=$(fzf_mode)
-        if [ -z "$selected" ]; then
-            exit 0
-        fi
-        local script_path="$SCRIPT_DIR/$selected"
-        if [ -f "$script_path" ]; then
-            run_script "$selected"
-        fi
-        exec "$0"
+    if [[ "$1" == "--fzf" ]] && command -v fzf &>/dev/null; then
+        while true; do
+            local selected
+            selected=$(fzf_mode)
+            [ -z "$selected" ] && break
+            local script_path="$SCRIPT_DIR/$selected"
+            [ -f "$script_path" ] && run_script "$selected"
+        done
+        exit 0
     fi
 
     trap 'restore_terminal; show_cursor; echo ""; exit 0' INT TERM
@@ -487,4 +480,4 @@ main() {
     echo ""
 }
 
-main
+main "$@"
