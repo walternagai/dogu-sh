@@ -301,14 +301,22 @@ show_category_menu() {
                 local cat="${CAT_NAMES[$i]}"
                 local icon=$(get_cat_icon "$cat")
                 local count="${CAT_COUNTS[$i]}"
-                local label="${icon}  ${cat}  ${DIM}(${count})${RESET}"
+                local count_str="(${count})"
                 local width=$(get_term_width)
-                local padding=$((width - 4))
 
                 if [ "$i" -eq "$selected" ]; then
-                    printf "  \033[7m${BOLD} %-${padding}s\033[27m${RESET}\n" "$cat  (${count})"
+                    # Barra destacada: "  [SP]cat  (count)[padding]"
+                    # prefixo visível = 3 ("  " + espaço do formato)
+                    local bar_width=$((width - 3))
+                    local inner="${cat}  ${count_str}"
+                    printf "  \033[7m${BOLD} %-${bar_width}s\033[27m${RESET}\n" "$inner"
                 else
-                    printf "  ${icon}  %-$((${padding} - 4))s ${DIM}(${count})${RESET}\n" "$cat"
+                    # Linha normal: "  icon  [cat padded]  (count)"
+                    # prefixo visível = 6 ("  " + emoji 2 colunas + "  ")
+                    # sufixo = " (count)" = 1 + len(count_str)
+                    local cat_width=$((width - 6 - 1 - ${#count_str}))
+                    [ $cat_width -lt 1 ] && cat_width=1
+                    printf "  ${icon}  %-${cat_width}s ${DIM}${count_str}${RESET}\n" "$cat"
                 fi
             done
 
