@@ -25,7 +25,17 @@
 
 set -eo pipefail
 
-VERSION="1.1.0"
+DEP_HELPER="./dependency-helper.sh"
+[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
+if [ -f "$DEP_HELPER" ]; then
+    source "$DEP_HELPER"
+    INSTALLER=$(detect_installer)
+    check_and_install "wmctrl" "$INSTALLER wmctrl"
+    check_and_install "xdotool" "$INSTALLER xdotool"
+    check_and_install "xrandr" "$INSTALLER x11-xserver-utils"
+fi
+
+VERSION="1.2.0"
 
 GREEN='\033[1;32m'
 CYAN='\033[1;36m'
@@ -43,25 +53,7 @@ trap 'rm -rf "$TMPWORK"' EXIT
 DRY_RUN=false
 
 check_dependencies() {
-    local missing=""
-    if ! command -v wmctrl &>/dev/null; then
-        missing="${missing}  - wmctrl  (sudo apt install wmctrl)\n"
-    fi
-    if ! command -v xdotool &>/dev/null; then
-        missing="${missing}  - xdotool (sudo apt install xdotool)\n"
-    fi
-    if ! command -v xrandr &>/dev/null; then
-        missing="${missing}  - xrandr  (sudo apt install x11-xserver-utils)\n"
-    fi
-    if [ -n "$missing" ]; then
-        echo ""
-        echo -e "  ${RED}Dependencias ausentes:${RESET}"
-        echo -e "$missing"
-        echo -e "  ${DIM}Instale-as e tente novamente.${RESET}"
-        echo ""
-        exit 1
-    fi
-}
+    :
 
 SKIP_PROCS="Desktop|xfce4-panel|gnome-shell|plasmashell|mate-panel|cinnamon|budgie-panel|lxpanel|tint2|polybar|i3bar|waybar|xfdesktop|nautilus-desktop|nemo-desktop|pcmanfm-desktop"
 
