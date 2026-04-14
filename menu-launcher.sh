@@ -162,6 +162,7 @@ CAT_ICO_MON="🖥  Sistema e Monitoramento"
 CAT_ICO_NET="🌐 Rede e Lookup"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MENU_RESULT=""
 
 # Build ordered arrays of categories and their scripts
 # CAT_NAMES[i] = category name, CAT_SCRIPTS[i] = "script1 script2 ..."
@@ -325,8 +326,8 @@ show_category_menu() {
             down)  [ $selected -lt $((total - 1)) ] && selected=$((selected + 1)); redraw=true ;;
             home)  selected=0; redraw=true ;;
             end)   selected=$((total - 1)); redraw=true ;;
-            enter) echo "$selected"; return ;;
-            esc)   echo ""; return ;;
+            enter) MENU_RESULT="$selected"; return ;;
+            esc)   MENU_RESULT=""; return ;;
         esac
     done
 }
@@ -390,8 +391,8 @@ show_script_menu() {
             down)    [ $selected -lt $((total - 1)) ] && selected=$((selected + 1)); redraw=true ;;
             home)    selected=0; redraw=true ;;
             end)     selected=$((total - 1)); redraw=true ;;
-            esc)     echo ""; return ;;
-            enter)   echo "${scripts[$selected]}"; return ;;
+            esc)     MENU_RESULT=""; return ;;
+            enter)   MENU_RESULT="${scripts[$selected]}"; return ;;
         esac
     done
 }
@@ -462,12 +463,12 @@ main() {
     hide_cursor
 
     while true; do
-        local chosen_idx
-        chosen_idx=$(show_category_menu)
+        show_category_menu
+        local chosen_idx="$MENU_RESULT"
         [ -z "$chosen_idx" ] && break
 
-        local chosen_script
-        chosen_script=$(show_script_menu "$chosen_idx")
+        show_script_menu "$chosen_idx"
+        local chosen_script="$MENU_RESULT"
         [ -z "$chosen_script" ] && continue
 
         run_script "$chosen_script"

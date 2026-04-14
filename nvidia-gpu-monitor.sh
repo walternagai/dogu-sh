@@ -169,9 +169,16 @@ format_bar() {
 
 collect_gpu_data() {
     local query_output
+    local rc
     query_output=$("$NVIDIA_SMI" \
         --query-gpu=index,name,utilization.gpu,utilization.memory,memory.used,memory.total,memory.free,temperature.gpu,fan.speed,power.draw,power.limit,clocks.current.sm,clocks.current.mem,clocks.max.sm,clocks.max.mem,pstate,uuid,driver_version,vbios_version \
-        --format=csv,noheader,nounits 2>/dev/null) || return 1
+        --format=csv,noheader,nounits 2>"$ERR_FILE")
+    rc=$?
+    if [ $rc -ne 0 ] || [ -z "$query_output" ]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: nvidia-smi query failed (rc=$rc)" >> "$LOG_FILE"
+        [ -s "$ERR_FILE" ] && cat "$ERR_FILE" >> "$LOG_FILE"
+        return 1
+    fi
 
     echo "$query_output"
 }
@@ -347,7 +354,6 @@ monitor_loop() {
 
         local gpu_data
         gpu_data=$(collect_gpu_data) || {
-            echo "[$timestamp] ERROR: nvidia-smi query failed" >> "$LOG_FILE"
             sleep "$INTERVAL"
             continue
         }

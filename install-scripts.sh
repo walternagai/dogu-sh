@@ -11,7 +11,8 @@ RED='\033[1;31m'
 CYAN='\033[1;36m'
 RESET='\033[0m'
 
-VERSION="1.0.0"
+VERSION="1.1.0"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN_DIR="$HOME/.local/bin"
 DRY_RUN=false
 
@@ -31,15 +32,23 @@ if [ ! -d "$BIN_DIR" ]; then
 fi
 
 # 2. Copiar scripts
-log "Copiando scripts para $BIN_DIR..."
-for script in *.sh; do
-    # Não copiar o próprio instalador para evitar redundância se desejar, 
-    # mas geralmente é útil tê-lo lá.
+log "Copiando scripts de $SCRIPT_DIR para $BIN_DIR..."
+shopt -s nullglob
+scripts=("$SCRIPT_DIR"/*.sh)
+shopt -u nullglob
+
+if [ ${#scripts[@]} -eq 0 ]; then
+    error "Nenhum script .sh encontrado em $SCRIPT_DIR"
+fi
+
+for script_path in "${scripts[@]}"; do
+    script="$(basename "$script_path")"
     if [ "$DRY_RUN" = false ]; then
-        cp "$script" "$BIN_DIR/"
+        cp "$script_path" "$BIN_DIR/"
         chmod +x "$BIN_DIR/$script"
+        log "  ✓ $script"
     else
-        echo "  [Dry-run] cp $script -> $BIN_DIR/"
+        echo "  [Dry-run] cp $script_path -> $BIN_DIR/$script"
     fi
 done
 
