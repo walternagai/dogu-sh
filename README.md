@@ -82,6 +82,7 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 
 ### 🖥️ Sistema e Monitoramento
 - `battery-monitor.sh`: Status da bateria, alerta de nível baixo/crítico.
+- `nvidia-gpu-monitor.sh`: Monitoramento de atividade e temperatura de GPUs NVIDIA.
 - `brightness.sh`: Controle de brilho do monitor (up/down/set).
 - `screenshot.sh`: Captura de tela (full, area, window) com salvamento automático.
 - `volume.sh`: Controle de volume e mute via PulseAudio/PipeWire.
