@@ -77,6 +77,11 @@ SCRIPT_DESC=(
     [dns-lookup.sh]="Lookup DNS (A, AAAA, MX, NS, TXT, CNAME)"
     [port-check.sh]="Verifica se portas estao abertas em um host"
     [whois.sh]="Consulta WHOIS de dominios"
+    [nvidia-gpu-monitor.sh]="Monitora atividade da GPU NVIDIA em segundo plano"
+    [docker-cis-benchmark.sh]="Verifica conformidade com CIS Docker Benchmark"
+    [docker-bottleneck-detect.sh]="Detecta gargalos comparando limites config vs uso real"
+    [docker-dependency-map.sh]="Mapeia relacoes de dependencia entre containers"
+    [docker-secret-scanner.sh]="Escaneia containers em busca de segredos expostos"
 )
 
 declare -A SCRIPT_CATEGORY
@@ -142,6 +147,11 @@ SCRIPT_CATEGORY=(
     [dns-lookup.sh]="Rede e Lookup"
     [port-check.sh]="Rede e Lookup"
     [whois.sh]="Rede e Lookup"
+    [nvidia-gpu-monitor.sh]="Sistema e Monitoramento"
+    [docker-cis-benchmark.sh]="Docker"
+    [docker-bottleneck-detect.sh]="Docker"
+    [docker-dependency-map.sh]="Docker"
+    [docker-secret-scanner.sh]="Docker"
 )
 
 CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Produtividade" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup")
