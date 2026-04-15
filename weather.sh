@@ -85,7 +85,7 @@ case "$FORMAT" in
         }
         ;;
     compact)
-        curl -s "wttr.in/${LOCATION_ENCODED}?0?lang=pt" 2>/dev/null || {
+        curl -s "wttr.in/${LOCATION_ENCODED}?lang=pt" 2>/dev/null || {
             echo -e "  ${RED}Erro: nao foi possivel obter a previsao.${RESET}"
             exit 1
         }
