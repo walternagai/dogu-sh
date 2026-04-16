@@ -80,6 +80,7 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `base64-tool.sh`: Codifica/decodifica Base64, URL encode, hex.
 - `uuid-gen.sh`: Gera UUIDs v4 (um ou em lote).
 - `docx-to-md.sh`: Converte arquivos `.docx` para Markdown (`.md`) via pandoc — suporte a lote e modo recursivo.
+- `pdf-to-md.sh`: Converte arquivos `.pdf` para Markdown (`.md`) extraindo texto via `pdftotext`, com OCR opcional para PDFs escaneados.
 - `xlsx-to-csv.sh`: Converte arquivos `.xlsx` para CSV via openpyxl — cada aba vira um `.csv` separado.
 
 ### 🖥️ Sistema e Monitoramento
@@ -172,6 +173,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `dns-lookup.sh` | `dig` (dnsutils/bind-utils) ou `nslookup` |
 | `ip-info.sh` | `curl` |
 | `docx-to-md.sh` | `pandoc` |
+| `pdf-to-md.sh` | `pdftotext` (`poppler-utils`/`poppler`), `tesseract` (opcional para `--ocr`) |
 | `xlsx-to-csv.sh` | `python3`, `openpyxl` (pip) |
 
 ## 📝 Notas

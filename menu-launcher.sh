@@ -87,6 +87,7 @@ SCRIPT_DESC=(
     [docker-dependency-map.sh]="Mapeia relacoes de dependencia entre containers"
     [docker-secret-scanner.sh]="Escaneia containers em busca de segredos expostos"
     [docx-to-md.sh]="Converte arquivos .docx para Markdown (.md) via pandoc"
+    [pdf-to-md.sh]="Converte arquivos .pdf para Markdown (.md) extraindo texto"
     [xlsx-to-csv.sh]="Converte arquivos .xlsx para CSV, extraindo cada aba separadamente"
     [env-keygen.sh]="Gera chaves secretas seguras para arquivos .env via openssl"
 )
@@ -163,6 +164,7 @@ SCRIPT_CATEGORY=(
     [docker-dependency-map.sh]="Docker"
     [docker-secret-scanner.sh]="Docker"
     [docx-to-md.sh]="Produtividade e Notas"
+    [pdf-to-md.sh]="Produtividade e Notas"
     [xlsx-to-csv.sh]="Produtividade e Notas"
     [env-keygen.sh]="Seguranca e Criptografia"
 )
