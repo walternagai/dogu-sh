@@ -70,7 +70,10 @@ SCRIPT_DESC=(
     [password-gen.sh]="Gerador de senhas configuravel"
     [qr-gen.sh]="Gera QR Code no terminal ou salva como PNG"
     [base64-tool.sh]="Codifica/decodifica Base64, URL e Hex"
-    [uuid-gen.sh]="Gera UUIDs v4 (um ou em lote)"
+    [docx-to-md.sh]="Converte arquivos .docx para Markdown (.md) via pandoc"
+    [env-keygen.sh]="Gera chaves secretas seguras para arquivos .env"
+    [pdf-to-md.sh]="Converte arquivos .pdf para Markdown (.md) extraindo texto"
+    [xlsx-to-csv.sh]="Converte arquivos .xlsx para CSV, extraindo cada aba separadamente"
     [battery-monitor.sh]="Status da bateria com alerta de nivel baixo"
     [brightness.sh]="Controle de brilho do monitor"
     [screenshot.sh]="Captura de tela com salvamento automatico"
@@ -86,10 +89,6 @@ SCRIPT_DESC=(
     [docker-bottleneck-detect.sh]="Detecta gargalos comparando limites config vs uso real"
     [docker-dependency-map.sh]="Mapeia relacoes de dependencia entre containers"
     [docker-secret-scanner.sh]="Escaneia containers em busca de segredos expostos"
-    [docx-to-md.sh]="Converte arquivos .docx para Markdown (.md) via pandoc"
-    [pdf-to-md.sh]="Converte arquivos .pdf para Markdown (.md) extraindo texto"
-    [xlsx-to-csv.sh]="Converte arquivos .xlsx para CSV, extraindo cada aba separadamente"
-    [env-keygen.sh]="Gera chaves secretas seguras para arquivos .env via openssl"
 )
 
 declare -A SCRIPT_CATEGORY
@@ -147,7 +146,10 @@ SCRIPT_CATEGORY=(
     [password-gen.sh]="Produtividade e Notas"
     [qr-gen.sh]="Produtividade e Notas"
     [base64-tool.sh]="Produtividade e Notas"
-    [uuid-gen.sh]="Produtividade e Notas"
+    [docx-to-md.sh]="Produtividade e Notas"
+    [env-keygen.sh]="Seguranca e Criptografia"
+    [pdf-to-md.sh]="Produtividade e Notas"
+    [xlsx-to-csv.sh]="Produtividade e Notas"
     [battery-monitor.sh]="Sistema e Monitoramento"
     [brightness.sh]="Sistema e Monitoramento"
     [screenshot.sh]="Sistema e Monitoramento"
@@ -163,10 +165,6 @@ SCRIPT_CATEGORY=(
     [docker-bottleneck-detect.sh]="Docker"
     [docker-dependency-map.sh]="Docker"
     [docker-secret-scanner.sh]="Docker"
-    [docx-to-md.sh]="Produtividade e Notas"
-    [pdf-to-md.sh]="Produtividade e Notas"
-    [xlsx-to-csv.sh]="Produtividade e Notas"
-    [env-keygen.sh]="Seguranca e Criptografia"
 )
 
 CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup" "Seguranca e Criptografia")

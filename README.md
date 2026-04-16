@@ -78,7 +78,7 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `password-gen.sh`: Gerador de senhas configurável (tamanho, chars, quantidade, passphrase).
 - `qr-gen.sh`: Gera QR Code no terminal ou salva como PNG.
 - `base64-tool.sh`: Codifica/decodifica Base64, URL encode, hex.
-- `uuid-gen.sh`: Gera UUIDs v4 (um ou em lote).
+- `env-keygen.sh`: Gera chaves secretas seguras para arquivos .env (hex, base64, uuid, django, fernet, rails, alnum, ascii, numeric, password).
 - `docx-to-md.sh`: Converte arquivos `.docx` para Markdown (`.md`) via pandoc — suporte a lote e modo recursivo.
 - `pdf-to-md.sh`: Converte arquivos `.pdf` para Markdown (`.md`) extraindo texto via `pdftotext`, com OCR opcional para PDFs escaneados.
 - `xlsx-to-csv.sh`: Converte arquivos `.xlsx` para CSV via openpyxl — cada aba vira um `.csv` separado.
