@@ -86,6 +86,9 @@ SCRIPT_DESC=(
     [docker-bottleneck-detect.sh]="Detecta gargalos comparando limites config vs uso real"
     [docker-dependency-map.sh]="Mapeia relacoes de dependencia entre containers"
     [docker-secret-scanner.sh]="Escaneia containers em busca de segredos expostos"
+    [docx-to-md.sh]="Converte arquivos .docx para Markdown (.md) via pandoc"
+    [xlsx-to-csv.sh]="Converte arquivos .xlsx para CSV, extraindo cada aba separadamente"
+    [env-keygen.sh]="Gera chaves secretas seguras para arquivos .env via openssl"
 )
 
 declare -A SCRIPT_CATEGORY
@@ -95,7 +98,7 @@ SCRIPT_CATEGORY=(
     [ssh-tunnel-mgr.sh]="Infraestrutura"
     [clean-cache.sh]="Sistema e Manutencao"
     [clean-system.sh]="Sistema e Manutencao"
-    [clipboard-manager.sh]="Produtividade"
+    [clipboard-manager.sh]="Produtividade e Notas"
     [dependency-helper.sh]="Infraestrutura"
     [disk-health.sh]="Sistema e Manutencao"
     [disk-scanner.sh]="Sistema e Manutencao"
@@ -120,14 +123,14 @@ SCRIPT_CATEGORY=(
     [menu-launcher.sh]="Instalacao e Execucao"
     [organize-downloads.sh]="Sistema e Manutencao"
     [package-list-backup.sh]="Sistema e Manutencao"
-    [pomodor.sh]="Produtividade"
+    [pomodor.sh]="Produtividade e Notas"
     [quick-backup.sh]="Sincronizacao e Backup"
-    [setup-workspace.sh]="Produtividade"
+    [setup-workspace.sh]="Produtividade e Notas"
     [snap-flatpak-manager.sh]="Sistema e Manutencao"
-    [speedtest-log.sh]="Produtividade"
+    [speedtest-log.sh]="Produtividade e Notas"
     [ssh-key-manager.sh]="Infraestrutura"
     [update-all.sh]="Sistema e Manutencao"
-    [wifi-scanner.sh]="Produtividade"
+    [wifi-scanner.sh]="Produtividade e Notas"
     [calculator.sh]="Calculadoras e Conversores"
     [unit-converter.sh]="Calculadoras e Conversores"
     [currency-converter.sh]="Calculadoras e Conversores"
@@ -159,9 +162,12 @@ SCRIPT_CATEGORY=(
     [docker-bottleneck-detect.sh]="Docker"
     [docker-dependency-map.sh]="Docker"
     [docker-secret-scanner.sh]="Docker"
+    [docx-to-md.sh]="Produtividade e Notas"
+    [xlsx-to-csv.sh]="Produtividade e Notas"
+    [env-keygen.sh]="Seguranca e Criptografia"
 )
 
-CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Produtividade" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup")
+CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup" "Seguranca e Criptografia")
 
 CATEGORY_ICONS=()
 CATEGORY_ICONS_BY_NAME=()
@@ -170,7 +176,6 @@ CAT_ICO_PKG="📦 Instalacao e Execucao"
 CAT_ICO_DKR="🐳 Docker"
 CAT_ICO_SYS="🛠  Sistema e Manutencao"
 CAT_ICO_BKP="📂 Sincronizacao e Backup"
-CAT_ICO_PRD="⚙  Produtividade"
 CAT_ICO_INF="🛡  Infraestrutura"
 CAT_ICO_CALC="🔢 Calculadoras e Conversores"
 CAT_ICO_TM="🕐 Tempo e Relogio"
@@ -218,7 +223,6 @@ get_cat_icon() {
         "Docker") echo "🐳" ;;
         "Sistema e Manutencao") echo "🛠" ;;
         "Sincronizacao e Backup") echo "📂" ;;
-        "Produtividade") echo "⚙" ;;
         "Infraestrutura") echo "🛡" ;;
         "Calculadoras e Conversores") echo "🔢" ;;
         "Tempo e Relogio") echo "🕐" ;;
