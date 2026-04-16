@@ -39,6 +39,7 @@ VERSION="1.2.0"
 
 GREEN='\033[1;32m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 DIM='\033[0;90m'
 BOLD='\033[1m'
 RED='\033[1;31m'
@@ -54,6 +55,7 @@ DRY_RUN=false
 
 check_dependencies() {
     :
+}
 
 SKIP_PROCS="Desktop|xfce4-panel|gnome-shell|plasmashell|mate-panel|cinnamon|budgie-panel|lxpanel|tint2|polybar|i3bar|waybar|xfdesktop|nautilus-desktop|nemo-desktop|pcmanfm-desktop"
 
@@ -623,11 +625,12 @@ save_profile() {
 
     echo ""
     if [ -t 0 ] || [ -e /dev/tty ]; then
-        printf "  Salvar perfil ${CYAN}\"$profile_name\"${RESET}? [S/n]: "
+        printf "  Salvar perfil ${CYAN}\"$profile_name\"${RESET}? [s/N]: "
         local confirm
-        read -r confirm < /dev/tty 2>/dev/null || confirm="s"
+        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
         case "$confirm" in
-            [nN]*) echo -e "  ${DIM}Cancelado.${RESET}"; echo ""; return 0 ;;
+            [sS]) ;;
+            *) echo -e "  ${DIM}Cancelado.${RESET}"; echo ""; return 0 ;;
         esac
     fi
 
@@ -1077,6 +1080,7 @@ case "${1:-}" in
         ;;
     --version|-v)
         echo "setup-workspace.sh $VERSION"
+        exit 0
         ;;
     *)
         check_dependencies

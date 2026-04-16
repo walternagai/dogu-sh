@@ -20,8 +20,10 @@ if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; fi
 VERSION="1.0.0"
 
 GREEN='\033[1;32m'
+YELLOW='033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -106,8 +108,8 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version) echo "clipboard-manager.sh $VERSION"; exit 0 ;;
-        *) echo "Opcao desconhecida: $1" >&2; exit 1 ;;
+        --version|-v) echo "clipboard-manager.sh $VERSION"; exit 0 ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
     esac
 done
 
@@ -306,8 +308,17 @@ case "$ACTION" in
 
     clear)
         if [ -f "$HISTORY_FILE" ]; then
-            echo "" > "$HISTORY_FILE"
-            echo -e "  ${GREEN}✓${RESET} Historico do clipboard limpo"
+            printf "  Confirmar limpeza do historico? [s/N]: "
+            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+            case "$confirm" in
+                [sS])
+                    echo "" > "$HISTORY_FILE"
+                    echo -e "  ${GREEN}✓${RESET} Historico do clipboard limpo"
+                    ;;
+                *)
+                    echo -e "  ${DIM}Limpeza cancelada.${RESET}"
+                    ;;
+            esac
         else
             echo -e "  ${DIM}Historico ja esta vazio.${RESET}"
         fi

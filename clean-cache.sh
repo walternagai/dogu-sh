@@ -9,12 +9,17 @@
 
 set -eo pipefail
 
+DEP_HELPER="./dependency-helper.sh"
+[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "bc" "$INSTALLER bc"; fi
+
 VERSION="1.0.0"
 
 GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -63,7 +68,7 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         *)
-            echo "Opcao desconhecida: $1" >&2
+            echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
             exit 1
             ;;
     esac
@@ -135,7 +140,7 @@ clean_dir() {
         local confirm
         read -r confirm < /dev/tty 2>/dev/null || confirm="n"
         case "$confirm" in
-            [sS]|[yY]*) ;;
+            [sS]) ;;
             *) return ;;
         esac
     fi
@@ -188,7 +193,7 @@ clean_files_pattern() {
         local confirm
         read -r confirm < /dev/tty 2>/dev/null || confirm="n"
         case "$confirm" in
-            [sS]|[yY]*) ;;
+            [sS]) ;;
             *) return ;;
         esac
     fi
@@ -281,7 +286,7 @@ if [ "$tmp_user_files" -gt 0 ] && [ "$tmp_user_size" -gt 0 ]; then
             printf "  Limpar ${CYAN}Arquivos soltos em /tmp${RESET} (${RED}%s${RESET})? [s/N]: " "$tmp_size_str"
             read -r confirm < /dev/tty 2>/dev/null || confirm="n"
             case "$confirm" in
-                [sS]|[yY]*) ;;
+                [sS]) ;;
                 *) tmp_user_size=0 ;;
             esac
         fi
@@ -349,7 +354,7 @@ if command -v apt-get &>/dev/null; then
                 printf "  Limpar ${CYAN}APT cache${RESET} (${RED}%s${RESET})? [s/N]: " "$size_str"
                 read -r confirm < /dev/tty 2>/dev/null || confirm="n"
                 case "$confirm" in
-                    [sS]|[yY]*)
+                    [sS])
                         sudo apt-get clean -y 2>/dev/null && \
                             printf "  ${GREEN}✓${RESET} %-36s ${GREEN}%s liberados${RESET}\n" "APT cache" "$size_str" || \
                             echo -e "  ${RED}Falha ao limpar APT cache${RESET}"
@@ -419,7 +424,7 @@ if command -v journalctl &>/dev/null; then
                 printf "  Limpar ${CYAN}journal logs${RESET} (manter 7 dias)? [s/N]: "
                 read -r confirm < /dev/tty 2>/dev/null || confirm="n"
                 case "$confirm" in
-                    [sS]|[yY]*)
+                    [sS])
                         sudo journalctl --vacuum-time=7d 2>/dev/null || \
                             echo -e "  ${RED}Falha ao limpar journal${RESET}"
                         ;;

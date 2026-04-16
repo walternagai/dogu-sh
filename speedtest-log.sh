@@ -1,15 +1,15 @@
 #!/bin/bash
-# speedtest-log.sh — Run speedtests and keep history in CSV (Linux)
-# Usage: ./speedtest-log.sh [options]
-# Options:
-#   --run           Run a speedtest now
-#   --history       Show test history
-#   --today         Show today's results only
-#   --chart         Show ASCII chart of recent results
-#   --csv           Export full history as CSV to stdout
-#   --output DIR    Directory for data (default: ~/.local/share/speedtest-log)
-#   --help          Show this help
-#   --version       Show version
+# speedtest-log.sh — Executa testes de velocidade e mantem historico em CSV (Linux)
+# Uso: ./speedtest-log.sh [opcoes]
+# Opcoes:
+#   --run           Executa um teste de velocidade agora
+#   --history       Mostra historico de testes
+#   --today         Mostra apenas resultados de hoje
+#   --chart         Mostra grafico ASCII dos resultados recentes
+#   --csv           Exporta historico completo como CSV para stdout
+#   --output DIR    Diretorio para dados (padrao: ~/.local/share/speedtest-log)
+#   --help          Mostra esta ajuda
+#   --version       Mostra versao
 
 set -eo pipefail
 
@@ -23,6 +23,7 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -66,7 +67,7 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         --version|-v) echo "speedtest-log.sh $VERSION"; exit 0 ;;
-        *) echo "Unknown option: $1" >&2; exit 1 ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
     esac
 done
 

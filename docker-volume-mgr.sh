@@ -26,6 +26,7 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -77,7 +78,7 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         --version) echo "docker-volume-mgr.sh $VERSION"; exit 0 ;;
-        *) echo "Opcao desconhecida: $1" >&2; exit 1 ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
     esac
 done
 
@@ -241,6 +242,16 @@ case "$ACTION" in
 
         echo -e "  Removendo volume ${CYAN}${VOLUME_NAME}${RESET}"
 
+        printf "  Confirmar remocao do volume ${CYAN}${VOLUME_NAME}${RESET}? [s/N]: "
+        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        case "$confirm" in
+            [sS])
+                ;;
+            *)
+                echo -e "  ${DIM}Remocao cancelada.${RESET}"
+                ;;
+        esac
+
         if $DRY_RUN; then
             echo -e "  ${DIM}[dry-run] docker volume rm $VOLUME_NAME${RESET}"
         else
@@ -269,6 +280,16 @@ case "$ACTION" in
             echo -e "  ${GREEN}✓${RESET} Nenhum volume orfao para remover"
         else
             echo -e "  ${YELLOW}$orphan_count${RESET} volume(s) orfao(s) serao removidos:"
+
+            printf "  Confirmar remocao de ${orphan_count} volume(s) orfao(s)? [s/N]: "
+            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+            case "$confirm" in
+                [sS])
+                    ;;
+                *)
+                    echo -e "  ${DIM}Remocao cancelada.${RESET}"
+                    ;;
+            esac
 
             while IFS= read -r vname; do
                 [ -z "$vname" ] && continue

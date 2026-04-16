@@ -38,6 +38,7 @@ YELLOW='\033[1;33m'
 RED='\033[1;31m'
 GREEN='\033[1;32m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -192,7 +193,7 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         -*)
-            echo "Opcao desconhecida: $1" >&2
+            echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
             exit 1
             ;;
         *)
@@ -213,8 +214,8 @@ fi
 
 if $USE_DELETE && ! $FORCE; then
     echo -e "${RED}ATENCAO: --delete ira deletar permanentemente os arquivos!${RESET}" >&2
-    read -p "Confirmar exclusao permanente de duplicatas? (s/N): " confirm
-    if [[ "$confirm" != "s" && "$confirm" != "S" ]]; then
+    read -p "Confirmar exclusao permanente de duplicatas? [s/N]: " confirm
+    if [[ ! "$confirm" =~ ^[Ss]$ ]]; then
         echo "Operacao cancelada." >&2
         exit 0
     fi

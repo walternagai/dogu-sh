@@ -26,6 +26,7 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -79,8 +80,8 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version) echo "ssh-key-manager.sh $VERSION"; exit 0 ;;
-        *) echo "Opcao desconhecida: $1" >&2; exit 1 ;;
+        --version|-v) echo "ssh-key-manager.sh $VERSION"; exit 0 ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
     esac
 done
 
@@ -243,6 +244,16 @@ case "$ACTION" in
         ;;
 
     rotate)
+        printf "  Confirmar rotacao da chave ${CYAN}${KEY_PATH}${RESET}? [s/N]: "
+        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        case "$confirm" in
+            [sS])
+                ;;
+            *)
+                echo -e "  ${DIM}Rotacao cancelada.${RESET}"
+                ;;
+        esac
+
         if [ ! -f "$KEY_PATH" ]; then
             echo -e "  ${YELLOW}Chave '${KEY_PATH}' nao encontrada. Criando nova...${RESET}"
             echo ""
@@ -325,6 +336,16 @@ case "$ACTION" in
         echo -e "  Distribuindo chave para ${CYAN}${DEPLOY_HOST}${RESET}"
         echo -e "  Chave: ${BOLD}${pub_key}${RESET}"
         echo ""
+
+        printf "  Confirmar deploy da chave para ${CYAN}${DEPLOY_HOST}${RESET}? [s/N]: "
+        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        case "$confirm" in
+            [sS])
+                ;;
+            *)
+                echo -e "  ${DIM}Deploy cancelado.${RESET}"
+                ;;
+        esac
 
         if $DRY_RUN; then
             echo -e "  ${DIM}[dry-run] ssh-copy-id -i ${pub_key} ${DEPLOY_HOST}${RESET}"

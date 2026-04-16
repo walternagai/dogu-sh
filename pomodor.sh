@@ -20,6 +20,7 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -30,6 +31,7 @@ LONG_BREAK_MINS=15
 CYCLES_BEFORE_LONG=4
 NO_SOUND=false
 ACTION="run"
+CLEAN_ALL=false
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -65,7 +67,7 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         --version|-v) echo "pomodor.sh $VERSION"; exit 0 ;;
-        *) echo "Opcao desconhecida: $1" >&2; exit 1 ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
     esac
 done
 
@@ -265,10 +267,11 @@ case "$ACTION" in
             session_num=$((session_num + 1))
 
             if ! $CLEAN_ALL; then
-                printf "  Continuar? [S/n]: "
-                read -r cont < /dev/tty 2>/dev/null || cont="s"
+                printf "  Continuar? [s/N]: "
+                read -r cont < /dev/tty 2>/dev/null || cont="n"
                 case "$cont" in
-                    [nN]*) echo -e "  ${DIM}Ate logo!${RESET}"; echo ""; break ;;
+                    [sS]) ;;
+                    *) echo -e "  ${DIM}Ate logo!${RESET}"; echo ""; break ;;
                 esac
             fi
 

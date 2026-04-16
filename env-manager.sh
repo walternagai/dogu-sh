@@ -13,6 +13,7 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
@@ -118,7 +119,7 @@ case "$USER_CHOICE" in
         IFS=',' read -ra ADDR <<< "$indices"
         for i in "${ADDR[@]}"; do
             idx=$((i-1))
-            if [ "$idx" -ge 0 && "$idx" -lt "${#ACTIONS[@]}" ]; then
+            if [[ "$idx" -ge 0 && "$idx" -lt "${#ACTIONS[@]}" ]]; then
                 log "Executando: ${ACTIONS[$idx]}"
                 if eval "${ACTIONS[$idx]}"; then success "Concluído!"; else error "Falhou!"; fi
             fi

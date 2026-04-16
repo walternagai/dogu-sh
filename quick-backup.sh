@@ -1,5 +1,5 @@
 #!/bin/bash
-# quick-backup.sh — Incremental backup with rsync (Linux)
+# quick-backup.sh — Backup incremental com rsync (Linux)
 # Uso: ./quick-backup.sh [dir-origem] [dir-destino]
 # Opcoes:
 #   --dry-run       Preview sem copiar
@@ -21,6 +21,7 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -66,7 +67,7 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         --version|-v) echo "quick-backup.sh $VERSION"; exit 0 ;;
-        -*) echo "Opcao desconhecida: $1" >&2; exit 1 ;;
+        -*) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
         *) POSITIONAL_ARGS+=("$1"); shift ;;
     esac
 done
@@ -146,7 +147,7 @@ if ! $CLEAN_ALL && ! $DRY_RUN; then
     printf "  Confirmar backup? [s/N]: "
     read -r confirm < /dev/tty 2>/dev/null || confirm="n"
     case "$confirm" in
-        [sS]|[yY]*) ;;
+        [sS]) ;;
         *) echo -e "  ${DIM}Cancelado.${RESET}"; echo ""; exit 0 ;;
     esac
 fi

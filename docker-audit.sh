@@ -19,6 +19,7 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -28,7 +29,7 @@ JSON_OUTPUT=false
 
 while [ $# -gt 0 ]; do
     case "$1" in
-        --verbose|-v) VERBOSE=true; shift ;;
+        --verbose) VERBOSE=true; shift ;;
         --json|-j) JSON_OUTPUT=true; shift ;;
         --help|-h)
             echo ""
@@ -56,8 +57,8 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version) echo "docker-audit.sh $VERSION"; exit 0 ;;
-        *) echo "Opcao desconhecida: $1" >&2; exit 1 ;;
+        --version|-v) echo "docker-audit.sh $VERSION"; exit 0 ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
     esac
 done
 

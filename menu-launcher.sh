@@ -8,6 +8,7 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -16,6 +17,9 @@ VERSION="2.0.0"
 
 declare -A SCRIPT_DESC
 SCRIPT_DESC=(
+    [log-analyzer.sh]="Analisa logs com cores e filtros"
+    [process-killer.sh]="Busca e mata processos interativamente"
+    [ssh-tunnel-mgr.sh]="Gerencia túneis SSH persistentes"
     [clean-cache.sh]="Limpa arquivos temporarios e caches de aplicacoes"
     [clean-system.sh]="Limpeza profunda do sistema baseada na distro"
     [clipboard-manager.sh]="Historico do clipboard com busca e persistencia"
@@ -86,6 +90,9 @@ SCRIPT_DESC=(
 
 declare -A SCRIPT_CATEGORY
 SCRIPT_CATEGORY=(
+    [log-analyzer.sh]="Sistema e Monitoramento"
+    [process-killer.sh]="Sistema e Monitoramento"
+    [ssh-tunnel-mgr.sh]="Infraestrutura"
     [clean-cache.sh]="Sistema e Manutencao"
     [clean-system.sh]="Sistema e Manutencao"
     [clipboard-manager.sh]="Produtividade"

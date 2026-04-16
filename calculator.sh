@@ -12,7 +12,7 @@ set -eo pipefail
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; fi
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; check_and_install bc "$(detect_installer) bc" 2>/dev/null || { echo -e "${RED}[ERROR] bc necessario.${RESET}" >&2; exit 1; }; fi
 
 VERSION="1.0.0"
 
@@ -20,6 +20,7 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -34,9 +35,9 @@ EVAL_EXPR=""
 while [ $# -gt 0 ]; do
     case "$1" in
         -e|--eval) EVAL_EXPR="$2"; ACTION="eval"; shift 2 ;;
-        --history|-h) ACTION="history"; shift ;;
+        --history) ACTION="history"; shift ;;
         --clear|-c) ACTION="clear"; shift ;;
-        --help)
+        --help|-h)
             echo ""
             echo "  calculator.sh — Calculadora interativa com historico"
             echo ""
@@ -60,13 +61,11 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         --version|-v) echo "calculator.sh $VERSION"; exit 0 ;;
-        *) echo "Opcao desconhecida: $1" >&2; exit 1 ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
     esac
 done
 
-if ! command -v bc &>/dev/null; then
-    check_and_install bc "$(detect_installer) bc" 2>/dev/null || { echo -e "${RED}[ERROR] bc necessario.${RESET}" >&2; exit 1; }
-fi
+
 
 calc_expr() {
     local expr="$1"

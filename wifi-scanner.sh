@@ -1,5 +1,5 @@
 #!/bin/bash
-# wifi-scanner.sh — Scan Wi-Fi networks and suggest best channel (Linux)
+# wifi-scanner.sh — Escaneia redes Wi-Fi e sugere o melhor canal (Linux)
 # Uso: ./wifi-scanner.sh
 # Metodo primario: nmcli (NetworkManager)
 # Fallback: iwlist (wireless-tools)
@@ -18,6 +18,7 @@ VERSION="1.1.0"
 GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'

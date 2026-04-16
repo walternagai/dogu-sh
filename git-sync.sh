@@ -22,6 +22,7 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -78,7 +79,7 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         --version|-v) echo "git-sync.sh $VERSION"; exit 0 ;;
-        -*) echo "Opcao desconhecida: $1" >&2; exit 1 ;;
+        -*) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
         *) POSITIONAL_ARGS+=("$1"); shift ;;
     esac
 done
@@ -158,7 +159,7 @@ generate_commit_message() {
     fi
 }
 
-MAGENTA='\033[1;35m'
+
 
 resolve_merge_conflicts() {
     local conflicted
@@ -335,7 +336,7 @@ resolve_diverged_repo() {
             printf "    Confirmar reset para remoto? [s/N]: "
             read -r confirm < /dev/tty 2>/dev/null || confirm="n"
             case "$confirm" in
-                [sS]|[yY]*)
+                [sS])
                     git reset --hard "@{upstream}" 2>/dev/null
                     echo -e "    ${GREEN}✓ resetado para remoto${RESET}"
                     return 0
@@ -457,7 +458,7 @@ while IFS= read -r repo_path; do
                     printf "    Fazer commit de %s alteracao(oes)? [s/N]: " "$dirty"
                     read -r confirm < /dev/tty 2>/dev/null || confirm="n"
                     case "$confirm" in
-                        [sS]|[yY]*)
+                        [sS])
                             commit_msg=$(generate_commit_message)
                             if [ -n "$commit_msg" ]; then
                                 git add -A 2>/dev/null
@@ -528,7 +529,7 @@ while IFS= read -r repo_path; do
                         exit 1
                     else
                         git rebase --abort 2>/dev/null || true
-                        echo -e "    ${RED}Falha no rebase. Aborting.${RESET}"
+                        echo -e "    ${RED}Falha no rebase. Abortando.${RESET}"
                         echo ""
                         exit 1
                     fi
@@ -582,7 +583,7 @@ while IFS= read -r repo_path; do
             printf "    Fazer commit de %s alteracao(oes)? [s/N]: " "$dirty"
             read -r confirm < /dev/tty 2>/dev/null || confirm="n"
             case "$confirm" in
-                [sS]|[yY]*)
+                [sS])
                     commit_msg=$(generate_commit_message)
                     if [ -n "$commit_msg" ]; then
                         git add -A 2>/dev/null
@@ -632,7 +633,7 @@ while IFS= read -r repo_path; do
                 printf "    Puxar atualizacoes? [s/N]: "
                 read -r confirm < /dev/tty 2>/dev/null || confirm="n"
                 case "$confirm" in
-                    [sS]|[yY]*)
+                    [sS])
                         if ! git pull --ff-only 2>/dev/null; then
                             echo -e "    ${YELLOW}ff-only falhou. Tentando rebase...${RESET}"
                             if ! git pull --rebase 2>/dev/null; then
@@ -714,7 +715,7 @@ while IFS= read -r repo_path; do
                 printf "    Enviar commits? [s/N]: "
                 read -r confirm < /dev/tty 2>/dev/null || confirm="n"
                 case "$confirm" in
-                    [sS]|[yY]*)
+                    [sS])
                         if ! git push 2>/dev/null; then
                             echo -e "    ${YELLOW}Push rejeitado. Tentando pull --rebase...${RESET}"
                             if git pull --rebase 2>/dev/null; then

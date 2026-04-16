@@ -1,5 +1,5 @@
 #!/bin/bash
-# folder-sync.sh — Sync directories with rsync (Linux)
+# folder-sync.sh — Sincroniza diretorios com rsync (Linux)
 # Uso: ./folder-sync.sh [origem] [destino]
 # Opcoes:
 #   --dry-run       Preview sem copiar
@@ -22,6 +22,7 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -67,7 +68,7 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         --version|-v) echo "folder-sync.sh $VERSION"; exit 0 ;;
-        -*) echo "Opcao desconhecida: $1" >&2; exit 1 ;;
+        -*) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
         *) POSITIONAL_ARGS+=("$1"); shift ;;
     esac
 done
@@ -158,7 +159,7 @@ run_sync() {
     echo -e "  Destino:  ${CYAN}$DEST${RESET}"
 
     if $MIRROR; then
-        echo -e "  Modo:     ${RED}ESPPELHO${RESET} (arquivos ausentes na origem serao removidos no destino)"
+        echo -e "  Modo:     ${RED}ESPELHO${RESET} (arquivos ausentes na origem serao removidos no destino)"
     else
         echo -e "  Modo:     ${GREEN}INCREMENTAL${RESET} (apenas adiciona/atualiza)"
     fi
@@ -173,7 +174,7 @@ run_sync() {
         fi
         read -r confirm < /dev/tty 2>/dev/null || confirm="n"
         case "$confirm" in
-            [sS]|[yY]*) ;;
+            [sS]) ;;
             *) echo -e "  ${DIM}Cancelado.${RESET}"; echo ""; exit 0 ;;
         esac
     fi

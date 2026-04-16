@@ -18,8 +18,10 @@ if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer
 VERSION="1.0.0"
 
 GREEN='\033[1;32m'
+YELLOW='033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -28,6 +30,7 @@ OUTPUT_FILE="docker-stats.csv"
 WATCH_INTERVAL=10
 CONTAINER_FILTER=""
 NO_HEADER=false
+DRY_RUN=false
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -35,6 +38,7 @@ while [ $# -gt 0 ]; do
         --watch|-w) WATCH_INTERVAL="${2:-10}"; shift 2 ;;
         --container|-c) CONTAINER_FILTER="$2"; shift 2 ;;
         --no-header) NO_HEADER=true; shift ;;
+        --dry-run) DRY_RUN=true; shift ;;
         --help|-h)
             echo ""
             echo "  docker-stats-history.sh — Historico de CPU/RAM em CSV"
@@ -60,7 +64,7 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         --version) echo "docker-stats-history.sh $VERSION"; exit 0 ;;
-        *) echo "Opcao desconhecida: $1" >&2; exit 1 ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
     esac
 done
 
@@ -108,7 +112,12 @@ collect_stats() {
         local mem_limit_val
         mem_limit_val=$(echo "$mem_usage" | awk -F'/' '{print $2}' | tr -d '[:space:]')
 
-        echo "${timestamp},${cname},${cpu_pct},${mem_usage_val},${mem_limit_val},${mem_pct},${net_io},${block_io}" >> "$OUTPUT_FILE"
+        local csv_line="${timestamp},${cname},${cpu_pct},${mem_usage_val},${mem_limit_val},${mem_pct},${net_io},${block_io}"
+        if $DRY_RUN; then
+            echo "$csv_line"
+        else
+            echo "$csv_line" >> "$OUTPUT_FILE"
+        fi
 
         row_count=$((row_count + 1))
     done <<< "$containers"

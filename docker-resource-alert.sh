@@ -23,6 +23,7 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 RED='\033[1;31m'
 CYAN='\033[1;36m'
+BLUE='\033[1;34m'
 BOLD='\033[1m'
 DIM='\033[0;90m'
 RESET='\033[0m'
@@ -67,7 +68,7 @@ while [ $# -gt 0 ]; do
             exit 0
             ;;
         --version) echo "docker-resource-alert.sh $VERSION"; exit 0 ;;
-        *) echo "Opcao desconhecida: $1" >&2; exit 1 ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
     esac
 done
 
@@ -138,7 +139,7 @@ while true; do
 
             if $AUTO_KILL && [ "${CPU_VIOLATIONS[$cname]}" -ge 3 ]; then
                 echo -e "  ${RED}✗${RESET} $cname — CPU alta por 3 ciclos — ${RED}MATANDO${RESET}"
-                docker kill "$cid" &>/dev/null || true
+                docker stop "$cid" &>/dev/null || true
                 send_notify "Docker: $cname eliminado" "CPU acima de $CPU_LIMIT% por 3 ciclos"
                 unset CPU_VIOLATIONS[$cname]
                 continue
