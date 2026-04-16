@@ -118,7 +118,11 @@ day_of_week() {
         m=$((m + 12))
         y=$((y - 1))
     fi
-    local dow=$(( (d + (13 * (m + 1)) / 5 + y + y / 4 - y / 100 + y / 400) % 7 ))
+    local K=$((y % 100))
+    local J=$((y / 100))
+    local h=$(( (d + (13 * (m + 1)) / 5 + K + K / 4 + J / 4 - 2 * J) % 7 ))
+    if [ "$h" -lt 0 ]; then h=$((h + 7)); fi
+    local dow=$(( (h + 6) % 7 ))
     echo $dow
 }
 
