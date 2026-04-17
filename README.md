@@ -38,6 +38,7 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `clean-system.sh`: Limpeza profunda do sistema baseada na distro.
 - `disk-health.sh`: Monitoramento de saúde SMART do disco.
 - `disk-scanner.sh`: Identificação de arquivos e pastas volumosas.
+- `disk-space.sh`: Espaço disponível nos discos com identificação de tipo (SSD/NVMe/HDD).
 - `hunt-duplicates.sh`: Busca de arquivos duplicados via SHA-256.
 - `organize-downloads.sh`: Organização automática de arquivos por extensão.
 
@@ -156,6 +157,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 |--------|-------------|
 | `docker-*.sh` | `docker` (e `docker-compose` para compose-manager) |
 | `disk-health.sh` | `smartmontools` (smartctl) |
+| `disk-space.sh` | `lsblk` (util-linux, presente por padrão) |
 | `folder-sync.sh`, `quick-backup.sh` | `rsync` |
 | `setup-workspace.sh` | `wmctrl`, `xdotool`, `xrandr` |
 | `speedtest-log.sh` | `speedtest-cli` |
