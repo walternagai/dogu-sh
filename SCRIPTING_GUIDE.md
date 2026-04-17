@@ -17,11 +17,18 @@ Todo script deve seguir este esquema na ordem abaixo:
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
 
-set -eo pipefail
+set -euo pipefail
+
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "dep" "$INSTALLER pacote"; fi
+if [ -f "$DEP_HELPER" ]; then
+    source "$DEP_HELPER"
+    INSTALLER=$(detect_installer)
+    check_and_install "dep" "$INSTALLER" "pacote"
+fi
 
 # ... variáveis de cor, constantes, lógica ...
 ```
@@ -32,20 +39,27 @@ if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer
 |---|---|
 | **Shebang** | Sempre `#!/bin/bash` |
 | **Header** | Descrição, uso e opções nas primeiras linhas (comentário) |
-| **set** | Sempre `set -eo pipefail` — aborta em erro e falha de pipe |
-| **VERSION** | Variável obrigatória: `VERSION="1.0.0"` |
+| **set** | Sempre `set -euo pipefail` — aborta em erro, pipe e variável indefinida |
+| **VERSION** | Variável obrigatória: `readonly VERSION="1.0.0"` |
+| **SCRIPT_DIR** | Sempre definir para permitir referências a arquivos relativos ao script |
 | **DEP_HELPER** | Sempre importar `dependency-helper.sh` quando o script depende de ferramentas externas |
 
 ---
 
 ## 2. Dependency Helper
 
-Scripts que dependem de ferramentas externas (Docker, curl, jq, fzf, etc.) **devem** usar o `dependency-helper.sh`:
+Scripts que dependem de ferramentas externas (Docker, curl, jq, fzf, etc.) **devem** usar o `dependency-helper.sh`.
+
+A assinatura de `check_and_install` é: `check_and_install "nome-binário" "instalador" "pacote"`.
 
 ```bash
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "tool" "$INSTALLER pacote"; fi
+if [ -f "$DEP_HELPER" ]; then
+    source "$DEP_HELPER"
+    INSTALLER=$(detect_installer)
+    check_and_install "tool" "$INSTALLER" "pacote"
+fi
 ```
 
 - O fallback para `$HOME/.local/bin` garante funcionamento após instalação.
@@ -56,8 +70,8 @@ if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer
 if [ -f "$DEP_HELPER" ]; then
     source "$DEP_HELPER"
     INSTALLER=$(detect_installer)
-    check_and_install "docker" "$INSTALLER docker.io"
-    check_and_install "jq" "$INSTALLER jq"
+    check_and_install "docker" "$INSTALLER" "docker.io"
+    check_and_install "jq"     "$INSTALLER" "jq"
 fi
 ```
 
@@ -65,17 +79,17 @@ fi
 
 ## 3. Paleta de Cores e Formatação
 
-Usar **sempre** estas variáveis para qualquer saída colorida:
+Usar **sempre** estas variáveis para qualquer saída colorida. Declará-las como `readonly`:
 
 ```bash
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
 ```
 
 ### Uso semântico
@@ -93,11 +107,13 @@ RESET='\033[0m'
 
 ### Funções de log recomendadas
 
+`warn` e `error` escrevem em `stderr` (`>&2`) para não poluir pipes e redirecionamentos.
+
 ```bash
 log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
-warn()    { echo -e "${YELLOW}[WARN]${RESET} $1"; }
-error()   { echo -e "${RED}[ERROR]${RESET} $1"; exit 1; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 ```
 
 ---
@@ -111,13 +127,17 @@ Para manter a identidade visual consistente entre os scripts:
 | `✓` | Operação bem-sucedida |
 | `✗` | Operação falhou |
 | `▶` | Iniciando execução / rodando |
-| `────` | Separador de seções (usar `${DIM}`) |
+| `────` | Separador interno de seções (usar `${DIM}`) |
 | `━━━` | Separador de cabeçalho principal (usar `${CYAN}`) |
 | `▲` / `▼` | Indicadores de scroll em menus |
 
-Exemplo de separador:
+Exemplos:
 
 ```bash
+# Cabeçalho principal
+echo -e "  ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+
+# Separador interno de seções
 echo -e "  ${DIM}────────────────────────────────────────────${RESET}"
 ```
 
@@ -125,12 +145,14 @@ echo -e "  ${DIM}─────────────────────
 
 ## 5. Tratamento de Argumentos
 
-Usar **sempre** loop `while` com `case` para parsing de flags:
+Usar **sempre** loop `while` com `case` para parsing de flags. Preferir `[[ ]]` a `[ ]` em condicionais bash.
 
 ```bash
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        --flag|-f) VARIAVEL="$2"; shift 2 ;;
+        --flag|-f)
+            [[ -z "${2-}" ]] && error "Flag --flag requer um valor"
+            VARIAVEL="$2"; shift 2 ;;
         --bool|-b) BOOLEAN=true; shift ;;
         --help|-h)
             echo ""
@@ -141,15 +163,16 @@ while [ $# -gt 0 ]; do
             echo "  Opcoes:"
             echo "    --flag|-f VAL   Descricao da flag"
             echo "    --bool|-b       Descricao da flag booleana"
-            echo "    --help          Mostra esta ajuda"
-            echo "    --version       Mostra versao"
+            echo "    --help|-h       Mostra esta ajuda"
+            echo "    --version|-V    Mostra versao"
             echo ""
             exit 0
             ;;
-        --version|-v) echo "nome-do-script.sh $VERSION"; exit 0 ;;
+        --version|-V) echo "nome-do-script.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
         *)
-            echo -e "${RED}Opcao desconhecida: $1${RESET}"
-            exit 1
+            echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
+            exit 2
             ;;
     esac
 done
@@ -157,10 +180,13 @@ done
 
 ### Regras
 
-- Toda flag longa deve ter uma versão curta quando fizer sentido (`--help|-h`, `--version|-v`).
+- Toda flag longa deve ter uma versão curta quando fizer sentido (`--help|-h`).
+- Usar `-V` (maiúsculo) para `--version` — reserva `-v` para `--verbose` quando necessário.
 - `--help` imprime o bloco formatado com espaçamento consistente (linha em branco antes/depois).
 - `--version` imprime no formato `nome-do-script.sh $VERSION`.
-- Flags desconhecidas geram erro com `${RED}` e `exit 1`.
+- `--` encerra o parsing; argumentos seguintes são tratados como posicionais.
+- Flags com valor obrigatório devem validar que `$2` existe antes de fazer `shift 2`.
+- Flags desconhecidas geram erro com `${RED}`, saída para `stderr`, e `exit 2`.
 
 ---
 
@@ -168,10 +194,10 @@ done
 
 ### Confirmações
 
-Sempre usar formato `[s/N]` (padrão = não):
+Sempre usar formato `[s/N]` (padrão = não). Usar `read -r` para não interpretar backslashes:
 
 ```bash
-read -p "Confirmar operacao? [s/N] " CONFIRM
+read -r -p "Confirmar operacao? [s/N] " CONFIRM
 if [[ ! "$CONFIRM" =~ ^[Ss]$ ]]; then
     echo -e "${DIM}Operacao cancelada.${RESET}"
     exit 0
@@ -184,7 +210,7 @@ Para scripts que listam itens selecionáveis, usar `fzf` com fallback:
 
 ```bash
 if ! command -v fzf &>/dev/null; then
-    echo -e "${RED}Erro: fzf e necessario.${RESET}"
+    echo -e "${RED}Erro: fzf e necessario.${RESET}" >&2
     exit 1
 fi
 
@@ -196,7 +222,30 @@ SELECTED=$(comando_que_lista | fzf --prompt="Selecionar > ")
 
 ---
 
-## 7. Sinais de Processo
+## 7. Arquivos Temporários e Limpeza
+
+Scripts que criam arquivos temporários **devem** usar `mktemp` e garantir limpeza via `trap`:
+
+```bash
+TMPFILE=$(mktemp)
+trap 'rm -f "$TMPFILE"' EXIT
+
+# a partir daqui, $TMPFILE é removido automaticamente ao sair (sucesso, erro ou SIGINT)
+```
+
+Para múltiplos temporários ou diretório temporário:
+
+```bash
+TMPDIR_WORK=$(mktemp -d)
+trap 'rm -rf "$TMPDIR_WORK"' EXIT
+```
+
+- `trap ... EXIT` cobre saída normal, `exit N`, e sinais que terminam o processo.
+- Nunca criar arquivos temporários em caminhos fixos como `/tmp/meu-script.tmp` — há risco de colisão entre execuções paralelas.
+
+---
+
+## 8. Sinais de Processo
 
 Para terminação de processos, **sempre** preferir `SIGTERM` antes de `SIGKILL`:
 
@@ -213,7 +262,39 @@ kill -9 "$PID" 2>/dev/null
 
 ---
 
-## 8. Idioma e Nomenclatura
+## 9. Funções — Boas Práticas
+
+- Sempre declarar variáveis internas com `local` para evitar vazamento de escopo:
+
+```bash
+my_function() {
+    local input="$1"
+    local result
+    result=$(some_command "$input")
+    echo "$result"
+}
+```
+
+- Preferir `$()` a backticks `` ` ` `` para substituição de comando — mais legível e aninhável.
+- Usar `[[ ]]` em vez de `[ ]` para condicionais — evita word-splitting e não exige aspas em comparações simples.
+
+---
+
+## 10. Exit Codes
+
+Usar códigos de saída padronizados:
+
+| Código | Significado |
+|---|---|
+| `0` | Sucesso |
+| `1` | Erro geral / falha de execução |
+| `2` | Uso incorreto de flags ou argumentos |
+| `127` | Dependência não encontrada |
+| `130` | Interrompido pelo usuário (`Ctrl+C` / SIGINT) |
+
+---
+
+## 11. Idioma e Nomenclatura
 
 | Elemento | Idioma |
 |---|---|
@@ -226,33 +307,35 @@ kill -9 "$PID" 2>/dev/null
 
 ---
 
-## 9. Portabilidade e Caminhos
+## 12. Portabilidade e Caminhos
 
 - Nunca usar caminhos absolutos fixos (exceto `/var/log`, `/etc` quando necessário).
 - Preferir `$HOME` em vez de `/home/usuario`.
+- Usar `$SCRIPT_DIR` para referenciar arquivos no mesmo diretório do script.
 - Detectar gerenciador de pacotes via `detect_installer` do `dependency-helper.sh`.
 - Não assumir que um diretório existe — sempre verificar com `[ -d ]` ou criar com `mkdir -p`.
 
 ---
 
-## 10. Backup e Segurança
+## 13. Backup e Segurança
 
-- Antes de edit arquivos de configuração (`.bashrc`, `.zshrc`, etc.), **sempre** criar backup:
+- Antes de editar arquivos de configuração (`.bashrc`, `.zshrc`, etc.), **sempre** criar backup:
 
 ```bash
 cp "$SHELL_RC" "${SHELL_RC}.bak"
 ```
 
 - Nunca commitar segredos, tokens ou credenciais nos scripts.
-- Scripts que lidam com senhas/chaves devem usar `read -s` para entrada oculta:
+- Scripts que lidam com senhas/chaves devem usar `read -r -s` para entrada oculta:
 
 ```bash
-read -s -p "Senha: " PASSWORD
+read -r -s -p "Senha: " PASSWORD
+echo ""
 ```
 
 ---
 
-## 11. --dry-run
+## 14. --dry-run
 
 Scripts que fazem alterações no sistema (remover, mover, instalar) **devem** suportar `--dry-run`:
 
@@ -262,7 +345,7 @@ DRY_RUN=false
 --dry-run) DRY_RUN=true; shift ;;
 
 # na execução:
-if [ "$DRY_RUN" = false ]; then
+if [[ "$DRY_RUN" == false ]]; then
     rm "$file"
     log "  ✓ Removido: $file"
 else
@@ -272,22 +355,26 @@ fi
 
 ---
 
-## 12. Checklist para Novos Scripts
+## 15. Checklist para Novos Scripts
 
 Antes de considerar um script pronto, verificar:
 
 - [ ] Header com descrição, uso e opções
-- [ ] `set -eo pipefail`
-- [ ] `VERSION` definida
+- [ ] `set -euo pipefail`
+- [ ] `readonly VERSION` definida
+- [ ] `SCRIPT_DIR` definido
 - [ ] `dependency-helper.sh` importado quando necessário
-- [ ] Paleta de cores padronizada
-- [ ] `--help` e `--version` implementados
-- [ ] Argumentos via `while/case`
-- [ ] Confirmações no formato `[s/N]`
+- [ ] Paleta de cores padronizada com `readonly`
+- [ ] Funções `log`, `warn`, `error`, `success` definidas (`warn`/`error` escrevem em stderr)
+- [ ] `--help` e `--version` implementados (`-V` para version)
+- [ ] Argumentos via `while/case` com validação de valor obrigatório e tratamento de `--`
+- [ ] Confirmações no formato `[s/N]` com `read -r`
+- [ ] `trap` + `mktemp` para arquivos temporários
 - [ ] SIGTERM antes de SIGKILL
+- [ ] Exit codes padronizados (0/1/2/127/130)
 - [ ] `--dry-run` quando aplicável
 - [ ] Backup de config antes de edição
 - [ ] Mensagens em português
 - [ ] Registrado no `menu-launcher.sh` (SCRIPT_DESC e SCRIPT_CATEGORY)
 - [ ] Permissão de execução (`chmod +x`)
-- [ ] listado na tabela de dependências do `README.md`
+- [ ] Listado na tabela de dependências do `README.md`

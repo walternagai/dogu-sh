@@ -169,19 +169,6 @@ SCRIPT_CATEGORY=(
 
 CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup" "Seguranca e Criptografia")
 
-CATEGORY_ICONS=()
-CATEGORY_ICONS_BY_NAME=()
-# Icons indexed by name using parallel arrays (bash 4 compatible)
-CAT_ICO_PKG="📦 Instalacao e Execucao"
-CAT_ICO_DKR="🐳 Docker"
-CAT_ICO_SYS="🛠  Sistema e Manutencao"
-CAT_ICO_BKP="📂 Sincronizacao e Backup"
-CAT_ICO_INF="🛡  Infraestrutura"
-CAT_ICO_CALC="🔢 Calculadoras e Conversores"
-CAT_ICO_TM="🕐 Tempo e Relogio"
-CAT_ICO_NOTES="📝 Produtividade e Notas"
-CAT_ICO_MON="🖥  Sistema e Monitoramento"
-CAT_ICO_NET="🌐 Rede e Lookup"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MENU_RESULT=""
@@ -229,6 +216,7 @@ get_cat_icon() {
         "Produtividade e Notas") echo "📝" ;;
         "Sistema e Monitoramento") echo "🖥" ;;
         "Rede e Lookup") echo "🌐" ;;
+        "Seguranca e Criptografia") echo "🔐" ;;
         *) echo "📁" ;;
     esac
 }
@@ -355,8 +343,8 @@ show_category_menu() {
             down)  [ $selected -lt $((total - 1)) ] && selected=$((selected + 1)); redraw=true ;;
             home)  selected=0; redraw=true ;;
             end)   selected=$((total - 1)); redraw=true ;;
-            enter) MENU_RESULT="$selected"; return ;;
-            esc)   MENU_RESULT=""; return ;;
+            enter|right) MENU_RESULT="$selected"; return ;;
+            esc)         MENU_RESULT=""; return ;;
         esac
     done
 }
