@@ -365,7 +365,7 @@ resolve_diverged_repo() {
 
 count_diverged=0
 
-if $DO_COMMIT; then
+if $DO_COMMIT || ($DO_PUSH && $CLEAN_ALL); then
     check_ollama_model
     ollama_rc=$?
     if [ "$ollama_rc" -eq 0 ]; then
