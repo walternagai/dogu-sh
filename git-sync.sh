@@ -135,7 +135,7 @@ generate_commit_message() {
         local prompt
         prompt="Analyze this git diff and generate a concise commit message using Conventional Commits format. Use one of these tags: feat, fix, docs, style, refactor, perf, test, chore. Format: tag: description. Return ONLY the commit message, nothing else. Diff stats: ${diff_output}. Diff: ${diff_full}"
         local msg
-        msg=$(ollama run "$OLLAMA_MODEL" "$prompt" 2>/dev/null | head -5 | sed '/^$/d' | head -1) || true
+        msg=$(ollama run "$OLLAMA_MODEL" --hidethinking "$prompt" 2>/dev/null | head -5 | sed '/^$/d' | head -1) || true
         if [ -n "$msg" ]; then
             msg=$(echo "$msg" | sed 's/^[`"'"'"']//;s/[`"'"'"']$//' | head -c 200)
             echo -e "    ${GREEN}Mensagem sugerida:${RESET} $msg" >&2
