@@ -135,7 +135,17 @@ generate_commit_message() {
         local prompt
         prompt="Analyze this git diff and generate a concise commit message using Conventional Commits format. Use one of these tags: feat, fix, docs, style, refactor, perf, test, chore. Format: tag: description. Return ONLY the commit message, nothing else. Diff stats: ${diff_output}. Diff: ${diff_full}"
         local msg
-        msg=$(ollama run "$OLLAMA_MODEL" --hidethinking "$prompt" 2>/dev/null | head -5 | sed '/^$/d' | head -1) || true
+        if command -v curl &>/dev/null && command -v jq &>/dev/null; then
+            local ollama_host="${OLLAMA_HOST:-http://127.0.0.1:11434}"
+            local json_prompt
+            json_prompt=$(printf '%s' "$prompt" | jq -Rs .)
+            local response
+            response=$(curl -s --max-time 120 "$ollama_host/api/generate" \
+                -d "{\"model\":\"$OLLAMA_MODEL\",\"prompt\":$json_prompt,\"stream\":false}" 2>/dev/null) || true
+            msg=$(echo "$response" | jq -r '.response // empty' 2>/dev/null | head -5 | sed '/^$/d' | head -1) || true
+        else
+            msg=$(ollama run "$OLLAMA_MODEL" --hidethinking "$prompt" 2>/dev/null | head -5 | sed '/^$/d' | head -1) || true
+        fi
         if [ -n "$msg" ]; then
             msg=$(echo "$msg" | sed 's/^[`"'"'"']//;s/[`"'"'"']$//' | head -c 200)
             echo -e "    ${GREEN}Mensagem sugerida:${RESET} $msg" >&2
