@@ -88,7 +88,9 @@ check_ollama_model() {
     if ! command -v ollama &>/dev/null; then
         return 1
     fi
-    if ! ollama list &>/dev/null; then
+    local ollama_list_output
+    ollama_list_output=$(ollama list 2>/dev/null)
+    if [ $? -ne 0 ]; then
         echo -e "  ${YELLOW}Aviso: Ollama instalado mas nao esta em execucao.${RESET}" >&2
         return 1
     fi
@@ -97,7 +99,7 @@ check_ollama_model() {
     else
         echo ""
         echo -e "  ${BOLD}Modelos Ollama disponiveis:${RESET}"
-        models=$(ollama list 2>/dev/null | tail -n +2 | awk '{print "    - " $1}')
+        models=$(echo "$ollama_list_output" | tail -n +2 | awk '{print "    - " $1}')
         if [ -n "$models" ]; then
             echo "$models"
         else
@@ -110,7 +112,7 @@ check_ollama_model() {
             echo -e "  ${RED}Erro: Nenhum modelo informado.${RESET}" >&2
             return 1
         fi
-        export OLLAMA_DEFAULT_MODEL="$OLLAMA_MODEL"
+        OLLAMA_DEFAULT_MODEL="$OLLAMA_MODEL"
     fi
     return 0
 }
@@ -119,14 +121,21 @@ generate_commit_message() {
     local diff_output
     diff_output=$(git diff --stat 2>/dev/null)
     local diff_full
-    diff_full=$(git diff 2>/dev/null | head -200)
+    local diff_raw diff_line_count
+    diff_raw=$(git diff 2>/dev/null)
+    diff_line_count=$(echo "$diff_raw" | wc -l | tr -d ' ')
+    if [ "$diff_line_count" -gt 200 ]; then
+        diff_full=$(echo "$diff_raw" | awk 'NR<=200{lines[NR]=$0; if(/^@@/) last_hunk=NR} END{for(i=1;i<=last_hunk;i++) print lines[i]}')
+    else
+        diff_full="$diff_raw"
+    fi
 
     if command -v ollama &>/dev/null && [ -n "$OLLAMA_MODEL" ]; then
         echo -e "    ${DIM}→ Gerando commit com Ollama ($OLLAMA_MODEL)...${RESET}" >&2
         local prompt
         prompt="Analyze this git diff and generate a concise commit message using Conventional Commits format. Use one of these tags: feat, fix, docs, style, refactor, perf, test, chore. Format: tag: description. Return ONLY the commit message, nothing else. Diff stats: ${diff_output}. Diff: ${diff_full}"
         local msg
-        msg=$(ollama run "$OLLAMA_MODEL" "$prompt" 2>/dev/null | head -5 | sed '/^$/d' | head -1)
+        msg=$(ollama run "$OLLAMA_MODEL" "$prompt" 2>/dev/null | head -5 | sed '/^$/d' | head -1) || true
         if [ -n "$msg" ]; then
             msg=$(echo "$msg" | sed 's/^[`"'"'"']//;s/[`"'"'"']$//' | head -c 200)
             echo -e "    ${GREEN}Mensagem sugerida:${RESET} $msg" >&2
@@ -140,7 +149,7 @@ generate_commit_message() {
                     ;;
                 [eE]*)
                     printf "    Edite a mensagem: " >&2
-                    read -r msg < /dev/tty 2>/dev/null -i "$msg" || msg="$msg"
+                    read -r -e -i "$msg" msg < /dev/tty 2>/dev/null || msg="$msg"
                     ;;
             esac
             echo "$msg"
@@ -357,9 +366,9 @@ resolve_diverged_repo() {
 count_diverged=0
 
 if $DO_COMMIT; then
-    ollama_available=false
-    if check_ollama_model; then
-        ollama_available=true
+    check_ollama_model
+    ollama_rc=$?
+    if [ "$ollama_rc" -eq 0 ]; then
         echo -e "  ${GREEN}Ollama disponivel${RESET} — modelo: ${CYAN}$OLLAMA_MODEL${RESET}"
     else
         echo -e "  ${YELLOW}Ollama nao disponivel${RESET} — commit sera manual"
