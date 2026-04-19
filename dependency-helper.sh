@@ -1,34 +1,31 @@
 #!/bin/bash
 # dependency-helper.sh — Utilitário interno para verificação e instalação de dependências
 
-# Cores (fallback caso o script chamador não defina)
-GREEN="${GREEN:-'\033[1;32m'}"
-YELLOW="${YELLOW:-'\033[1;33m'}"
-RED="${RED:-'\033[1;31m'}"
-CYAN="${CYAN:-'\033[1;36m'}"
-BLUE="${BLUE:-'\033[1;34m'}"
-RESET="${RESET:-'\033[0m'}"
-
 check_and_install() {
     local pkg_name=$1
     local install_cmd=$2
+    local green="${GREEN-$'\033[1;32m'}"
+    local yellow="${YELLOW-$'\033[1;33m'}"
+    local red="${RED-$'\033[1;31m'}"
+    local cyan="${CYAN-$'\033[1;36m'}"
+    local reset="${RESET-$'\033[0m'}"
 
     if command -v "$pkg_name" >/dev/null 2>&1; then
         return 0
     fi
 
-    echo -e "${YELLOW}[WARN] Dependência '$pkg_name' não encontrada.${RESET}"
+    echo -e "${yellow}[WARN] Dependência '$pkg_name' não encontrada.${reset}"
     read -p "Deseja instalar '$pkg_name' agora? (s/n): " choice
     if [[ "$choice" == "s" || "$choice" == "S" ]]; then
-        echo -e "${CYAN}Instalando $pkg_name...${RESET}"
+        echo -e "${cyan}Instalando $pkg_name...${reset}"
         if eval "$install_cmd"; then
-            echo -e "${GREEN}[SUCCESS] $pkg_name instalado.${RESET}"
+            echo -e "${green}[SUCCESS] $pkg_name instalado.${reset}"
         else
-            echo -e "${RED}[ERROR] Falha ao instalar $pkg_name.${RESET}"
+            echo -e "${red}[ERROR] Falha ao instalar $pkg_name.${reset}"
             exit 1
         fi
     else
-        echo -e "${RED}[ERROR] O script requer '$pkg_name' para funcionar.${RESET}"
+        echo -e "${red}[ERROR] O script requer '$pkg_name' para funcionar.${reset}"
         exit 1
     fi
 }
