@@ -13,9 +13,6 @@
 
 set -euo pipefail
 
-DEP_HELPER="./dependency-helper.sh"
-[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; fi
 
 readonly VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -33,6 +30,11 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+DEP_HELPER="./dependency-helper.sh"
+[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; fi
+
+
 
 
 ACTION="list"

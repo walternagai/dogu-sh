@@ -1,13 +1,13 @@
 #!/bin/bash
 # dependency-helper.sh — Utilitário interno para verificação e instalação de dependências
 
-# Cores
-readonly GREEN='\033[1;32m'
-readonly YELLOW='\033[1;33m'
-readonly RED='\033[1;31m'
-readonly CYAN='\033[1;36m'
-readonly BLUE='\033[1;34m'
-readonly RESET='\033[0m'
+# Cores (fallback caso o script chamador não defina)
+GREEN="${GREEN:-'\033[1;32m'}"
+YELLOW="${YELLOW:-'\033[1;33m'}"
+RED="${RED:-'\033[1;31m'}"
+CYAN="${CYAN:-'\033[1;36m'}"
+BLUE="${BLUE:-'\033[1;34m'}"
+RESET="${RESET:-'\033[0m'}"
 
 check_and_install() {
     local pkg_name=$1

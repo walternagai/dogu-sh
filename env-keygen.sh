@@ -41,13 +41,6 @@ readonly BOLD='\033[1m'
 readonly DIM='\033[0;90m'
 readonly RESET='\033[0m'
 
-DEP_HELPER="./dependency-helper.sh"
-[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then
-    source "$DEP_HELPER"
-    INSTALLER=$(detect_installer)
-    check_and_install "openssl" "$INSTALLER" "openssl"
-fi
 
 VAR_NAME=""
 BYTE_LENGTH=32
@@ -66,6 +59,15 @@ FIXED_FORMATS="uuid django fernet rails"
 log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+DEP_HELPER="./dependency-helper.sh"
+[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
+if [ -f "$DEP_HELPER" ]; then
+    source "$DEP_HELPER"
+    INSTALLER=$(detect_installer)
+    check_and_install "openssl" "$INSTALLER" "openssl"
+fi
+
+
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 
 while [[ $# -gt 0 ]]; do
