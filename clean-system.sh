@@ -13,7 +13,7 @@
 set -euo pipefail
 
 
-readonly VERSION="1.0.0"
+readonly SCRIPT_VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 readonly GREEN='\033[1;32m'
@@ -72,7 +72,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             exit 0
             ;;
-        --version|-V) echo "clean-system.sh $VERSION"; exit 0 ;;
+        --version|-V) echo "clean-system.sh $SCRIPT_VERSION"; exit 0 ;;
         --) shift; break ;;
         *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
@@ -136,7 +136,6 @@ confirm_action() {
     read -r confirm < /dev/tty 2>/dev/null || confirm="n"
     case "$confirm" in
         [sS]) return 0 ;;
-        --) shift; break ;;
         *) return 1 ;;
     esac
 }
@@ -260,7 +259,6 @@ case "$DISTRO" in
         fi
         ;;
 
-        --) shift; break ;;
     *)
         echo -e "  ${DIM}Distro nao suportada para autoremove automatico.${RESET}"
         ;;
@@ -397,7 +395,6 @@ case "$DISTRO" in
         echo -e "  ${DIM}Arch mantem o kernel atual automaticamente.${RESET}"
         ;;
 
-        --) shift; break ;;
     *)
         echo -e "  Kernel atual: ${GREEN}$CURRENT_KERNEL${RESET}"
         echo -e "  ${DIM}Remocao de kernels nao suportada para esta distro.${RESET}"

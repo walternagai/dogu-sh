@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-readonly VERSION="1.0.0"
+readonly SCRIPT_VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 readonly GREEN='\033[1;32m'
@@ -80,7 +80,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             exit 0
             ;;
-        --version|-V) echo "package-list-backup.sh $VERSION"; exit 0 ;;
+        --version|-V) echo "package-list-backup.sh $SCRIPT_VERSION"; exit 0 ;;
         --) shift; break ;;
         *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
@@ -123,7 +123,6 @@ detect_installer_for() {
         pip) echo "pip install" ;;
         cargo) echo "cargo install" ;;
         brew) echo "brew install" ;;
-        --) shift; break ;;
         *) echo "echo" ;;
     esac
 }
@@ -131,7 +130,7 @@ detect_installer_for() {
 DISTRO=$(detect_distro)
 
 echo ""
-echo -e "  ${BOLD}Package List Backup${RESET}  ${DIM}v$VERSION${RESET}"
+echo -e "  ${BOLD}Package List Backup${RESET}  ${DIM}v$SCRIPT_VERSION${RESET}"
 
 if $DRY_RUN; then
     echo -e "  ${YELLOW}[DRY-RUN]${RESET} Preview sem executar"
@@ -159,7 +158,6 @@ collect_system() {
         arch|manjaro|endeavouros|garuda*)
             pacman -Qe 2>/dev/null | awk '{print $1}' | sort
             ;;
-        --) shift; break ;;
         *)
             echo "# distro nao suportada" >&2
             ;;
@@ -493,7 +491,6 @@ if [ "$ACTION" = "import" ]; then
                     failed=$((failed + 1))
                 fi
                 ;;
-        --) shift; break ;;
             *)
                 printf "  ${DIM}?${RESET} %-20s %s ${DIM}(secao desconhecida)${RESET}\n" "[$current_section]" "$line"
                 ;;
