@@ -223,7 +223,7 @@ echo -e "  ${BOLD} Espaco nos Discos${RESET}"
 echo -e "  ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo ""
 
-printf "  ${BOLD}%-4s %-13s %-7s %10s %10s %10s %4s  %-12s  %s${RESET}\n" \
+printf "  ${BOLD}%-4s %-13s %-7s %-10s %-10s %-10s %-5s %-12s  %s${RESET}\n" \
     "TIPO" "DISPOSITIVO" "FS" "TOTAL" "USADO" "LIVRE" "USO%" "BARRA" "MONTAGEM"
 echo -e "  ${DIM}──────────────────────────────────────────────────────────────────────────────────${RESET}"
 
@@ -290,7 +290,7 @@ if $USE_JQ; then
         display_mount="$mount"
         display_mount="${display_mount//$HOME/~}"
 
-        printf "  %b  %-13s %-7s %10s %10s %10s %4s  %b  %s\n" \
+        printf "  %b  %-13s %-7s %-10s %-10s %-10s %-5s %b  %s\n" \
             "$type_icon" "$dev_name" "$fstype" "$total_h" "$used_h" "$avail_h" "$pct_plain" "$bar" "$display_mount"
 
         count=$((count + 1))
@@ -340,7 +340,7 @@ else
         display_mount="$mount"
         display_mount="${display_mount//$HOME/~}"
 
-        printf "  %b  %-13s %-7s %10s %10s %10s %4s  %b  %s\n" \
+        printf "  %b  %-13s %-7s %-10s %-10s %-10s %-5s %b  %s\n" \
             "$type_icon" "$dev_name" "$fstype" "$total" "$used" "$avail" "$pct_plain" "$bar" "$display_mount"
 
         count=$((count + 1))
