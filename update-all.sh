@@ -173,7 +173,6 @@ if $UPDATE_SYSTEM; then
             run_or_dry "pacman -Sc" sudo pacman -Sc --noconfirm
             updated_count=$((updated_count + 2))
             ;;
-        --) shift; break ;;
         *)
             echo -e "  ${DIM}Distro '$DISTRO' nao suportada para atualizacao automatica.${RESET}"
             skipped_count=$((skipped_count + 1))
