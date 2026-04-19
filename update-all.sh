@@ -15,7 +15,7 @@
 set -euo pipefail
 
 
-readonly VERSION="1.0.0"
+readonly SCRIPT_VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 readonly GREEN='\033[1;32m'
@@ -79,7 +79,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             exit 0
             ;;
-        --version|-V) echo "update-all.sh $VERSION"; exit 0 ;;
+        --version|-V) echo "update-all.sh $SCRIPT_VERSION"; exit 0 ;;
         --) shift; break ;;
         *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
@@ -134,7 +134,7 @@ run_or_dry() {
 DISTRO=$(detect_distro)
 
 echo ""
-echo -e "  ${BOLD}Update All${RESET}  ${DIM}v$VERSION${RESET}"
+echo -e "  ${BOLD}Update All${RESET}  ${DIM}v$SCRIPT_VERSION${RESET}"
 
 if $DRY_RUN; then
     echo -e "  ${YELLOW}[DRY-RUN]${RESET} Preview sem executar"
