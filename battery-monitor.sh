@@ -9,29 +9,40 @@
 #   --help              Mostra esta ajuda
 #   --version           Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 ACTION="status"
 LOW_THRESHOLD=20
 CRITICAL_THRESHOLD=5
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
         --status|-s) ACTION="status"; shift ;;
         --watch|-w) ACTION="watch"; shift ;;
-        --low) LOW_THRESHOLD="$2"; shift 2 ;;
-        --critical) CRITICAL_THRESHOLD="$2"; shift 2 ;;
+        --low)
+            [[ -z "${2-}" ]] && { echo "Flag --low requer um valor" >&2; exit 1; }
+            LOW_THRESHOLD="$2"; shift 2 ;;
+        --critical)
+            [[ -z "${2-}" ]] && { echo "Flag --critical requer um valor" >&2; exit 1; }
+            CRITICAL_THRESHOLD="$2"; shift 2 ;;
         --help|-h)
             echo ""
             echo "  battery-monitor.sh — Monitor de bateria com alertas"
@@ -53,8 +64,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "battery-monitor.sh $VERSION"; exit 0 ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "battery-monitor.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 
@@ -152,6 +164,7 @@ show_status() {
         Charging) status_color="${GREEN}" ;;
         Discharging) status_color="${YELLOW}" ;;
         Full) status_color="${GREEN}" ;;
+        --) shift; break ;;
         *) status_color="${DIM}" ;;
     esac
     echo -e "  Status:      ${status_color}${BOLD}${status}${RESET}"

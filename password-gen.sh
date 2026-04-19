@@ -14,18 +14,25 @@
 #   --help              Mostra esta ajuda
 #   --version           Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 LENGTH=16
 COUNT=1
@@ -37,17 +44,23 @@ ONLY_HEX=false
 PASSPHRASE=false
 CHECK_PASS=""
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        -l|--length) LENGTH="$2"; shift 2 ;;
-        -n|--count) COUNT="$2"; shift 2 ;;
+        -l|--length)
+            [[ -z "${2-}" ]] && { echo "Flag --length requer um valor" >&2; exit 1; }
+            LENGTH="$2"; shift 2 ;;
+        -n|--count)
+            [[ -z "${2-}" ]] && { echo "Flag --count requer um valor" >&2; exit 1; }
+            COUNT="$2"; shift 2 ;;
         --no-upper) USE_UPPER=false; shift ;;
         --no-lower) USE_LOWER=false; shift ;;
         --no-digits) USE_DIGITS=false; shift ;;
         --no-symbols) USE_SYMBOLS=false; shift ;;
         --only-hex) ONLY_HEX=true; shift ;;
         --passphrase) PASSPHRASE=true; shift ;;
-        --check) CHECK_PASS="$2"; shift 2 ;;
+        --check)
+            [[ -z "${2-}" ]] && { echo "Flag --check requer um valor" >&2; exit 1; }
+            CHECK_PASS="$2"; shift 2 ;;
         --help|-h)
             echo ""
             echo "  password-gen.sh — Gerador de senhas configuravel"
@@ -74,8 +87,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "password-gen.sh $VERSION"; exit 0 ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "password-gen.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 

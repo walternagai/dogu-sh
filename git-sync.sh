@@ -10,22 +10,29 @@
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "git" "$INSTALLER git"; fi
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "git" "$INSTALLER" "git"; fi
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 DRY_RUN=false
 DO_PUSH=false
@@ -37,14 +44,16 @@ POSITIONAL_ARGS=()
 
 COMMIT_TAGS="feat fix docs style refactor perf test chore"
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
         --dry-run) DRY_RUN=true; shift ;;
         --push|-p) DO_PUSH=true; shift ;;
         --fetch|-f) DO_FETCH_ONLY=true; shift ;;
         --commit|-C) DO_COMMIT=true; shift ;;
         --all|-a) CLEAN_ALL=true; shift ;;
-        --depth) MAX_DEPTH="${2:-5}"; shift 2 ;;
+        --depth)
+            [[ -z "${2-}" ]] && { echo "Flag --depth requer um valor" >&2; exit 1; }
+            MAX_DEPTH="${2:-5}"; shift 2 ;;
         --help|-h)
             echo ""
             echo "  git-sync.sh — Sincroniza multiplos repositorios git"
@@ -78,8 +87,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "git-sync.sh $VERSION"; exit 0 ;;
-        -*) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "git-sync.sh $VERSION"; exit 0 ;;
+        -*) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
+        --) shift; break ;;
         *) POSITIONAL_ARGS+=("$1"); shift ;;
     esac
 done
@@ -261,6 +271,7 @@ resolve_merge_conflicts() {
                             git add -- "$f" 2>/dev/null
                             echo -e "        ${GREEN}✓${RESET} editado: $f"
                             ;;
+        --) shift; break ;;
                         *)
                             echo -e "        ${DIM}Pulado: $f${RESET}"
                             ;;
@@ -273,6 +284,7 @@ resolve_merge_conflicts() {
                 fi
                 return 0
                 ;;
+        --) shift; break ;;
             *)
                 echo -e "    ${RED}Abortando resolucao de conflitos.${RESET}"
                 git rebase --abort 2>/dev/null || git merge --abort 2>/dev/null || true
@@ -360,12 +372,14 @@ resolve_diverged_repo() {
                     echo -e "    ${GREEN}✓ resetado para remoto${RESET}"
                     return 0
                     ;;
+        --) shift; break ;;
                 *)
                     echo -e "    ${DIM}Reset cancelado.${RESET}"
                     return 2
                     ;;
             esac
             ;;
+        --) shift; break ;;
         *)
             echo -e "    ${DIM}Repositorio pulado.${RESET}"
             return 2

@@ -12,32 +12,53 @@
 #   --help              Mostra esta ajuda
 #   --version           Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 ACTION=""
 INPUT_TEXT=""
 FILE_INPUT=""
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        -e|--encode) ACTION="encode"; INPUT_TEXT="$2"; shift 2 ;;
-        -d|--decode) ACTION="decode"; INPUT_TEXT="$2"; shift 2 ;;
-        --url-encode) ACTION="url-encode"; INPUT_TEXT="$2"; shift 2 ;;
-        --url-decode) ACTION="url-decode"; INPUT_TEXT="$2"; shift 2 ;;
-        --hex-encode) ACTION="hex-encode"; INPUT_TEXT="$2"; shift 2 ;;
-        --hex-decode) ACTION="hex-decode"; INPUT_TEXT="$2"; shift 2 ;;
-        --file|-f) FILE_INPUT="$2"; shift 2 ;;
+        -e|--encode)
+            [[ -z "${2-}" ]] && { echo "Flag --encode requer um valor" >&2; exit 1; }
+            ACTION="encode"; INPUT_TEXT="$2"; shift 2 ;;
+        -d|--decode)
+            [[ -z "${2-}" ]] && { echo "Flag --decode requer um valor" >&2; exit 1; }
+            ACTION="decode"; INPUT_TEXT="$2"; shift 2 ;;
+        --url-encode)
+            [[ -z "${2-}" ]] && { echo "Flag --url-encode requer um valor" >&2; exit 1; }
+            ACTION="url-encode"; INPUT_TEXT="$2"; shift 2 ;;
+        --url-decode)
+            [[ -z "${2-}" ]] && { echo "Flag --url-decode requer um valor" >&2; exit 1; }
+            ACTION="url-decode"; INPUT_TEXT="$2"; shift 2 ;;
+        --hex-encode)
+            [[ -z "${2-}" ]] && { echo "Flag --hex-encode requer um valor" >&2; exit 1; }
+            ACTION="hex-encode"; INPUT_TEXT="$2"; shift 2 ;;
+        --hex-decode)
+            [[ -z "${2-}" ]] && { echo "Flag --hex-decode requer um valor" >&2; exit 1; }
+            ACTION="hex-decode"; INPUT_TEXT="$2"; shift 2 ;;
+        --file|-f)
+            [[ -z "${2-}" ]] && { echo "Flag --file requer um valor" >&2; exit 1; }
+            FILE_INPUT="$2"; shift 2 ;;
         --help|-h)
             echo ""
             echo "  base64-tool.sh — Codifica/decodifica Base64, URL e Hex"
@@ -64,8 +85,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "base64-tool.sh $VERSION"; exit 0 ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "base64-tool.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 
@@ -155,6 +177,7 @@ case "$ACTION" in
         echo ""
         ;;
 
+        --) shift; break ;;
     *)
         echo ""
         echo -e "  ${BOLD}Base64 Tool${RESET}  ${DIM}v$VERSION${RESET}"
@@ -176,6 +199,7 @@ case "$ACTION" in
             4) ACTION="url-decode"; INPUT_TEXT="$text" ;;
             5) ACTION="hex-encode"; INPUT_TEXT="$text" ;;
             6) ACTION="hex-decode"; INPUT_TEXT="$text" ;;
+        --) shift; break ;;
             *) echo -e "  ${RED}Opcao invalida.${RESET}"; exit 1 ;;
         esac
 

@@ -6,13 +6,13 @@
 # toolchains on Ubuntu and derivatives (Linux Mint, Zorin OS, Pop!_OS, etc.)
 # ==============================================================================
 
-set -uo pipefail
+set -euo pipefail
 
 # ==============================================================================
 # GLOBALS
 # ==============================================================================
 
-SCRIPT_VERSION="2.0.0"
+readonly VERSION="2.0.0"
 SCRIPT_NAME="$(basename "$0")"
 
 STATE_DIR="$HOME/.lab_manager"
@@ -26,13 +26,19 @@ AI_VENV="$VENV_BASE/ai-tools"
 DOTNET_VERSION="8.0"
 OPENWEBUI_PORT=3000
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
-NC='\033[0m'
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly BLUE='\033[0;34m'
+readonly CYAN='\033[0;36m'
+readonly BOLD='\033[1m'
+readonly NC='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 TOTAL_TESTS=0
 PASSED_TESTS=0
@@ -1309,6 +1315,7 @@ uninstall_component() {
         devtools) do_uninstall_devtools ;;
         ai)     do_uninstall_ai ;;
         docker) do_uninstall_docker ;;
+        --) shift; break ;;
         *)      log_warn "Unknown component: $comp"; return 1 ;;
     esac
 
@@ -1729,6 +1736,7 @@ menu_install() {
                 read -p "ENTER to continue..."
                 ;;
             0) return ;;
+        --) shift; break ;;
             *) log_error "Invalid option"; sleep 1 ;;
         esac
     done
@@ -1754,6 +1762,7 @@ menu_uninstall() {
             13) uninstall_component "docker"; read -p "ENTER to continue..." ;;
             [aA]) do_uninstall_all; read -p "ENTER to continue..." ;;
             0) return ;;
+        --) shift; break ;;
             *) log_error "Invalid option"; sleep 1 ;;
         esac
     done
@@ -1791,6 +1800,7 @@ interactive_mode() {
             7) do_generate_samples; read -p "ENTER to continue..." ;;
             8) do_status; read -p "ENTER to continue..." ;;
             0) log_info "Bye"; exit 0 ;;
+        --) shift; break ;;
             *) log_error "Invalid option"; sleep 1 ;;
         esac
     done
@@ -1828,7 +1838,7 @@ OPTIONS:
     --safe          Safe uninstall, confirm destructive actions (default)
     --force         Skip confirmations (use with caution)
     -h, --help      Show this help
-    -v, --version   Show version
+    -V, --version   Mostra versao
 
 EXAMPLES:
     ./lab_manager.sh
@@ -1859,14 +1869,15 @@ parse_args() {
     cmd="$1"
     shift
 
-    while [ $# -gt 0 ]; do
+    while [[ $# -gt 0 ]]; do
         case "$1" in
             --json)  json_output=true; shift ;;
             --safe)  shift ;;
             --force) shift ;;
             -h|--help) show_help; exit 0 ;;
-            -v|--version) echo "v$SCRIPT_VERSION"; exit 0 ;;
+            -V|--version) echo "lab_manager.sh $VERSION"; exit 0 ;;
             all) comp_args=("${COMPONENTS_ALL[@]}"); shift ;;
+        --) shift; break ;;
             *) comp_args+=("$1"); shift ;;
         esac
     done
@@ -1897,6 +1908,7 @@ parse_args() {
                         do_install_browsers; do_install_devtools; do_install_ai
                         do_install_docker; configure_git
                         ;;
+        --) shift; break ;;
                     *) log_error "Unknown component: $c" ;;
                 esac
             done
@@ -1934,6 +1946,7 @@ parse_args() {
                     bashrc) restore_config ".bashrc" ;;
                     zshrc)  restore_config ".zshrc" ;;
                     profile) restore_config ".profile" ;;
+        --) shift; break ;;
                     *) log_warn "Unknown restore target: $c" ;;
                 esac
             done
@@ -1941,6 +1954,7 @@ parse_args() {
         help|--help|-h)
             show_help
             ;;
+        --) shift; break ;;
         *)
             log_error "Unknown command: $cmd"
             show_help
@@ -1966,7 +1980,7 @@ main() {
         create_backup
         interactive_mode
     else
-        if [[ "$1" != "status" && "$1" != "help" && "$1" != "-h" && "$1" != "--help" && "$1" != "-v" && "$1" != "--version" && "$1" != "restore" && "$1" != "generate-samples" ]]; then
+        if [[ "$1" != "status" && "$1" != "help" && "$1" != "-h" && "$1" != "--help" && "$1" != "-V" && "$1" != "--version" && "$1" != "restore" && "$1" != "generate-samples" ]]; then
             if ! run_preflight; then
                 log_error "Preflight checks failed"
                 exit 1

@@ -10,18 +10,25 @@
 #   --help               Mostra esta ajuda
 #   --version            Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 DATA_DIR="$HOME/.config/calendar"
 mkdir -p "$DATA_DIR"
@@ -33,12 +40,20 @@ ADD_EVENT=""
 REMOVE_ID=""
 SHOW_EVENTS=false
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        -m|--month) TARGET_MONTH="$2"; shift 2 ;;
-        -y|--year) TARGET_YEAR="$2"; shift 2 ;;
-        -a|--add) ADD_EVENT="$2"; shift 2 ;;
-        -r|--remove) REMOVE_ID="$2"; shift 2 ;;
+        -m|--month)
+            [[ -z "${2-}" ]] && { echo "Flag --month requer um valor" >&2; exit 1; }
+            TARGET_MONTH="$2"; shift 2 ;;
+        -y|--year)
+            [[ -z "${2-}" ]] && { echo "Flag --year requer um valor" >&2; exit 1; }
+            TARGET_YEAR="$2"; shift 2 ;;
+        -a|--add)
+            [[ -z "${2-}" ]] && { echo "Flag --add requer um valor" >&2; exit 1; }
+            ADD_EVENT="$2"; shift 2 ;;
+        -r|--remove)
+            [[ -z "${2-}" ]] && { echo "Flag --remove requer um valor" >&2; exit 1; }
+            REMOVE_ID="$2"; shift 2 ;;
         --events|-e) SHOW_EVENTS=true; shift ;;
         --help|-h)
             echo ""
@@ -63,8 +78,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "calendar.sh $VERSION"; exit 0 ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "calendar.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 

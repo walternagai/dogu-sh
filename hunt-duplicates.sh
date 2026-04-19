@@ -26,22 +26,28 @@
 #   --version             Mostra versao
 # Nenhum arquivo e deletado sem --trash, --delete ou --soft-link.
 
-set -eo pipefail
+set -euo pipefail
 
-VERSION="2.0.0"
+readonly VERSION="2.0.0"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=dependency-helper.sh
 source "$SCRIPT_DIR/dependency-helper.sh" 2>/dev/null || true
 
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-GREEN='\033[1;32m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly GREEN='\033[1;32m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 USE_TRASH=false
 USE_DELETE=false
@@ -63,7 +69,7 @@ WATCH_MODE=false
 PARTIAL_COMPARE=false
 POSITIONAL_ARGS=()
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
         --trash)
             USE_TRASH=true
@@ -81,6 +87,7 @@ while [ $# -gt 0 ]; do
             KEEP_MODE="${1#--mode=}"
             case "$KEEP_MODE" in
                 oldest|newest|smallest-path|first) ;;
+        --) shift; break ;;
                 *) echo "Erro: --mode invalido '$KEEP_MODE'. Use: oldest, newest, smallest-path, first" >&2; exit 1 ;;
             esac
             shift
@@ -188,7 +195,7 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v)
+        --version|-V)
             echo "hunt-duplicates.sh $VERSION"
             exit 0
             ;;
@@ -196,6 +203,7 @@ while [ $# -gt 0 ]; do
             echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
             exit 1
             ;;
+        --) shift; break ;;
         *)
             POSITIONAL_ARGS+=("$1")
             shift
@@ -222,7 +230,7 @@ if $USE_DELETE && ! $FORCE; then
 fi
 
 if $WATCH_MODE; then
-    check_and_install inotifywait "$(detect_installer) inotify-tools" 2>/dev/null || {
+    check_and_install inotifywait "$(detect_installer)" "inotify-tools" 2>/dev/null || {
         echo "Erro: inotifywait nao encontrado. Instale inotify-tools." >&2
         exit 1
     }
@@ -857,6 +865,7 @@ run_scan() {
                     echo "}"
                 } > "$OUTPUT_FILE"
                 ;;
+        --) shift; break ;;
             *)
                 {
                     echo "hash,group,filepath,size,kept"

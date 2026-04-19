@@ -10,22 +10,29 @@
 #   --help           Mostra esta ajuda
 #   --version        Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER docker.io"; fi
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 FILTER_CONTAINER=""
 CHECK_HOST=false
@@ -33,12 +40,16 @@ CHECK_CONTAINERS=true
 SEVERITY_FILTER=""
 JSON_OUTPUT=false
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
         --all|-a) CHECK_HOST=true; CHECK_CONTAINERS=true; shift ;;
-        --container|-c) FILTER_CONTAINER="$2"; shift 2 ;;
+        --container|-c)
+            [[ -z "${2-}" ]] && { echo "Flag --container requer um valor" >&2; exit 1; }
+            FILTER_CONTAINER="$2"; shift 2 ;;
         --host|-H) CHECK_HOST=true; CHECK_CONTAINERS=false; shift ;;
-        --severity|-s) SEVERITY_FILTER="$2"; shift 2 ;;
+        --severity|-s)
+            [[ -z "${2-}" ]] && { echo "Flag --severity requer um valor" >&2; exit 1; }
+            SEVERITY_FILTER="$2"; shift 2 ;;
         --json|-j) JSON_OUTPUT=true; shift ;;
         --help|-h)
             echo ""
@@ -63,8 +74,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version) echo "docker-cis-benchmark.sh $VERSION"; exit 0 ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "docker-cis-benchmark.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 

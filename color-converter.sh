@@ -8,22 +8,29 @@
 #   --help               Mostra esta ajuda
 #   --version            Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "bc" "$INSTALLER bc"; fi
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "bc" "$INSTALLER" "bc"; fi
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 COLOR_INPUT=""
 SHOW_PREVIEW=false
@@ -41,9 +48,11 @@ NAMED_COLORS=(
     [ivory]="255,255,240" [turquoise]="64,224,208" [crimson]="220,20,60" [chocolate]="210,105,30"
 )
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        -c|--color) COLOR_INPUT="$2"; shift 2 ;;
+        -c|--color)
+            [[ -z "${2-}" ]] && { echo "Flag --color requer um valor" >&2; exit 1; }
+            COLOR_INPUT="$2"; shift 2 ;;
         --preview|-p) SHOW_PREVIEW=true; shift ;;
         --list|-l) LIST_COLORS=true; shift ;;
         --help|-h)
@@ -72,8 +81,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "color-converter.sh $VERSION"; exit 0 ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "color-converter.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 
@@ -230,6 +240,7 @@ elif [[ "$COLOR_INPUT" =~ ^hsl\([0-9]+,[0-9]+%,?[0-9]+%?\)$ ]]; then
             2) r1=0; g1=$C; b1=$X ;;
             3) r1=0; g1=$X; b1=$C ;;
             4) r1=$X; g1=0; b1=$C ;;
+        --) shift; break ;;
             *) r1=$C; g1=0; b1=$X ;;
         esac
         R=$(echo "scale=0; ($r1 + $m) * 255" | bc)

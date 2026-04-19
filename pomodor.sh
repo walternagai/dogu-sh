@@ -12,18 +12,25 @@
 #   --help              Mostra esta ajuda
 #   --version           Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 WORK_MINS=25
 BREAK_MINS=5
@@ -33,12 +40,20 @@ NO_SOUND=false
 ACTION="run"
 CLEAN_ALL=false
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        -w|--work) WORK_MINS="${2:-25}"; shift 2 ;;
-        -b|--break) BREAK_MINS="${2:-5}"; shift 2 ;;
-        -l|--long-break) LONG_BREAK_MINS="${2:-15}"; shift 2 ;;
-        -c|--cycles) CYCLES_BEFORE_LONG="${2:-4}"; shift 2 ;;
+        -w|--work)
+            [[ -z "${2-}" ]] && { echo "Flag --work requer um valor" >&2; exit 1; }
+            WORK_MINS="${2:-25}"; shift 2 ;;
+        -b|--break)
+            [[ -z "${2-}" ]] && { echo "Flag --break requer um valor" >&2; exit 1; }
+            BREAK_MINS="${2:-5}"; shift 2 ;;
+        -l|--long-break)
+            [[ -z "${2-}" ]] && { echo "Flag --long-break requer um valor" >&2; exit 1; }
+            LONG_BREAK_MINS="${2:-15}"; shift 2 ;;
+        -c|--cycles)
+            [[ -z "${2-}" ]] && { echo "Flag --cycles requer um valor" >&2; exit 1; }
+            CYCLES_BEFORE_LONG="${2:-4}"; shift 2 ;;
         --status|-s) ACTION="status"; shift ;;
         --reset) ACTION="reset"; shift ;;
         --no-sound) NO_SOUND=true; shift ;;
@@ -66,8 +81,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "pomodor.sh $VERSION"; exit 0 ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "pomodor.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 
@@ -271,6 +287,7 @@ case "$ACTION" in
                 read -r cont < /dev/tty 2>/dev/null || cont="n"
                 case "$cont" in
                     [sS]) ;;
+        --) shift; break ;;
                     *) echo -e "  ${DIM}Ate logo!${RESET}"; echo ""; break ;;
                 esac
             fi

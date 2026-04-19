@@ -27,25 +27,26 @@
 #   numeric    Apenas digitos
 #   password   Senha legivel com pontuacao segura
 
-set -eo pipefail
+set -euo pipefail
 
-VERSION="1.1.0"
+readonly VERSION="1.1.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ]; then
     source "$DEP_HELPER"
     INSTALLER=$(detect_installer)
-    check_and_install "openssl" "$INSTALLER openssl"
+    check_and_install "openssl" "$INSTALLER" "openssl"
 fi
 
 VAR_NAME=""
@@ -63,20 +64,30 @@ VALID_FORMATS="hex base64 base64url uuid alnum django fernet rails ascii numeric
 FIXED_FORMATS="uuid django fernet rails"
 
 log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
-warn()    { echo -e "${YELLOW}[WARN]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
-success() { echo -e "${GREEN}[OK]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        -n|--name)      VAR_NAME="$2"; shift 2 ;;
-        -l|--length)    BYTE_LENGTH="$2"; LENGTH_SET=true; shift 2 ;;
-        -f|--format)    FORMAT="$2"; shift 2 ;;
-        -c|--count)     COUNT="$2"; shift 2 ;;
+        -n|--name)
+            [[ -z "${2-}" ]] && error "Flag --name requer um valor"
+            VAR_NAME="$2"; shift 2 ;;
+        -l|--length)
+            [[ -z "${2-}" ]] && error "Flag --length requer um valor"
+            BYTE_LENGTH="$2"; LENGTH_SET=true; shift 2 ;;
+        -f|--format)
+            [[ -z "${2-}" ]] && error "Flag --format requer um valor"
+            FORMAT="$2"; shift 2 ;;
+        -c|--count)
+            [[ -z "${2-}" ]] && error "Flag --count requer um valor"
+            COUNT="$2"; shift 2 ;;
         --upper|-u)     UPPER=true; shift ;;
         --no-hyphen)    NO_HYPHEN=true; shift ;;
         --copy)         COPY=true; shift ;;
-        --append)       APPEND_FILE="$2"; shift 2 ;;
+        --append)
+            [[ -z "${2-}" ]] && error "Flag --append requer um valor"
+            APPEND_FILE="$2"; shift 2 ;;
         --dry-run)      DRY_RUN=true; shift ;;
         --help|-h)
             echo ""
@@ -128,7 +139,8 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "env-keygen.sh $VERSION"; exit 0 ;;
+        --version|-V) echo "env-keygen.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
         *)
             echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
             exit 1
@@ -252,6 +264,7 @@ generate_key() {
             done
             echo "${key:0:$len}"
             ;;
+        --) shift; break ;;
         *)
             error "Formato invalido: '$FORMAT'. Use: $VALID_FORMATS"
             ;;

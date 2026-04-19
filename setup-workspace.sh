@@ -23,28 +23,35 @@
 #   #   top-left, top-right, bottom-left, bottom-right
 #   # Posicoes customizadas: x%,y%,w%,h%  (porcentagem da area visivel)
 
-set -eo pipefail
+set -euo pipefail
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ]; then
     source "$DEP_HELPER"
     INSTALLER=$(detect_installer)
-    check_and_install "wmctrl" "$INSTALLER wmctrl"
-    check_and_install "xdotool" "$INSTALLER xdotool"
-    check_and_install "xrandr" "$INSTALLER x11-xserver-utils"
+    check_and_install "wmctrl" "$INSTALLER" "wmctrl"
+    check_and_install "xdotool" "$INSTALLER" "xdotool"
+    check_and_install "xrandr" "$INSTALLER" "x11-xserver-utils"
 fi
 
-VERSION="1.2.0"
+readonly VERSION="1.2.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-DIM='\033[0;90m'
-BOLD='\033[1m'
-RED='\033[1;31m'
-YELLOW='\033[1;33m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly DIM='\033[0;90m'
+readonly BOLD='\033[1m'
+readonly RED='\033[1;31m'
+readonly YELLOW='\033[1;33m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 CONFIG_FILE="${WORKSPACE_CONFIG:-$HOME/.config/workspace-profiles.conf}"
 
@@ -1078,7 +1085,7 @@ case "${1:-}" in
     --help|-h)
         show_help
         ;;
-    --version|-v)
+    --version|-V)
         echo "setup-workspace.sh $VERSION"
         exit 0
         ;;

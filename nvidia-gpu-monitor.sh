@@ -11,12 +11,13 @@
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
 NVIDIA_PATHS="/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/snap/bin:/opt/nvidia/bin:/usr/lib/wsl/lib"
 for p in ${NVIDIA_PATHS//:/ }; do
     case ":$PATH:" in
         *":$p:"*) ;;
+        --) shift; break ;;
         *) PATH="$PATH:$p" ;;
     esac
 done
@@ -24,16 +25,23 @@ export PATH
 
 ERR_FILE="/tmp/nvidia-gpu-monitor-err.log"
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 INTERVAL=5
 LOG_FILE="/tmp/nvidia-gpu-monitor.log"
@@ -45,12 +53,20 @@ USE_NOTIFY=false
 DAEMON=false
 PID_FILE="/tmp/nvidia-gpu-monitor.pid"
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        --interval|-i) INTERVAL="${2:-5}"; shift 2 ;;
-        --output|-o) LOG_FILE="${2:-/tmp/nvidia-gpu-monitor.log}"; ALERT_LOG="${LOG_FILE%.log}-alerts.log"; shift 2 ;;
-        --temp|-t) TEMP_THRESHOLD="${2:-80}"; shift 2 ;;
-        --retention|-r) RETENTION_DAYS="${2:-7}"; shift 2 ;;
+        --interval|-i)
+            [[ -z "${2-}" ]] && { echo "Flag --interval requer um valor" >&2; exit 1; }
+            INTERVAL="${2:-5}"; shift 2 ;;
+        --output|-o)
+            [[ -z "${2-}" ]] && { echo "Flag --output requer um valor" >&2; exit 1; }
+            LOG_FILE="${2:-/tmp/nvidia-gpu-monitor.log}"; ALERT_LOG="${LOG_FILE%.log}-alerts.log"; shift 2 ;;
+        --temp|-t)
+            [[ -z "${2-}" ]] && { echo "Flag --temp requer um valor" >&2; exit 1; }
+            TEMP_THRESHOLD="${2:-80}"; shift 2 ;;
+        --retention|-r)
+            [[ -z "${2-}" ]] && { echo "Flag --retention requer um valor" >&2; exit 1; }
+            RETENTION_DAYS="${2:-7}"; shift 2 ;;
         --once|-1) ONCE=true; shift ;;
         --notify|-n) USE_NOTIFY=true; shift ;;
         --daemon|-d) DAEMON=true; shift ;;
@@ -85,7 +101,7 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "nvidia-gpu-monitor.sh $VERSION"; exit 0 ;;
+        --version|-V) echo "nvidia-gpu-monitor.sh $VERSION"; exit 0 ;;
         --stop|-s)
             if [ -f "$PID_FILE" ]; then
                 PID=$(cat "$PID_FILE")
@@ -102,7 +118,8 @@ while [ $# -gt 0 ]; do
             fi
             exit 0
             ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 

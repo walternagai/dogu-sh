@@ -12,22 +12,29 @@
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER docker.io"; fi
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 BACKUP_ALL=false
 TARGET_VOLUMES=()
@@ -37,14 +44,22 @@ USE_COMPRESS=false
 KEEP_VERSIONS=5
 DRY_RUN=false
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
         --all|-a) BACKUP_ALL=true; shift ;;
-        --volume|-V) TARGET_VOLUMES+=("$2"); shift 2 ;;
-        --container|-c) TARGET_CONTAINERS+=("$2"); shift 2 ;;
-        --output|-o) OUTPUT_DIR="$2"; shift 2 ;;
+        --volume|-V)
+            [[ -z "${2-}" ]] && { echo "Flag --volume requer um valor" >&2; exit 1; }
+            TARGET_VOLUMES+=("$2"); shift 2 ;;
+        --container|-c)
+            [[ -z "${2-}" ]] && { echo "Flag --container requer um valor" >&2; exit 1; }
+            TARGET_CONTAINERS+=("$2"); shift 2 ;;
+        --output|-o)
+            [[ -z "${2-}" ]] && { echo "Flag --output requer um valor" >&2; exit 1; }
+            OUTPUT_DIR="$2"; shift 2 ;;
         --compress|-z) USE_COMPRESS=true; shift ;;
-        --keep|-k) KEEP_VERSIONS="${2:-5}"; shift 2 ;;
+        --keep|-k)
+            [[ -z "${2-}" ]] && { echo "Flag --keep requer um valor" >&2; exit 1; }
+            KEEP_VERSIONS="${2:-5}"; shift 2 ;;
         --dry-run) DRY_RUN=true; shift ;;
         --help|-h)
             echo ""
@@ -71,8 +86,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version) echo "docker-backup.sh $VERSION"; exit 0 ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "docker-backup.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 

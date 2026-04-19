@@ -8,22 +8,29 @@
 #   --help             Mostra esta ajuda
 #   --version          Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; check_and_install bc "$(detect_installer) bc" 2>/dev/null || { echo -e "${RED}[ERROR] bc necessario.${RESET}" >&2; exit 1; }; fi
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; check_and_install bc "$(detect_installer)" "bc" 2>/dev/null || { echo -e "${RED}[ERROR] bc necessario.${RESET}" >&2; exit 1; }; fi
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 DATA_DIR="$HOME/.config/calculator"
 mkdir -p "$DATA_DIR"
@@ -32,9 +39,11 @@ HISTORY_FILE="$DATA_DIR/history.csv"
 ACTION="interactive"
 EVAL_EXPR=""
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        -e|--eval) EVAL_EXPR="$2"; ACTION="eval"; shift 2 ;;
+        -e|--eval)
+            [[ -z "${2-}" ]] && { echo "Flag --eval requer um valor" >&2; exit 1; }
+            EVAL_EXPR="$2"; ACTION="eval"; shift 2 ;;
         --history) ACTION="history"; shift ;;
         --clear|-c) ACTION="clear"; shift ;;
         --help|-h)
@@ -60,8 +69,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "calculator.sh $VERSION"; exit 0 ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "calculator.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 

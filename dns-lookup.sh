@@ -9,30 +9,43 @@
 #   --help              Mostra esta ajuda
 #   --version           Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 DOMAIN=""
 RECORD_TYPE="A"
 ALL_TYPES=false
 DNS_SERVER=""
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        -d|--domain) DOMAIN="$2"; shift 2 ;;
-        -t|--type) RECORD_TYPE="$2"; shift 2 ;;
+        -d|--domain)
+            [[ -z "${2-}" ]] && { echo "Flag --domain requer um valor" >&2; exit 1; }
+            DOMAIN="$2"; shift 2 ;;
+        -t|--type)
+            [[ -z "${2-}" ]] && { echo "Flag --type requer um valor" >&2; exit 1; }
+            RECORD_TYPE="$2"; shift 2 ;;
         --all|-a) ALL_TYPES=true; shift ;;
-        --server|-s) DNS_SERVER="$2"; shift 2 ;;
+        --server|-s)
+            [[ -z "${2-}" ]] && { echo "Flag --server requer um valor" >&2; exit 1; }
+            DNS_SERVER="$2"; shift 2 ;;
         --help|-h)
             echo ""
             echo "  dns-lookup.sh — Lookup DNS"
@@ -54,8 +67,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "dns-lookup.sh $VERSION"; exit 0 ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "dns-lookup.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 

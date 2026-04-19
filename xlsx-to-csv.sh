@@ -12,21 +12,22 @@
 #   -h, --help              Mostra esta ajuda
 #   -v, --version           Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
 
 log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
-warn()    { echo -e "${YELLOW}[WARN]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 
@@ -108,7 +109,7 @@ SHEET_FILTER=""
 INPUT_FILES=()
 
 # --- parsing de argumentos ---
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
         -o|--output)
             [ -z "$2" ] && error "Flag --output requer um diretorio como argumento."
@@ -133,6 +134,7 @@ while [ $# -gt 0 ]; do
             echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
             exit 1
             ;;
+        --) shift; break ;;
         *)
             INPUT_FILES+=("$1"); shift ;;
     esac

@@ -8,22 +8,29 @@
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "grep" "$INSTALLER grep"; fi
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "grep" "$INSTALLER" "grep"; fi
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-BLUE='\033[1;34m'
-CYAN='\033[1;36m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly BLUE='\033[1;34m'
+readonly CYAN='\033[1;36m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
 
-VERSION="1.0.0"
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
+
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 FOLLOW=false
 LINES=50
@@ -32,10 +39,12 @@ FILE=""
 PATTERN="."
 
 parse_args() {
-    while [ $# -gt 0 ]; do
+    while [[ $# -gt 0 ]]; do
         case "$1" in
             --follow|-f) FOLLOW=true; shift ;;
-            --lines|-n) LINES="${2:-50}"; shift 2 ;;
+            --lines|-n)
+                [[ -z "${2-}" ]] && { echo "Flag --lines requer um valor" >&2; exit 1; }
+                LINES="${2:-50}"; shift 2 ;;
             --stats|-s) SHOW_STATS=true; shift ;;
             --help|-h)
                 echo ""
@@ -57,11 +66,12 @@ parse_args() {
                 echo ""
                 exit 0
                 ;;
-            --version|-v) echo "log-analyzer.sh $VERSION"; exit 0 ;;
+            --version|-V) echo "log-analyzer.sh $VERSION"; exit 0 ;;
             -*)
                 echo -e "${RED}Opcao desconhecida: $1${RESET}"
                 exit 1
                 ;;
+        --) shift; break ;;
             *)
                 if [ -z "$FILE" ]; then
                     FILE="$1"

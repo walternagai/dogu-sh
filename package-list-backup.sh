@@ -11,18 +11,25 @@
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 ACTION=""
 BACKUP_FILE=""
@@ -30,13 +37,23 @@ FORMAT="txt"
 SCOPE="all"
 DRY_RUN=false
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        --export|-e) ACTION="export"; BACKUP_FILE="$2"; shift 2 ;;
-        --import|-i) ACTION="import"; BACKUP_FILE="$2"; shift 2 ;;
-        --diff|-d) ACTION="diff"; BACKUP_FILE="$2"; shift 2 ;;
-        --format|-f) FORMAT="$2"; shift 2 ;;
-        --scope|-s) SCOPE="$2"; shift 2 ;;
+        --export|-e)
+            [[ -z "${2-}" ]] && { echo "Flag --export requer um valor" >&2; exit 1; }
+            ACTION="export"; BACKUP_FILE="$2"; shift 2 ;;
+        --import|-i)
+            [[ -z "${2-}" ]] && { echo "Flag --import requer um valor" >&2; exit 1; }
+            ACTION="import"; BACKUP_FILE="$2"; shift 2 ;;
+        --diff|-d)
+            [[ -z "${2-}" ]] && { echo "Flag --diff requer um valor" >&2; exit 1; }
+            ACTION="diff"; BACKUP_FILE="$2"; shift 2 ;;
+        --format|-f)
+            [[ -z "${2-}" ]] && { echo "Flag --format requer um valor" >&2; exit 1; }
+            FORMAT="$2"; shift 2 ;;
+        --scope|-s)
+            [[ -z "${2-}" ]] && { echo "Flag --scope requer um valor" >&2; exit 1; }
+            SCOPE="$2"; shift 2 ;;
         --dry-run) DRY_RUN=true; shift ;;
         --help|-h)
             echo ""
@@ -63,8 +80,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "package-list-backup.sh $VERSION"; exit 0 ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "package-list-backup.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 
@@ -105,6 +123,7 @@ detect_installer_for() {
         pip) echo "pip install" ;;
         cargo) echo "cargo install" ;;
         brew) echo "brew install" ;;
+        --) shift; break ;;
         *) echo "echo" ;;
     esac
 }
@@ -140,6 +159,7 @@ collect_system() {
         arch|manjaro|endeavouros|garuda*)
             pacman -Qe 2>/dev/null | awk '{print $1}' | sort
             ;;
+        --) shift; break ;;
         *)
             echo "# distro nao suportada" >&2
             ;;
@@ -473,6 +493,7 @@ if [ "$ACTION" = "import" ]; then
                     failed=$((failed + 1))
                 fi
                 ;;
+        --) shift; break ;;
             *)
                 printf "  ${DIM}?${RESET} %-20s %s ${DIM}(secao desconhecida)${RESET}\n" "[$current_section]" "$line"
                 ;;

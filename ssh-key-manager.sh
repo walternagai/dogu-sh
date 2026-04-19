@@ -14,22 +14,29 @@
 #   --help               Mostra esta ajuda
 #   --version            Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "ssh-keygen" "$INSTALLER openssh-client"; fi
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "ssh-keygen" "$INSTALLER" "openssh-client"; fi
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 ACTION="list"
 KEY_TYPE="ed25519"
@@ -40,16 +47,26 @@ DEPLOY_HOST=""
 DRY_RUN=false
 SSH_DIR="$HOME/.ssh"
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
         --generate|-g) ACTION="generate"; shift ;;
         --list|-l) ACTION="list"; shift ;;
         --rotate|-r) ACTION="rotate"; shift ;;
-        --deploy|-d) ACTION="deploy"; DEPLOY_HOST="$2"; shift 2 ;;
-        --type|-t) KEY_TYPE="$2"; shift 2 ;;
-        --bits|-b) KEY_BITS="$2"; shift 2 ;;
-        --comment|-C) KEY_COMMENT="$2"; shift 2 ;;
-        --key-path|-k) KEY_PATH="$2"; shift 2 ;;
+        --deploy|-d)
+            [[ -z "${2-}" ]] && { echo "Flag --deploy requer um valor" >&2; exit 1; }
+            ACTION="deploy"; DEPLOY_HOST="$2"; shift 2 ;;
+        --type|-t)
+            [[ -z "${2-}" ]] && { echo "Flag --type requer um valor" >&2; exit 1; }
+            KEY_TYPE="$2"; shift 2 ;;
+        --bits|-b)
+            [[ -z "${2-}" ]] && { echo "Flag --bits requer um valor" >&2; exit 1; }
+            KEY_BITS="$2"; shift 2 ;;
+        --comment|-C)
+            [[ -z "${2-}" ]] && { echo "Flag --comment requer um valor" >&2; exit 1; }
+            KEY_COMMENT="$2"; shift 2 ;;
+        --key-path|-k)
+            [[ -z "${2-}" ]] && { echo "Flag --key-path requer um valor" >&2; exit 1; }
+            KEY_PATH="$2"; shift 2 ;;
         --dry-run) DRY_RUN=true; shift ;;
         --help|-h)
             echo ""
@@ -80,8 +97,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "ssh-key-manager.sh $VERSION"; exit 0 ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "ssh-key-manager.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 
@@ -249,6 +267,7 @@ case "$ACTION" in
         case "$confirm" in
             [sS])
                 ;;
+        --) shift; break ;;
             *)
                 echo -e "  ${DIM}Rotacao cancelada.${RESET}"
                 ;;
@@ -342,6 +361,7 @@ case "$ACTION" in
         case "$confirm" in
             [sS])
                 ;;
+        --) shift; break ;;
             *)
                 echo -e "  ${DIM}Deploy cancelado.${RESET}"
                 ;;

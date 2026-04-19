@@ -9,33 +9,46 @@
 #   --help             Mostra esta ajuda
 #   --version          Mostra versao
 
-set -eo pipefail
+set -euo pipefail
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "bc" "$INSTALLER bc"; fi
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "bc" "$INSTALLER" "bc"; fi
 
-VERSION="1.0.0"
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-CYAN='\033[1;36m'
-BLUE='\033[1;34m'
-BOLD='\033[1m'
-DIM='\033[0;90m'
-RESET='\033[0m'
+readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
+readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
+readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
+error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
 
 CONV_TYPE=""
 FROM_UNIT=""
 INPUT_VAL=""
 LIST_UNITS=false
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        -t|--type) CONV_TYPE="$2"; shift 2 ;;
-        -f|--from) FROM_UNIT="$2"; shift 2 ;;
-        -i|--input) INPUT_VAL="$2"; shift 2 ;;
+        -t|--type)
+            [[ -z "${2-}" ]] && { echo "Flag --type requer um valor" >&2; exit 1; }
+            CONV_TYPE="$2"; shift 2 ;;
+        -f|--from)
+            [[ -z "${2-}" ]] && { echo "Flag --from requer um valor" >&2; exit 1; }
+            FROM_UNIT="$2"; shift 2 ;;
+        -i|--input)
+            [[ -z "${2-}" ]] && { echo "Flag --input requer um valor" >&2; exit 1; }
+            INPUT_VAL="$2"; shift 2 ;;
         --list|-l) LIST_UNITS=true; shift ;;
         --help|-h)
             echo ""
@@ -59,8 +72,9 @@ while [ $# -gt 0 ]; do
             echo ""
             exit 0
             ;;
-        --version|-v) echo "unit-converter.sh $VERSION"; exit 0 ;;
-        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 1 ;;
+        --version|-V) echo "unit-converter.sh $VERSION"; exit 0 ;;
+        --) shift; break ;;
+        *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
 
@@ -85,6 +99,7 @@ convert_temp() {
             echo -e "  ${CYAN}${val}°K${RESET} = ${GREEN}${celsius}°C${RESET} (Celsius)"
             echo -e "  ${CYAN}${val}°K${RESET} = ${GREEN}$(echo "scale=2; $celsius * 9 / 5 + 32" | bc)°F${RESET} (Fahrenheit)"
             ;;
+        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}" ;;
     esac
 }
@@ -103,6 +118,7 @@ convert_length() {
         ft|feet|pes) meters=$(echo "scale=6; $val * 0.3048" | bc) ;;
         yd|yard|jardas) meters=$(echo "scale=6; $val * 0.9144" | bc) ;;
         mi|mile|milhas) meters=$(echo "scale=6; $val * 1609.344" | bc) ;;
+        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}"; return ;;
     esac
     echo -e "  ${CYAN}${val} ${from}${RESET}"
@@ -127,6 +143,7 @@ convert_weight() {
         kg|quilo|quilos|quilograma) grams=$(echo "scale=6; $val * 1000" | bc) ;;
         lb|libra|libras) grams=$(echo "scale=6; $val * 453.592" | bc) ;;
         oz|onca|oncas) grams=$(echo "scale=6; $val * 28.3495" | bc) ;;
+        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}"; return ;;
     esac
     echo -e "  ${CYAN}${val} ${from}${RESET}"
@@ -150,6 +167,7 @@ convert_volume() {
         pt|pint) liters=$(echo "scale=6; $val * 0.473176" | bc) ;;
         cup|xicara) liters=$(echo "scale=6; $val * 0.236588" | bc) ;;
         floz|oncaliquida) liters=$(echo "scale=6; $val * 0.0295735" | bc) ;;
+        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}"; return ;;
     esac
     echo -e "  ${CYAN}${val} ${from}${RESET}"
@@ -172,6 +190,7 @@ convert_speed() {
         mph|mi/h) mps=$(echo "scale=6; $val * 0.44704" | bc) ;;
         kn|nos) mps=$(echo "scale=6; $val * 0.514444" | bc) ;;
         mach) mps=$(echo "scale=6; $val * 343" | bc) ;;
+        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}"; return ;;
     esac
     echo -e "  ${CYAN}${val} ${from}${RESET}"
@@ -193,6 +212,7 @@ convert_area() {
         ha|hectare) sqm=$(echo "scale=6; $val * 10000" | bc) ;;
         acre|acres) sqm=$(echo "scale=6; $val * 4046.86" | bc) ;;
         ft2|sqft) sqm=$(echo "scale=6; $val * 0.092903" | bc) ;;
+        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}"; return ;;
     esac
     echo -e "  ${CYAN}${val} ${from}${RESET}"
@@ -218,6 +238,7 @@ convert_time() {
         w|semana) seconds=$(echo "scale=6; $val * 604800" | bc) ;;
         mo|mes) seconds=$(echo "scale=6; $val * 2592000" | bc) ;;
         y|ano) seconds=$(echo "scale=6; $val * 31536000" | bc) ;;
+        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}"; return ;;
     esac
     echo -e "  ${CYAN}${val} ${from}${RESET}"
@@ -268,6 +289,7 @@ if [ -z "$CONV_TYPE" ]; then
         5|speed|vel) CONV_TYPE="speed" ;;
         6|area) CONV_TYPE="area" ;;
         7|time|tempo) CONV_TYPE="time" ;;
+        --) shift; break ;;
         *) echo -e "  ${RED}Tipo invalido${RESET}"; exit 1 ;;
     esac
 fi
@@ -290,6 +312,7 @@ case "$CONV_TYPE" in
     speed) convert_speed "$INPUT_VAL" "$FROM_UNIT" ;;
     area) convert_area "$INPUT_VAL" "$FROM_UNIT" ;;
     time) convert_time "$INPUT_VAL" "$FROM_UNIT" ;;
+        --) shift; break ;;
     *) echo -e "  ${RED}Tipo de conversao desconhecido: $CONV_TYPE${RESET}" ;;
 esac
 
