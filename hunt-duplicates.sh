@@ -87,7 +87,6 @@ while [[ $# -gt 0 ]]; do
             KEEP_MODE="${1#--mode=}"
             case "$KEEP_MODE" in
                 oldest|newest|smallest-path|first) ;;
-        --) shift; break ;;
                 *) echo "Erro: --mode invalido '$KEEP_MODE'. Use: oldest, newest, smallest-path, first" >&2; exit 1 ;;
             esac
             shift
@@ -149,6 +148,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --dry-run)
+            DRY_RUN=true
             shift
             ;;
         --help|-h)
@@ -201,7 +201,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         -*)
             echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
-            exit 1
+            exit 2
             ;;
         --) shift; break ;;
         *)
@@ -865,7 +865,6 @@ run_scan() {
                     echo "}"
                 } > "$OUTPUT_FILE"
                 ;;
-        --) shift; break ;;
             *)
                 {
                     echo "hash,group,filepath,size,kept"
