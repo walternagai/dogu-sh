@@ -16,6 +16,7 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 readonly GREEN='\033[1;32m'
 readonly YELLOW='\033[1;33m'
 readonly RED='\033[1;31m'
+readonly CYAN='\033[1;36m'
 readonly BLUE='\033[1;34m'
 readonly BOLD='\033[1m'
 readonly DIM='\033[0;90m'
@@ -129,10 +130,25 @@ scan_networks() {
     if command -v nmcli &>/dev/null; then
         nmcli dev wifi rescan 2>/dev/null || true
         sleep 1
-        nmcli -t -f SSID,CHAN dev wifi list 2>/dev/null | while IFS=: read -r ssid chan; do
-            [ -n "$chan" ] && [ "$ssid" != "--" ] && [ -n "$ssid" ] && echo "${chan}|${ssid}" >> "$PARSED_FILE"
+
+        # Usa o ultimo campo como canal para suportar SSID com ':'
+        nmcli -t -f SSID,CHAN dev wifi list 2>/dev/null | while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            chan="${line##*:}"
+            ssid="${line%:*}"
+            [ -z "$chan" ] && continue
+            [ "$ssid" = "--" ] && continue
+            [ -z "$ssid" ] && continue
+            echo "${chan}|${ssid}" >> "$PARSED_FILE"
         done
-    elif command -v iwlist &>/dev/null; then
+
+        # Fallback: se nmcli nao retornou redes, tenta iwlist
+        if [ -s "$PARSED_FILE" ]; then
+            return
+        fi
+    fi
+
+    if command -v iwlist &>/dev/null; then
         local iface
         iface=$(detect_wireless_interface)
         if [ -z "$iface" ]; then

@@ -472,7 +472,7 @@ main() {
         exit 1
     fi
 
-    if [[ "$1" == "--fzf" ]] && command -v fzf &>/dev/null; then
+    if [[ "${1-}" == "--fzf" ]] && command -v fzf &>/dev/null; then
         while true; do
             local selected
             selected=$(fzf_mode)
