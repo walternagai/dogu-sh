@@ -28,6 +28,8 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
+safe_grep() { grep "$@" || true; }
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "smartctl" "$INSTALLER" "smartmontools"; fi
@@ -96,8 +98,8 @@ check_smartctl_access() {
         exit 1
     fi
     local test_disk
-    test_disk=$(smartctl --scan 2>/dev/null | head -1 | awk '{print $1}')
-    if [ -n "$test_disk" ] && ! smartctl -i "$test_disk" &>/dev/null; then
+    test_disk=$(scan_disks | head -1)
+    if [ -n "$test_disk" ] && ! smartctl -i "/dev/$test_disk" &>/dev/null; then
         echo -e "  ${RED}Error: smartctl requires root privileges to read disk data.${RESET}" >&2
         echo -e "  ${DIM}Try: sudo ./disk-health.sh${RESET}" >&2
         exit 1
@@ -182,28 +184,28 @@ check_disk() {
     info=$(smartctl -i "$device" 2>/dev/null) || true
 
     local model family serial capacity rotation temp
-    model=$(echo "$info" | grep -i "Device Model:" | sed 's/.*: *//' | head -1)
+    model=$(echo "$info" | safe_grep -i "Device Model:" | sed 's/.*: *//' | head -1)
     if [ -z "$model" ]; then
-        model=$(echo "$info" | grep -i "Model Number:" | sed 's/.*: *//' | head -1)
+        model=$(echo "$info" | safe_grep -i "Model Number:" | sed 's/.*: *//' | head -1)
     fi
-    family=$(echo "$info" | grep -i "Model Family:" | sed 's/.*: *//' | head -1)
-    serial=$(echo "$info" | grep -i "Serial Number:" | sed 's/.*: *//' | head -1)
-    capacity=$(echo "$info" | grep -i "User Capacity:" | sed 's/.*: *//' | head -1 | cut -d'[' -f1 | tr -d ' ')
-    rotation=$(echo "$info" | grep -i "Rotation Rate:" | sed 's/.*: *//' | head -1)
+    family=$(echo "$info" | safe_grep -i "Model Family:" | sed 's/.*: *//' | head -1)
+    serial=$(echo "$info" | safe_grep -i "Serial Number:" | sed 's/.*: *//' | head -1)
+    capacity=$(echo "$info" | safe_grep -i "User Capacity:" | sed 's/.*: *//' | head -1 | cut -d'[' -f1 | tr -d ' ')
+    rotation=$(echo "$info" | safe_grep -i "Rotation Rate:" | sed 's/.*: *//' | head -1)
 
     if [ -z "$model" ]; then
         model="$disk"
     fi
 
     local smart_supported smart_enabled
-    smart_supported=$(echo "$info" | grep -i "SMART support is:" | head -1 | grep -qi "available\|yes" && echo "yes" || echo "no")
-    smart_enabled=$(echo "$info" | grep -i "SMART support is:" | tail -1 | grep -qi "enabled" && echo "yes" || echo "no")
+    smart_supported=$(echo "$info" | safe_grep -i "SMART support is:" | head -1 | grep -qi "available\|yes" && echo "yes" || echo "no")
+    smart_enabled=$(echo "$info" | safe_grep -i "SMART support is:" | tail -1 | grep -qi "enabled" && echo "yes" || echo "no")
 
     local overall_status
-    overall_status=$(smartctl -H "$device" 2>/dev/null | grep -i "SMART overall-health" | grep -qi "PASSED\|OK" && echo "PASSED" || echo "")
+    overall_status=$({ smartctl -H "$device" 2>/dev/null || true; } | safe_grep -i "SMART overall-health" | grep -qi "PASSED\|OK" && echo "PASSED" || echo "")
 
     if [ -z "$overall_status" ]; then
-        overall_status=$(smartctl -H "$device" 2>/dev/null | grep -i "SMART Health Status:" | sed 's/.*: *//') || true
+        overall_status=$({ smartctl -H "$device" 2>/dev/null || true; } | safe_grep -i "SMART Health Status:" | sed 's/.*: *//')
     fi
 
     local disk_status="unknown"
@@ -257,7 +259,7 @@ check_disk() {
 
         [[ "$attr_id" =~ ^[0-9]+$ ]] || continue
 
-        if echo "$CRITICAL_ATTRS" | grep -qw "$attr_id"; then
+        if echo "$CRITICAL_ATTRS" | safe_grep -qw "$attr_id"; then
             if [ "$attr_raw" -gt 0 ] 2>/dev/null; then
                 local label="${CRITICAL_MAP[$attr_id]:-$attr_name}"
                 attr_issues="${attr_issues}    ${RED}CRIT${RESET} ID $attr_id ($label): raw=$attr_raw\n"
@@ -269,7 +271,7 @@ check_disk() {
                 disk_issues="${label}=${attr_raw}"
                 send_notify "Disk CRITICAL: $model" "Attribute $attr_id ($label) = $attr_raw" "critical"
             fi
-        elif echo "$WARNING_ATTRS" | grep -qw "$attr_id"; then
+        elif echo "$WARNING_ATTRS" | safe_grep -qw "$attr_id"; then
             if [ -n "$attr_thresh" ] && [[ "$attr_thresh" =~ ^[0-9]+$ ]] && [ "$attr_thresh" -gt 0 ]; then
                 if [ "$attr_value" -le "$attr_thresh" ] 2>/dev/null && [ "$attr_value" -lt 255 ]; then
                     local label="${WARN_MAP[$attr_id]:-$attr_name}"
