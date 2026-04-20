@@ -89,15 +89,17 @@ send_notify() {
     fi
 }
 
-if ! command -v smartctl &>/dev/null; then
-    echo -e "  ${RED}Error: smartctl not found.${RESET}" >&2
-    echo -e "  ${DIM}Install: sudo apt install smartmontools${RESET}" >&2
-    exit 1
-fi
-
 check_smartctl_access() {
-    if ! smartctl --scan &>/dev/null; then
-        echo -e "  ${RED}Error: Cannot access smartctl. Try running with sudo.${RESET}" >&2
+    if ! command -v smartctl &>/dev/null; then
+        echo -e "  ${RED}Error: smartctl not found.${RESET}" >&2
+        echo -e "  ${DIM}Install: sudo apt install smartmontools${RESET}" >&2
+        exit 1
+    fi
+    local test_disk
+    test_disk=$(smartctl --scan 2>/dev/null | head -1 | awk '{print $1}')
+    if [ -n "$test_disk" ] && ! smartctl -i "$test_disk" &>/dev/null; then
+        echo -e "  ${RED}Error: smartctl requires root privileges to read disk data.${RESET}" >&2
+        echo -e "  ${DIM}Try: sudo ./disk-health.sh${RESET}" >&2
         exit 1
     fi
 }
@@ -150,7 +152,13 @@ scan_disks() {
             local target
             target=$(readlink -f "$link" 2>/dev/null)
             case "$target" in
-                /dev/sd*|/dev/nvme*|/dev/hd*)
+                /dev/nvme[0-9]*n[0-9]*)
+                    [[ "$target" =~ /nvme[0-9]+n[0-9]+$ ]] && basename "$target"
+                    ;;
+                /dev/sd[a-z])
+                    basename "$target"
+                    ;;
+                /dev/hd[a-z])
                     basename "$target"
                     ;;
             esac
@@ -171,7 +179,7 @@ check_disk() {
     total_disks=$((total_disks + 1))
 
     local info
-    info=$(smartctl -i "$device" 2>/dev/null)
+    info=$(smartctl -i "$device" 2>/dev/null) || true
 
     local model family serial capacity rotation temp
     model=$(echo "$info" | grep -i "Device Model:" | sed 's/.*: *//' | head -1)
@@ -195,7 +203,7 @@ check_disk() {
     overall_status=$(smartctl -H "$device" 2>/dev/null | grep -i "SMART overall-health" | grep -qi "PASSED\|OK" && echo "PASSED" || echo "")
 
     if [ -z "$overall_status" ]; then
-        overall_status=$(smartctl -H "$device" 2>/dev/null | grep -i "SMART Health Status:" | sed 's/.*: *//')
+        overall_status=$(smartctl -H "$device" 2>/dev/null | grep -i "SMART Health Status:" | sed 's/.*: *//') || true
     fi
 
     local disk_status="unknown"
@@ -235,7 +243,7 @@ check_disk() {
     fi
 
     local attrs
-    attrs=$(smartctl -A "$device" 2>/dev/null)
+    attrs=$(smartctl -A "$device" 2>/dev/null) || true
 
     local attr_issues=""
 
