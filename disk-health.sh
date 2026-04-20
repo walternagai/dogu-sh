@@ -95,13 +95,16 @@ check_smartctl_access() {
     if ! command -v smartctl &>/dev/null; then
         echo -e "  ${RED}Error: smartctl not found.${RESET}" >&2
         echo -e "  ${DIM}Install: sudo apt install smartmontools${RESET}" >&2
+        echo -e "  ${DIM}Or: sudo dnf install smartmontools / sudo pacman -S smartmontools${RESET}" >&2
         exit 1
     fi
     local test_disk
     test_disk=$(scan_disks | head -1)
     if [ -n "$test_disk" ] && ! smartctl -i "/dev/$test_disk" &>/dev/null; then
+        local script_path
+        script_path=$(command -v disk-health.sh 2>/dev/null || realpath "$0" 2>/dev/null || echo "$0")
         echo -e "  ${RED}Error: smartctl requires root privileges to read disk data.${RESET}" >&2
-        echo -e "  ${DIM}Try: sudo ./disk-health.sh${RESET}" >&2
+        echo -e "  ${DIM}Try: sudo $script_path${RESET}" >&2
         exit 1
     fi
 }
@@ -184,13 +187,19 @@ check_disk() {
     info=$(smartctl -i "$device" 2>/dev/null) || true
 
     local model family serial capacity rotation temp
-    model=$(echo "$info" | safe_grep -i "Device Model:" | sed 's/.*: *//' | head -1)
+    model=$(echo "$info" | safe_grep -i "Model Number:" | sed 's/.*: *//' | head -1)
     if [ -z "$model" ]; then
-        model=$(echo "$info" | safe_grep -i "Model Number:" | sed 's/.*: *//' | head -1)
+        model=$(echo "$info" | safe_grep -i "Device Model:" | sed 's/.*: *//' | head -1)
     fi
     family=$(echo "$info" | safe_grep -i "Model Family:" | sed 's/.*: *//' | head -1)
     serial=$(echo "$info" | safe_grep -i "Serial Number:" | sed 's/.*: *//' | head -1)
-    capacity=$(echo "$info" | safe_grep -i "User Capacity:" | sed 's/.*: *//' | head -1 | cut -d'[' -f1 | tr -d ' ')
+    capacity=$(echo "$info" | safe_grep -i "Total NVM Capacity:" | sed 's/.*: *//' | head -1)
+    if [ -z "$capacity" ]; then
+        capacity=$(echo "$info" | safe_grep -i "Namespace 1 Size/Capacity:" | sed 's/.*: *//' | head -1 | cut -d'[' -f1 | tr -d ' ')
+    fi
+    if [ -z "$capacity" ]; then
+        capacity=$(echo "$info" | safe_grep -i "User Capacity:" | sed 's/.*: *//' | head -1 | cut -d'[' -f1 | tr -d ' ')
+    fi
     rotation=$(echo "$info" | safe_grep -i "Rotation Rate:" | sed 's/.*: *//' | head -1)
 
     if [ -z "$model" ]; then
@@ -198,8 +207,13 @@ check_disk() {
     fi
 
     local smart_supported smart_enabled
-    smart_supported=$(echo "$info" | safe_grep -i "SMART support is:" | head -1 | grep -qi "available\|yes" && echo "yes" || echo "no")
-    smart_enabled=$(echo "$info" | safe_grep -i "SMART support is:" | tail -1 | grep -qi "enabled" && echo "yes" || echo "no")
+    if echo "$info" | safe_grep -qi "SMART/Health Information"; then
+        smart_supported="yes"
+        smart_enabled="yes"
+    else
+        smart_supported=$(echo "$info" | safe_grep -i "SMART support is:" | head -1 | grep -qi "available\|yes" && echo "yes" || echo "no")
+        smart_enabled=$(echo "$info" | safe_grep -i "SMART support is:" | tail -1 | grep -qi "enabled" && echo "yes" || echo "no")
+    fi
 
     local overall_status
     overall_status=$({ smartctl -H "$device" 2>/dev/null || true; } | safe_grep -i "SMART overall-health" | grep -qi "PASSED\|OK" && echo "PASSED" || echo "")
@@ -234,7 +248,6 @@ check_disk() {
                 disk_issues="$overall_status"
                 send_notify "Disk Health CRITICAL: $model" "$overall_status on /dev/$disk" "critical"
                 ;;
-        --) shift; break ;;
             *)
                 disk_status="unknown"
                 status_icon="${YELLOW}?${RESET}"
@@ -293,7 +306,6 @@ check_disk() {
             critical) json_status="critical" ;;
             warning) json_status="warning" ;;
             disabled) json_status="disabled" ;;
-        --) shift; break ;;
             *) json_status="unknown" ;;
         esac
         echo "  {\"disk\":\"$disk\",\"model\":\"$model\",\"serial\":\"$serial\",\"capacity\":\"$capacity\",\"status\":\"$json_status\",\"issues\":\"$disk_issues\"},"
@@ -317,7 +329,6 @@ check_disk() {
         critical) echo "${RED}$overall_status${RESET}" ;;
         warning) echo "${YELLOW}$disk_issues${RESET}" ;;
         disabled) echo "${YELLOW}DISABLED${RESET}" ;;
-        --) shift; break ;;
         *) echo "${DIM}$disk_issues${RESET}" ;;
     esac)"
 
