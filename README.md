@@ -61,6 +61,7 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `wifi-scanner.sh`: Escaneamento de redes Wi-Fi e sugestão de canais.
 - `clipboard-manager.sh`: Histórico do clipboard com busca e persistência.
 - `log-analyzer.sh`: Analisador de logs com coloração e filtros.
+- `dir-summary.sh`: Resumo de diretório com distribuição visual, top arquivos, subdiretórios e idade.
 
 ### 🔢 Calculadoras e Conversores
 - `calculator.sh`: Calculadora interativa com histórico e suporte a expressões (bc).

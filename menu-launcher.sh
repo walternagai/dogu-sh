@@ -96,7 +96,7 @@ SCRIPT_DESC=(
     [docker-bottleneck-detect.sh]="Detecta gargalos comparando limites config vs uso real"
     [docker-dependency-map.sh]="Mapeia relacoes de dependencia entre containers"
     [docker-secret-scanner.sh]="Escaneia containers em busca de segredos expostos"
-    [dir-summary.sh]="Resumo de diretorio: conta arquivos, tipos e tamanho"
+    [dir-summary.sh]="Resumo de diretorio: tipos, tamanhos, barras visuais, subdirs e idade"
 )
 
 declare -A SCRIPT_CATEGORY
