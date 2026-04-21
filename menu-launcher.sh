@@ -96,6 +96,7 @@ SCRIPT_DESC=(
     [docker-bottleneck-detect.sh]="Detecta gargalos comparando limites config vs uso real"
     [docker-dependency-map.sh]="Mapeia relacoes de dependencia entre containers"
     [docker-secret-scanner.sh]="Escaneia containers em busca de segredos expostos"
+    [dir-summary.sh]="Resumo de diretorio: conta arquivos, tipos e tamanho"
 )
 
 declare -A SCRIPT_CATEGORY
@@ -173,6 +174,7 @@ SCRIPT_CATEGORY=(
     [docker-bottleneck-detect.sh]="Docker"
     [docker-dependency-map.sh]="Docker"
     [docker-secret-scanner.sh]="Docker"
+    [dir-summary.sh]="Sistema e Manutencao"
 )
 
 CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup" "Seguranca e Criptografia")

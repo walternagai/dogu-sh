@@ -19,7 +19,7 @@ Todo script deve seguir este esquema na ordem abaixo:
 
 set -euo pipefail
 
-readonly VERSION="1.0.0"
+readonly SCRIPT_VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 DEP_HELPER="./dependency-helper.sh"
@@ -40,7 +40,7 @@ fi
 | **Shebang** | Sempre `#!/bin/bash` |
 | **Header** | Descrição, uso e opções nas primeiras linhas (comentário) |
 | **set** | Sempre `set -euo pipefail` — aborta em erro, pipe e variável indefinida |
-| **VERSION** | Variável obrigatória: `readonly VERSION="1.0.0"` |
+| **VERSION** | Variável obrigatória: `readonly SCRIPT_VERSION="1.0.0"` |
 | **SCRIPT_DIR** | Sempre definir para permitir referências a arquivos relativos ao script |
 | **DEP_HELPER** | Sempre importar `dependency-helper.sh` quando o script depende de ferramentas externas |
 

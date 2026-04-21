@@ -32,6 +32,8 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 
 ### 🛡️ Segurança
 - `ssh-key-manager.sh`: Geração, listagem, rotação e distribuição de chaves SSH entre hosts.
+- `ssh-tunnel-mgr.sh`: Gerenciador de túneis SSH (local e remoto).
+- `process-killer.sh`: Seletor interativo de processos para término via fzf.
 
 ### 🛠️ Sistema e Manutenção
 - `clean-cache.sh`: Limpeza de arquivos temporários e caches de apps.
@@ -58,6 +60,7 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `speedtest-log.sh`: Histórico de testes de velocidade de internet em CSV.
 - `wifi-scanner.sh`: Escaneamento de redes Wi-Fi e sugestão de canais.
 - `clipboard-manager.sh`: Histórico do clipboard com busca e persistência.
+- `log-analyzer.sh`: Analisador de logs com coloração e filtros.
 
 ### 🔢 Calculadoras e Conversores
 - `calculator.sh`: Calculadora interativa com histórico e suporte a expressões (bc).
