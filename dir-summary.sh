@@ -194,9 +194,9 @@ done
 echo ""
 echo -e "  ${CYAN}${BOLD}Resumo Geral${RESET}"
 echo -e "  ${DIM}────────────────────────────────────────────${RESET}"
-printf "  %-25s %s\n" "Total de arquivos:" "${BOLD}$TOTAL_FILES${RESET}"
-printf "  %-25s %s\n" "Tamanho total:" "${BOLD}$(format_size $TOTAL_SIZE)${RESET}"
-printf "  %-25s %s\n" "Tipos de arquivo:" "${BOLD}${#ext_count[@]}${RESET}"
+printf "  %-25s %b\n" "Total de arquivos:" "${BOLD}${TOTAL_FILES}${RESET}"
+printf "  %-25s %b\n" "Tamanho total:" "${BOLD}$(format_size $TOTAL_SIZE)${RESET}"
+printf "  %-25s %b\n" "Tipos de arquivo:" "${BOLD}${#ext_count[@]}${RESET}"
 echo ""
 
 # Prepara dados para ordenacao
