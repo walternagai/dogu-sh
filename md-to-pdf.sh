@@ -123,7 +123,7 @@ cat > "$HEADER_TEX" <<LATEX
 \usepackage{graphicx}
 \graphicspath{{./}{./images/}{./figuras/}{./img/}}
 \usepackage{float}
-\usepackage[svg]{svg}
+\usepackage{svg}
 
 % Configuracoes de posicionamento de imagens
 \setkeys{Gin}{width=\maxwidth,height=0.85\textheight,keepaspectratio}
@@ -156,6 +156,7 @@ if pandoc "$INPUT" \
     -f markdown+yaml_metadata_block \
     -t pdf \
     --pdf-engine=xelatex \
+    --lua-filter="$SCRIPT_DIR/strip-emoji.lua" \
     --include-in-header="$HEADER_TEX" \
     --extract-media="$MEDIA_DIR" \
     -V "geometry:a4paper" \
@@ -168,7 +169,6 @@ if pandoc "$INPUT" \
     -V "linkcolor=blue" \
     -V "urlcolor=blue" \
     -V "toccolor=black" \
-    -V "svg=yes" \
     -o "$OUTPUT"; then
     success "✓ PDF gerado: $OUTPUT"
 else
