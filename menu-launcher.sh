@@ -97,6 +97,7 @@ SCRIPT_DESC=(
     [docker-dependency-map.sh]="Mapeia relacoes de dependencia entre containers"
     [docker-secret-scanner.sh]="Escaneia containers em busca de segredos expostos"
     [dir-summary.sh]="Resumo de diretorio: tipos, tamanhos, barras visuais, subdirs e idade"
+    [md-to-pdf.sh]="Converte arquivo Markdown (.md) para PDF usando pandoc + XeLaTeX"
 )
 
 declare -A SCRIPT_CATEGORY
@@ -175,6 +176,7 @@ SCRIPT_CATEGORY=(
     [docker-dependency-map.sh]="Docker"
     [docker-secret-scanner.sh]="Docker"
     [dir-summary.sh]="Sistema e Manutencao"
+    [md-to-pdf.sh]="Produtividade e Notas"
 )
 
 CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup" "Seguranca e Criptografia")
@@ -197,7 +199,7 @@ build_categories() {
         scripts_for_cat=""
         count=0
         for script in $(ls "$SCRIPT_DIR"/*.sh 2>/dev/null | sort | sed 's/.*\///'); do
-            if [[ "${SCRIPT_CATEGORY[$script]}" == "$cat" ]]; then
+            if [[ "${SCRIPT_CATEGORY[$script]:-}" == "$cat" ]]; then
                 if [[ -n "$scripts_for_cat" ]]; then
                     scripts_for_cat="$scripts_for_cat|$script"
                 else
