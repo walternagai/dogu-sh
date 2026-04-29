@@ -290,7 +290,7 @@ if $USE_JQ; then
         display_mount="$mount"
         display_mount="${display_mount//$HOME/~}"
 
-        printf "  %b  %-13s %-7s %-10s %-10s %-10s %-5s %b  %s\n" \
+        printf "  %b    %-13s %-7s %-10s %-10s %-10s %-5s %b  %s\n" \
             "$type_icon" "$dev_name" "$fstype" "$total_h" "$used_h" "$avail_h" "$pct_plain" "$bar" "$display_mount"
 
         count=$((count + 1))
@@ -340,7 +340,7 @@ else
         display_mount="$mount"
         display_mount="${display_mount//$HOME/~}"
 
-        printf "  %b  %-13s %-7s %-10s %-10s %-10s %-5s %b  %s\n" \
+        printf "  %b    %-13s %-7s %-10s %-10s %-10s %-5s %b  %s\n" \
             "$type_icon" "$dev_name" "$fstype" "$total" "$used" "$avail" "$pct_plain" "$bar" "$display_mount"
 
         count=$((count + 1))
