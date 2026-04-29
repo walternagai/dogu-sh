@@ -156,8 +156,8 @@ if $UPDATE_SYSTEM; then
 
     case "$DISTRO" in
         debian|ubuntu|linuxmint|pop*|elementary|kali)
-            run_or_dry "apt update" sudo apt-get update -y
-            run_or_dry "apt upgrade" sudo apt-get upgrade -y
+            run_or_dry "apt update" sudo apt-get update -y 2>/dev/null || sudo apt-get update -y --allow-insecure || true
+            run_or_dry "apt upgrade" sudo apt-get upgrade -y --fix-missing
             run_or_dry "apt autoremove" sudo apt-get autoremove -y
             run_or_dry "apt clean" sudo apt-get clean -y
             updated_count=$((updated_count + 4))
@@ -216,14 +216,21 @@ if $UPDATE_PIP; then
         PIP_CMD="pip3"
         command -v pip3 &>/dev/null || PIP_CMD="pip"
 
-        run_or_dry "pip upgrade self" $PIP_CMD install --upgrade pip 2>/dev/null || true
+        PIP_EXTRA_FLAGS=""
+        if python3 -c "import importlib.util; raise SystemExit(0 if importlib.util.find_spec('pip._vendor.packaging.utils') is not None else 1)" 2>/dev/null && \
+           $PIP_CMD install --help 2>/dev/null | grep -q -- '--break-system-packages'; then
+            EXTERNALLY_MANAGED=$(python3 -c "import sysconfig,os; p=sysconfig.get_path('stdlib'); print('y') if os.path.isfile(os.path.join(p,'EXTERNALLY-MANAGED')) else ''" 2>/dev/null)
+            [ -n "$EXTERNALLY_MANAGED" ] && PIP_EXTRA_FLAGS="--break-system-packages"
+        fi
+
+        run_or_dry "pip upgrade self" $PIP_CMD install --upgrade pip $PIP_EXTRA_FLAGS 2>/dev/null || true
 
         if ! $DRY_RUN; then
-            outdated=$($PIP_CMD list --outdated --format=json 2>/dev/null | python3 -c "import sys,json; pkgs=json.load(sys.stdin); print(' '.join(p['name'] for p in pkgs))" 2>/dev/null || echo "")
+            outdated=$($PIP_CMD list --outdated --format=json $PIP_EXTRA_FLAGS 2>/dev/null | python3 -c "import sys,json; pkgs=json.load(sys.stdin); print(' '.join(p['name'] for p in pkgs))" 2>/dev/null || echo "")
             if [ -n "$outdated" ]; then
                 count=$(echo "$outdated" | wc -w | tr -d ' ')
                 echo -e "  ${YELLOW}$count${RESET} pacote(s) desatualizado(s)"
-                run_or_dry "pip upgrade packages ($count)" $PIP_CMD install --upgrade $outdated 2>/dev/null
+                run_or_dry "pip upgrade packages ($count)" $PIP_CMD install --upgrade $PIP_EXTRA_FLAGS $outdated 2>/dev/null
                 updated_count=$((updated_count + 2))
             else
                 echo -e "  ${GREEN}✓${RESET} Todos os pacotes pip estao atualizados"
@@ -250,7 +257,7 @@ if $UPDATE_CARGO; then
     echo ""
 
     if command -v rustup &>/dev/null; then
-        run_or_dry "rustup update" rustup update -y
+        run_or_dry "rustup update" rustup update
         updated_count=$((updated_count + 1))
     else
         echo -e "  ${DIM}rustup nao encontrado. Pulando Rust toolchain...${RESET}"
