@@ -197,7 +197,7 @@ for ((d=1; d<=total_days; d++)); do
         is_today=true
     fi
 
-    if [ -n "${EVENT_DAYS[$d]}" ]; then
+    if [ -n "${EVENT_DAYS[$d]:-}" ]; then
         has_event=true
     fi
 
@@ -222,8 +222,7 @@ done
 
 echo -e "  ${DIM}─────────────────────────────────${RESET}"
 
-event_count=${#EVENT_DAYS[@]}
-if [ "$event_count" -gt 0 ]; then
+if [[ -v EVENT_DAYS[@] ]] && [ ${#EVENT_DAYS[@]} -gt 0 ]; then
     echo ""
     echo -e "  ${CYAN}*${RESET} = dia com evento"
 fi
