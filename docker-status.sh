@@ -116,11 +116,17 @@ show_status() {
     echo -e "  Networks:    ${BOLD}$total_networks${RESET}"
 
     # -- Disco --
-    docker system df 2>/dev/null | tail -n +2 | while IFS= read -r line; do
-        type_name=$(echo "$line" | awk '{print $1}')
-        size_val=$(echo "$line" | awk '{print $2}')
-        echo -e "  ${DIM}$type_name: $size_val${RESET}"
-    done
+    while IFS= read -r line; do
+        case "$line" in
+            Image*)     label="Imagens" ;;
+            Container*) label="Containers" ;;
+            Local*)     label="Volumes" ;;
+            Build*)     label="Build Cache" ;;
+            *)          continue ;;
+        esac
+        size_val=$(echo "$line" | awk '{if ($2 ~ /^[0-9]+$/) print $4; else print $5}')
+        echo -e "  ${DIM}$label: $size_val${RESET}"
+    done < <(docker system df 2>/dev/null | tail -n +2)
 
     echo ""
 
@@ -128,8 +134,14 @@ show_status() {
     if $SHOW_CONTAINERS && [ "$total_containers" -gt 0 ]; then
         echo -e "  ${BOLD}── Containers ──${RESET}"
         echo ""
-        printf "  %-14s %-22s %-18s %-8s %-10s %s\n" "ID" "NOME" "IMAGEM" "STATUS" "PORTAS" "CPU/MEM"
-        printf "  %-14s %-22s %-18s %-8s %-10s %s\n" "──────────" "──────────────────" "────────────────" "──────" "─────────" "──────"
+        printf "  %-12s %-22s %-18s %-22s %-14s %s\n" "ID" "NOME" "IMAGEM" "STATUS" "PORTAS" "CPU/MEM"
+        printf "  %s %s %s %s %s %s\n" \
+            "$(printf '─%.0s' {1..12})" \
+            "$(printf '─%.0s' {1..22})" \
+            "$(printf '─%.0s' {1..18})" \
+            "$(printf '─%.0s' {1..22})" \
+            "$(printf '─%.0s' {1..14})" \
+            "$(printf '─%.0s' {1..14})"
 
         docker ps -a --format '{{.ID}}|{{.Names}}|{{.Image}}|{{.Status}}|{{.Ports}}' 2>/dev/null | while IFS='|' read -r id name image status ports; do
             short_id="${id:0:12}"
@@ -159,11 +171,13 @@ show_status() {
 
             short_ports=""
             if [ -n "$ports" ]; then
-                short_ports=$(echo "$ports" | cut -c1-9)
+                short_ports=$(echo "$ports" | grep -oP '(?<=:)\d+(?=->)' | sort -u | tr '\n' ',' | sed 's/,$//')
+                [ -z "$short_ports" ] && short_ports=$(echo "$ports" | cut -c1-12)
             fi
 
-            printf "  ${status_color}%-14s${RESET} %-22s %-18s %-8s %-10s %s\n" \
-                "$short_id" "$short_name" "$short_image" "$status_color$status${RESET}" "$short_ports" "$cpu_mem"
+            short_status=$(echo "$status" | cut -c1-22)
+            printf "  ${status_color}%-12s${RESET} %-22s %-18s ${status_color}%-22s${RESET} %-14s %s\n" \
+                "$short_id" "$short_name" "$short_image" "$short_status" "$short_ports" "$cpu_mem"
         done
 
         echo ""
@@ -174,7 +188,11 @@ show_status() {
         echo -e "  ${BOLD}── Imagens ──${RESET}"
         echo ""
         printf "  %-20s %-14s %-12s %s\n" "REPOSITORIO" "TAG" "TAMANHO" "ID"
-        printf "  %-20s %-14s %-12s %s\n" "──────────────────" "────────────" "──────────" "──────────"
+        printf "  %s %s %s %s\n" \
+            "$(printf '─%.0s' {1..20})" \
+            "$(printf '─%.0s' {1..14})" \
+            "$(printf '─%.0s' {1..12})" \
+            "$(printf '─%.0s' {1..12})"
 
         docker images --format '{{.Repository}}|{{.Tag}}|{{.Size}}|{{.ID}}' 2>/dev/null | while IFS='|' read -r repo tag size id; do
             short_repo=$(echo "$repo" | cut -c1-18)
@@ -191,7 +209,10 @@ show_status() {
         echo -e "  ${BOLD}── Volumes ──${RESET}"
         echo ""
         printf "  %-30s %-12s %s\n" "NOME" "DRIVER" "MOUNTPOINT"
-        printf "  %-30s %-12s %s\n" "────────────────────────────" "──────────" "──────────────────"
+        printf "  %s %s %s\n" \
+            "$(printf '─%.0s' {1..30})" \
+            "$(printf '─%.0s' {1..12})" \
+            "$(printf '─%.0s' {1..20})"
 
         docker volume ls --format '{{.Name}}|{{.Driver}}|{{.Mountpoint}}' 2>/dev/null | while IFS='|' read -r name driver mount; do
             short_name=$(echo "$name" | cut -c1-28)
