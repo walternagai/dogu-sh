@@ -27,6 +27,18 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
+run_prune() {
+    local label="$1"; shift
+    local out
+    if out=$("$@" 2>&1); then
+        echo -e "  ${GREEN}✓${RESET} $label"
+        echo "$out" | grep -v '^$' | sed 's/^/    /' || true
+    else
+        echo -e "  ${RED}✗${RESET} Falha ao $label" >&2
+        echo "$out" | sed 's/^/    /' >&2
+    fi
+}
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
@@ -164,11 +176,8 @@ else
     echo ""
 
     if confirm_action "Remover $stopped_count container(s) parado(s)"; then
-        if $DRY_RUN; then
-            : 
-        else
-            docker container prune -f &>/dev/null
-            echo -e "  ${GREEN}✓${RESET} Containers parados removidos"
+        if ! $DRY_RUN; then
+            run_prune "Containers parados removidos" docker container prune -f
         fi
     fi
 fi
@@ -189,11 +198,8 @@ else
     echo ""
 
     if confirm_action "Remover $dangling_count imagem(ns) dangling"; then
-        if $DRY_RUN; then
-            : 
-        else
-            docker image prune -f &>/dev/null
-            echo -e "  ${GREEN}✓${RESET} Imagens dangling removidas"
+        if ! $DRY_RUN; then
+            run_prune "Imagens dangling removidas" docker image prune -f
         fi
     fi
 fi
@@ -214,11 +220,8 @@ if $CLEAN_ALL || $DEEP; then
         echo ""
 
         if confirm_action "Remover imagens nao utilizadas por containers"; then
-            if $DRY_RUN; then
-                : 
-            else
-                docker image prune -a -f &>/dev/null
-                echo -e "  ${GREEN}✓${RESET} Imagens nao utilizadas removidas"
+            if ! $DRY_RUN; then
+                run_prune "Imagens nao utilizadas removidas" docker image prune -a -f
             fi
         fi
     fi
@@ -240,11 +243,8 @@ else
     echo ""
 
     if confirm_action "Remover $volume_count volume(s)"; then
-        if $DRY_RUN; then
-            : 
-        else
-            docker volume prune -f &>/dev/null
-            echo -e "  ${GREEN}✓${RESET} Volumes removidos"
+        if ! $DRY_RUN; then
+            run_prune "Volumes removidos" docker volume prune -f
         fi
     fi
 fi
@@ -265,11 +265,8 @@ else
     echo ""
 
     if confirm_action "Remover networks nao utilizadas"; then
-        if $DRY_RUN; then
-            : 
-        else
-            docker network prune -f &>/dev/null
-            echo -e "  ${GREEN}✓${RESET} Networks removidas"
+        if ! $DRY_RUN; then
+            run_prune "Networks removidas" docker network prune -f
         fi
     fi
 fi
@@ -282,11 +279,8 @@ if $DEEP; then
     echo ""
 
     if confirm_action "Remover build cache do Docker"; then
-        if $DRY_RUN; then
-            : 
-        else
-            docker builder prune -f &>/dev/null
-            echo -e "  ${GREEN}✓${RESET} Build cache removido"
+        if ! $DRY_RUN; then
+            run_prune "Build cache removido" docker builder prune -f
         fi
     fi
 
@@ -302,11 +296,8 @@ if $DEEP; then
     echo ""
 
     if confirm_action "Executar docker system prune"; then
-        if $DRY_RUN; then
-            : 
-        else
-            docker system prune -f &>/dev/null
-            echo -e "  ${GREEN}✓${RESET} System prune concluido"
+        if ! $DRY_RUN; then
+            run_prune "System prune concluido" docker system prune -f
         fi
     fi
 
