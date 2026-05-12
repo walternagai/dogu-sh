@@ -202,11 +202,11 @@ for ((d=1; d<=total_days; d++)); do
     fi
 
     if $is_today && $has_event; then
-        cell="${YELLOW}${BOLD}[${d_str}]${RESET}"
+        cell="${YELLOW}${BOLD}[${d_str}]${RESET} "
     elif $is_today; then
-        cell="${GREEN}${BOLD} ${d_str}${RESET} "
+        cell="${GREEN}${BOLD} ${d_str}${RESET}  "
     elif $has_event; then
-        cell="${CYAN} ${d_str}*${RESET}"
+        cell="${CYAN} ${d_str}*${RESET} "
     else
         cell=" ${d_str}  "
     fi
