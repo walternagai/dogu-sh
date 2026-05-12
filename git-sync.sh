@@ -273,7 +273,6 @@ resolve_merge_conflicts() {
                             git add -- "$f" 2>/dev/null
                             echo -e "        ${GREEN}✓${RESET} editado: $f"
                             ;;
-        --) shift; break ;;
                         *)
                             echo -e "        ${DIM}Pulado: $f${RESET}"
                             ;;
@@ -286,7 +285,6 @@ resolve_merge_conflicts() {
                 fi
                 return 0
                 ;;
-        --) shift; break ;;
             *)
                 echo -e "    ${RED}Abortando resolucao de conflitos.${RESET}"
                 git rebase --abort 2>/dev/null || git merge --abort 2>/dev/null || true
@@ -315,7 +313,7 @@ resolve_diverged_repo() {
     case "$choice" in
         1)
             echo -e "    ${DIM}→ git pull --rebase${RESET}"
-            if ! git pull --rebase 2>/dev/null; then
+            if ! git pull --rebase >/dev/null 2>&1; then
                 if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
                     echo -e "    ${YELLOW}Conflitos durante rebase. Resolvendo...${RESET}"
                     if ! resolve_merge_conflicts; then
@@ -343,7 +341,7 @@ resolve_diverged_repo() {
             ;;
         2)
             echo -e "    ${DIM}→ git pull (merge)${RESET}"
-            if ! git pull --no-rebase 2>/dev/null; then
+            if ! git pull --no-rebase >/dev/null 2>&1; then
                 if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
                     echo -e "    ${YELLOW}Conflitos durante merge. Resolvendo...${RESET}"
                     if ! resolve_merge_conflicts; then
@@ -374,14 +372,12 @@ resolve_diverged_repo() {
                     echo -e "    ${GREEN}✓ resetado para remoto${RESET}"
                     return 0
                     ;;
-        --) shift; break ;;
                 *)
                     echo -e "    ${DIM}Reset cancelado.${RESET}"
                     return 2
                     ;;
             esac
             ;;
-        --) shift; break ;;
         *)
             echo -e "    ${DIM}Repositorio pulado.${RESET}"
             return 2
@@ -443,14 +439,24 @@ count_ahead=0
 count_behind=0
 count_error=0
 
+max_name_len=0
+while IFS= read -r rpath; do
+    [ -z "$rpath" ] && continue
+    rname="${rpath#$BASE_DIR/}"
+    rname="${rname#$BASE_DIR}"
+    len=${#rname}
+    [ "$len" -gt "$max_name_len" ] && max_name_len=$len
+done < "$REPO_LIST"
+
 while IFS= read -r repo_path; do
     [ -z "$repo_path" ] && continue
 
     repo_name="${repo_path#$BASE_DIR/}"
     repo_name="${repo_name#$BASE_DIR}"
+    padded_name=$(printf "%-${max_name_len}s" "$repo_name")
 
     if ! cd "$repo_path" 2>/dev/null; then
-        echo -e "  ${RED}✗${RESET} $repo_name  ${DIM}(erro ao acessar)${RESET}"
+        echo -e "  ${RED}✗${RESET} $padded_name  ${DIM}(erro ao acessar)${RESET}"
         count_error=$((count_error + 1))
         continue
     fi
@@ -462,13 +468,13 @@ while IFS= read -r repo_path; do
     branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "detached")
 
     if [ "$branch" = "HEAD" ] || [ "$branch" = "detached" ]; then
-        echo -e "  ${DIM}○${RESET} $repo_name  ${DIM}(detached HEAD)${RESET}"
+        echo -e "  ${DIM}○${RESET} $padded_name  ${DIM}(detached HEAD)${RESET}"
         count_dirty=$((count_dirty + 1))
         continue
     fi
 
     if $DO_FETCH_ONLY || ! $DRY_RUN; then
-        git fetch --all --prune 2>/dev/null || true
+        git fetch --all --prune >/dev/null 2>&1 || true
     fi
 
     has_remote=false
@@ -479,13 +485,13 @@ while IFS= read -r repo_path; do
     if ! $has_remote; then
         dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
         if [ "$dirty" -gt 0 ]; then
-            echo -e "  ${YELLOW}■${RESET} $repo_name  ${DIM}[$branch] ${dirty} alteracao(oes) (sem remote)${RESET}"
+            echo -e "  ${YELLOW}■${RESET} $padded_name  ${DIM}[$branch] ${dirty} alteracao(oes) (sem remote)${RESET}"
             if $DO_COMMIT && ! $DRY_RUN && ! $DO_FETCH_ONLY; then
                 if $CLEAN_ALL; then
                     commit_msg=$(generate_commit_message)
                     if [ -n "$commit_msg" ]; then
                         git add -A 2>/dev/null
-                        git commit -m "$commit_msg" 2>/dev/null && \
+                        git commit -m "$commit_msg" >/dev/null 2>&1 && \
                             echo -e "    ${GREEN}✓ commit: ${DIM}${commit_msg}${RESET}" || \
                             echo -e "    ${RED}✗ falha no commit${RESET}"
                     fi
@@ -497,7 +503,7 @@ while IFS= read -r repo_path; do
                             commit_msg=$(generate_commit_message)
                             if [ -n "$commit_msg" ]; then
                                 git add -A 2>/dev/null
-                                git commit -m "$commit_msg" 2>/dev/null && \
+                                git commit -m "$commit_msg" >/dev/null 2>&1 && \
                                     echo -e "    ${GREEN}✓ commit: ${DIM}${commit_msg}${RESET}" || \
                                     echo -e "    ${RED}✗ falha no commit${RESET}"
                             else
@@ -509,7 +515,7 @@ while IFS= read -r repo_path; do
             fi
             count_dirty=$((count_dirty + 1))
         else
-            echo -e "  ${DIM}○${RESET} $repo_name  ${DIM}[$branch] (sem remote)${RESET}"
+            echo -e "  ${DIM}○${RESET} $padded_name  ${DIM}[$branch] (sem remote)${RESET}"
             count_clean=$((count_clean + 1))
         fi
         continue
@@ -551,19 +557,19 @@ while IFS= read -r repo_path; do
         needs_action=false
         count_dirty=$((count_dirty + 1))
     elif [ "$ahead" -gt 0 ] && [ "$behind" -gt 0 ]; then
-        echo -e "  ${RED}↕${RESET} $repo_name  ${DIM}[$branch]${RESET}  ${RED}divergiu (+${ahead}/-${behind})${RESET}"
+        echo -e "  ${RED}↕${RESET} $padded_name  ${DIM}[$branch]${RESET}  ${RED}divergiu (+${ahead}/-${behind})${RESET}"
         count_diverged=$((count_diverged + 1))
         if ! $DRY_RUN && ! $DO_FETCH_ONLY; then
             if $CLEAN_ALL; then
                 echo -e "    ${DIM}→ tentando rebase automatico${RESET}"
-                if ! git pull --rebase 2>/dev/null; then
-                    if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
-                        echo -e "    ${RED}Conflitos no rebase. Use modo interativo para resolver.${RESET}"
-                        echo -e "    ${RED}Execute: ./git-sync.sh $BASE_DIR${RESET}"
-                        echo ""
-                        exit 1
-                    else
-                        git rebase --abort 2>/dev/null || true
+            if ! git pull --rebase >/dev/null 2>&1; then
+                if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
+                    echo -e "    ${RED}Conflitos no rebase. Use modo interativo para resolver.${RESET}"
+                    echo -e "    ${RED}Execute: ./git-sync.sh $BASE_DIR${RESET}"
+                    echo ""
+                    exit 1
+                else
+                    git rebase --abort 2>/dev/null || true
                         echo -e "    ${RED}Falha no rebase. Abortando.${RESET}"
                         echo ""
                         exit 1
@@ -595,18 +601,18 @@ while IFS= read -r repo_path; do
         count_clean=$((count_clean + 1))
     fi
 
-    echo -e "  $status_icon $repo_name  ${DIM}[$branch]${RESET}  $status_detail"
+    echo -e "  $status_icon $padded_name  ${DIM}[$branch]${RESET}  $status_detail"
 
     if [ "$dirty" -gt 0 ] && ($DO_COMMIT || ($DO_PUSH && $CLEAN_ALL)) && ! $DRY_RUN && ! $DO_FETCH_ONLY; then
         if $CLEAN_ALL; then
             commit_msg=$(generate_commit_message)
             if [ -n "$commit_msg" ]; then
                 git add -A 2>/dev/null
-                if git commit -m "$commit_msg" 2>/dev/null; then
+                if git commit -m "$commit_msg" >/dev/null 2>&1; then
                     echo -e "    ${GREEN}✓ commit: ${DIM}${commit_msg}${RESET}"
                     if $DO_PUSH; then
                         echo -e "    ${DIM}→ git push${RESET}"
-                        git push 2>/dev/null && \
+                        git push >/dev/null 2>&1 && \
                             echo -e "    ${GREEN}✓ enviado${RESET}" || \
                             echo -e "    ${RED}✗ falha no push${RESET}"
                     fi
@@ -622,7 +628,7 @@ while IFS= read -r repo_path; do
                     commit_msg=$(generate_commit_message)
                     if [ -n "$commit_msg" ]; then
                         git add -A 2>/dev/null
-                        git commit -m "$commit_msg" 2>/dev/null && \
+                        git commit -m "$commit_msg" >/dev/null 2>&1 && \
                             echo -e "    ${GREEN}✓ commit: ${DIM}${commit_msg}${RESET}" || \
                             echo -e "    ${RED}✗ falha no commit${RESET}"
                     else
@@ -637,9 +643,9 @@ while IFS= read -r repo_path; do
         if [ "$behind" -gt 0 ] && [ "$ahead" -eq 0 ]; then
             if $CLEAN_ALL; then
                 echo -e "    ${DIM}→ git pull${RESET}"
-                if ! git pull --ff-only 2>/dev/null; then
+                if ! git pull --ff-only >/dev/null 2>&1; then
                     echo -e "    ${YELLOW}ff-only falhou. Tentando rebase...${RESET}"
-                    if ! git pull --rebase 2>/dev/null; then
+                    if ! git pull --rebase >/dev/null 2>&1; then
                         if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
                             echo -e "    ${YELLOW}Conflitos durante rebase. Resolvendo...${RESET}"
                             if ! resolve_merge_conflicts; then
@@ -669,9 +675,9 @@ while IFS= read -r repo_path; do
                 read -r confirm < /dev/tty 2>/dev/null || confirm="n"
                 case "$confirm" in
                     [sS])
-                        if ! git pull --ff-only 2>/dev/null; then
+                        if ! git pull --ff-only >/dev/null 2>&1; then
                             echo -e "    ${YELLOW}ff-only falhou. Tentando rebase...${RESET}"
-                            if ! git pull --rebase 2>/dev/null; then
+                            if ! git pull --rebase >/dev/null 2>&1; then
                                 if git diff --name-only --diff-filter=U 2>/dev/null | grep -q .; then
                                     echo -e "    ${YELLOW}Conflitos durante rebase. Resolvendo...${RESET}"
                                     if ! resolve_merge_conflicts; then
@@ -704,12 +710,12 @@ while IFS= read -r repo_path; do
         elif [ "$ahead" -gt 0 ] && [ "$behind" -eq 0 ] && $DO_PUSH; then
             if $CLEAN_ALL; then
                 echo -e "    ${DIM}→ git push${RESET}"
-                if ! git push 2>/dev/null; then
+                if ! git push >/dev/null 2>&1; then
                     echo -e "    ${YELLOW}Push rejeitado. Tentando pull --rebase...${RESET}"
-                    if git pull --rebase 2>/dev/null; then
+                    if git pull --rebase >/dev/null 2>&1; then
                         echo -e "    ${DIM}→ retry git push${RESET}"
-                        if ! git push 2>/dev/null; then
-                            echo -e "    ${RED}✗ CONFLITO: falha no push de ${repo_name} apos rebase${RESET}"
+                        if ! git push >/dev/null 2>&1; then
+                            echo -e "    ${RED}✗ CONFLITO: falha no push de $padded_name apos rebase${RESET}"
                             echo -e "    ${RED}Resolva o conflito manualmente.${RESET}"
                             echo ""
                             exit 1
@@ -730,7 +736,7 @@ while IFS= read -r repo_path; do
                             fi
                             git rebase --continue 2>/dev/null || true
                             echo -e "    ${DIM}→ retry git push${RESET}"
-                            if ! git push 2>/dev/null; then
+                            if ! git push >/dev/null 2>&1; then
                                 echo -e "    ${RED}✗ CONFLITO: falha no push de ${repo_name} apos resolucao${RESET}"
                                 echo ""
                                 exit 1
@@ -751,12 +757,12 @@ while IFS= read -r repo_path; do
                 read -r confirm < /dev/tty 2>/dev/null || confirm="n"
                 case "$confirm" in
                     [sS])
-                        if ! git push 2>/dev/null; then
+                        if ! git push >/dev/null 2>&1; then
                             echo -e "    ${YELLOW}Push rejeitado. Tentando pull --rebase...${RESET}"
-                            if git pull --rebase 2>/dev/null; then
+                            if git pull --rebase >/dev/null 2>&1; then
                                 echo -e "    ${DIM}→ retry git push${RESET}"
-                                if ! git push 2>/dev/null; then
-                                    echo -e "    ${RED}✗ CONFLITO: falha no push de ${repo_name}apos rebase${RESET}"
+                                if ! git push >/dev/null 2>&1; then
+                                    echo -e "    ${RED}✗ CONFLITO: falha no push de $padded_name apos rebase${RESET}"
                                     echo -e "    ${RED}Resolva o conflito manualmente.${RESET}"
                                     echo ""
                                     exit 1
@@ -777,14 +783,14 @@ while IFS= read -r repo_path; do
                                     fi
                                     git rebase --continue 2>/dev/null || true
                                     echo -e "    ${DIM}→ retry git push${RESET}"
-                                    if ! git push 2>/dev/null; then
+                                    if ! git push >/dev/null 2>&1; then
                                         echo -e "    ${RED}✗ CONFLITO: falha no push apos resolucao${RESET}"
                                         echo ""
                                         exit 1
                                     fi
                                     echo -e "    ${GREEN}  ✓ enviado apos resolucao${RESET}"
                                 else
-                                    echo -e "    ${RED}✗ CONFLITO: falha no push de ${repo_name}${RESET}"
+                            echo -e "    ${RED}✗ CONFLITO: falha no push de $padded_name${RESET}"
                                     echo -e "    ${RED}Resolva o conflito manualmente.${RESET}"
                                     echo ""
                                     exit 1
@@ -804,12 +810,16 @@ done < "$REPO_LIST"
 echo ""
 echo "  ─────────────────────────────────"
 echo -e "  ${BOLD}Resumo:${RESET}"
-echo -e "  ${GREEN}✓${RESET} Atualizados:   ${GREEN}${BOLD}$count_clean${RESET}"
-echo -e "  ${CYAN}↑${RESET} Nao enviado:   ${CYAN}${BOLD}$count_ahead${RESET}"
-echo -e "  ${YELLOW}↓${RESET} Atrasados:     ${YELLOW}${BOLD}$count_behind${RESET}"
-echo -e "  ${YELLOW}■${RESET} Modificados:   ${YELLOW}${BOLD}$count_dirty${RESET}"
+echo -e "  ${GREEN}✓${RESET} Atualizados   ${GREEN}${BOLD}${count_clean}${RESET}"
+echo -e "  ${CYAN}↑${RESET} Nao enviado   ${CYAN}${BOLD}${count_ahead}${RESET}"
+echo -e "  ${YELLOW}↓${RESET} Atrasados     ${YELLOW}${BOLD}${count_behind}${RESET}"
+echo -e "  ${YELLOW}■${RESET} Modificados   ${YELLOW}${BOLD}${count_dirty}${RESET}"
 if [ "$count_diverged" -gt 0 ]; then
-    echo -e "  ${RED}↕${RESET} Divergidos:     ${RED}${BOLD}$count_diverged${RESET}"
+    echo -e "  ${RED}↕${RESET} Divergidos     ${RED}${BOLD}${count_diverged}${RESET}"
+fi
+
+if [ "$count_error" -gt 0 ]; then
+    echo -e "  ${RED}✗${RESET} Erros          ${RED}${BOLD}${count_error}${RESET}"
 fi
 
 if [ "$count_error" -gt 0 ]; then
