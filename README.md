@@ -86,6 +86,7 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `env-keygen.sh`: Gera chaves secretas seguras para arquivos .env (hex, base64, uuid, django, fernet, rails, alnum, ascii, numeric, password).
 - `docx-to-md.sh`: Converte arquivos `.docx` para Markdown (`.md`) via pandoc — suporte a lote e modo recursivo.
 - `pdf-to-md.sh`: Converte arquivos `.pdf` para Markdown (`.md`) extraindo texto via `pdftotext`, com OCR opcional para PDFs escaneados.
+- `md-to-pdf.sh`: Converte arquivos `.md` para PDF usando pandoc + XeLaTeX com suporte a imagens PNG e SVG.
 - `xlsx-to-csv.sh`: Converte arquivos `.xlsx` para CSV via openpyxl — cada aba vira um `.csv` separado.
 
 ### 🖥️ Sistema e Monitoramento
@@ -180,6 +181,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `ip-info.sh` | `curl` |
 | `docx-to-md.sh` | `pandoc` |
 | `pdf-to-md.sh` | `pdftotext` (`poppler-utils`/`poppler`), `tesseract` (opcional para `--ocr`) |
+| `md-to-pdf.sh` | `pandoc` `texlive-xetex`, `rsvg-convert` (`librsvg2-bin` para SVG) |
 | `xlsx-to-csv.sh` | `python3`, `openpyxl` (pip) |
 
 ## 📝 Notas
