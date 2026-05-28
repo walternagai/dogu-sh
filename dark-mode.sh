@@ -1,5 +1,5 @@
 #!/bin/bash
-# dark-mode.sh — Alterna tema claro/escuro em GTK e terminais
+# dark-mode.sh — Alterna tema claro/escuro em GTK e terminais (Linux)
 # Uso: ./dark-mode.sh [opcoes]
 # Opcoes:
 #   --dark              Ativa tema escuro

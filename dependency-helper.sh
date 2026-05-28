@@ -1,5 +1,7 @@
 #!/bin/bash
 # dependency-helper.sh — Utilitário interno para verificação e instalação de dependências
+# Uso: source ./dependency-helper.sh
+# Opcoes: N/A (script importado por outros scripts)
 
 check_and_install() {
     local pkg_name=$1
@@ -15,8 +17,8 @@ check_and_install() {
     fi
 
     echo -e "${yellow}[WARN] Dependência '$pkg_name' não encontrada.${reset}"
-    read -p "Deseja instalar '$pkg_name' agora? (s/n): " choice
-    if [[ "$choice" == "s" || "$choice" == "S" ]]; then
+    read -r -p "Deseja instalar '$pkg_name' agora? [s/N]: " choice
+    if [[ "$choice" =~ ^[Ss]$ ]]; then
         echo -e "${cyan}Instalando $pkg_name...${reset}"
         if eval "$install_cmd"; then
             echo -e "${green}[SUCCESS] $pkg_name instalado.${reset}"
@@ -38,3 +40,27 @@ detect_installer() {
     elif command -v brew >/dev/null 2>&1; then echo "brew install";
     else echo "echo 'Gerenciador de pacotes não suportado. Por favor, instale manualmente.'"; fi
 }
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    VERSION="1.0.0"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --help|-h)
+                echo ""
+                echo "  dependency-helper.sh — Utilitario de verificacao e auto-instalacao de dependencias"
+                echo ""
+                echo "  Uso: source ./dependency-helper.sh  (importado por outros scripts)"
+                echo ""
+                echo "  Opcoes:"
+                echo "    --help|-h       Mostra esta ajuda"
+                echo "    --version|-V    Mostra versao"
+                echo ""
+                exit 0
+                ;;
+            --version|-V) echo "dependency-helper.sh $VERSION"; exit 0 ;;
+            *) shift ;;
+        esac
+    done
+    echo "Este script e uma biblioteca — use 'source ./dependency-helper.sh' em outros scripts."
+    exit 1
+fi

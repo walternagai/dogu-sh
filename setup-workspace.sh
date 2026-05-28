@@ -1,6 +1,7 @@
 #!/bin/bash
 # setup-workspace.sh — Multi-monitor workspace manager para Linux
 # Dependencias: wmctrl, xdotool, xrandr
+# Opcoes:
 # Uso:
 #   setup-workspace                  Menu interativo (carregar ou gravar)
 #   setup-workspace <perfil>         Executa um perfil
@@ -59,6 +60,7 @@ CONFIG_FILE="${WORKSPACE_CONFIG:-$HOME/.config/workspace-profiles.conf}"
 
 TMPWORK=$(mktemp -d)
 trap 'rm -rf "$TMPWORK"' EXIT
+trap 'exit 130' INT TERM
 
 DRY_RUN=false
 
@@ -1052,47 +1054,57 @@ show_help() {
     echo ""
 }
 
-case "${1:-}" in
-    "")
-        check_dependencies
-        interactive_menu
-        ;;
-    --detect)
-        check_dependencies
-        show_displays
-        ;;
-    --save)
-        check_dependencies
-        if [ -z "${2:-}" ]; then
-            echo "Uso: setup-workspace --save <nome-do-perfil>"
-            exit 1
-        fi
-        save_profile "$2"
-        ;;
-    --init)
-        generate_config
-        ;;
-    --list|-l)
-        list_profiles_cmd
-        ;;
-    --dry-run)
-        check_dependencies
-        if [ -z "${2:-}" ]; then
-            echo "Uso: setup-workspace --dry-run <nome-do-perfil>"
-            exit 1
-        fi
-        DRY_RUN=true
-        dry_run_profile "$2"
-        ;;
-    --help|-h)
-        show_help
-        ;;
-    --version|-V)
-        echo "setup-workspace.sh $VERSION"
-        exit 0
-        ;;
-    *)
-        check_dependencies
-        run_profile "$1"
-        ;;
-esac
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --detect)
+            check_dependencies
+            show_displays
+            exit 0
+            ;;
+        --save)
+            [[ -z "${2-}" ]] && { echo "Uso: setup-workspace --save <nome-do-perfil>"; exit 2; }
+            check_dependencies
+            save_profile "$2"
+            exit 0
+            ;;
+        --init)
+            generate_config
+            exit 0
+            ;;
+        --list|-l)
+            list_profiles_cmd
+            exit 0
+            ;;
+        --dry-run)
+            [[ -z "${2-}" ]] && { echo "Uso: setup-workspace --dry-run <nome-do-perfil>"; exit 2; }
+            check_dependencies
+            DRY_RUN=true
+            dry_run_profile "$2"
+            exit 0
+            ;;
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        --version|-V)
+            echo "setup-workspace.sh $VERSION"
+            exit 0
+            ;;
+        --) shift; break ;;
+        *)
+            if [[ "$1" =~ ^- ]]; then
+                echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
+                exit 2
+            fi
+            break
+            ;;
+    esac
+done
+
+if [ -z "${1-}" ]; then
+    check_dependencies
+    interactive_menu
+else
+    check_dependencies
+    run_profile "$1"
+fi

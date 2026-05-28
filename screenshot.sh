@@ -43,13 +43,13 @@ CLIPBOARD=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -m|--mode)
-            [[ -z "${2-}" ]] && { echo "Flag --mode requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --mode requer um valor" >&2; exit 2; }
             MODE="$2"; shift 2 ;;
         -o|--output)
-            [[ -z "${2-}" ]] && { echo "Flag --output requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --output requer um valor" >&2; exit 2; }
             OUTPUT_DIR="$2"; shift 2 ;;
         -d|--delay)
-            [[ -z "${2-}" ]] && { echo "Flag --delay requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --delay requer um valor" >&2; exit 2; }
             DELAY="$2"; shift 2 ;;
         --clipboard|-c) CLIPBOARD=true; shift ;;
         --help|-h)

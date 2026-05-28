@@ -69,7 +69,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         -*)
             echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
-            exit 1
+            exit 2
             ;;
         --) shift; break ;;
         *)

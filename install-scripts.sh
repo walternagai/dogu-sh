@@ -10,6 +10,8 @@ readonly YELLOW='\033[1;33m'
 readonly RED='\033[1;31m'
 readonly CYAN='\033[1;36m'
 readonly BLUE='\033[1;34m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[0;90m'
 readonly RESET='\033[0m'
 
 readonly VERSION="1.2.0"
@@ -21,8 +23,26 @@ UNINSTALL=false
 # Parse arguments
 for arg in "$@"; do
     case "$arg" in
+        --help|-h)
+            echo ""
+            echo "  install-scripts.sh — Instala scripts no ~/.local/bin e configura o PATH"
+            echo ""
+            echo "  Uso: ./install-scripts.sh [opcoes]"
+            echo ""
+            echo "  Opcoes:"
+            echo "    --dry-run       Simula a instalacao sem alterar arquivos"
+            echo "    --uninstall     Remove scripts e limpa PATH"
+            echo "    --help|-h       Mostra esta ajuda"
+            echo "    --version|-V    Mostra versao"
+            echo ""
+            exit 0
+            ;;
+        --version|-V) echo "install-scripts.sh $VERSION"; exit 0 ;;
         --dry-run) DRY_RUN=true ;;
         --uninstall) UNINSTALL=true ;;
+        -*)
+            echo -e "${RED}[ERROR]${RESET} Unknown option: $arg" >&2; exit 2
+            ;;
     esac
 done
 

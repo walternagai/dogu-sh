@@ -71,7 +71,7 @@ parse_args() {
             --version|-V) echo "log-analyzer.sh $VERSION"; exit 0 ;;
             -*)
                 echo -e "${RED}Opcao desconhecida: $1${RESET}"
-                exit 1
+                exit 2
                 ;;
         --) shift; break ;;
             *)
@@ -150,7 +150,7 @@ echo -e "${DIM}Exibindo $LINES linhas${RESET}\n"
 if [ "$FOLLOW" = true ]; then
     tail -n "$LINES" -f "$FILE" | grep --line-buffered -i "$PATTERN" | colorize &
     TAIL_PID=$!
-    trap "kill -TERM "$TAIL_PID" 2>/dev/null 2>/dev/null; exit 0" INT TERM
+    trap "kill -TERM "$TAIL_PID" 2>/dev/null 2>/dev/null; exit 130" INT TERM
     wait $TAIL_PID
 else
     grep -i "$PATTERN" "$FILE" | tail -n "$LINES" | colorize

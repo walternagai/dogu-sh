@@ -86,7 +86,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if ! command -v playerctl &>/dev/null; then
-    check_and_install playerctl "$(detect_installer)" "playerctl" 2>/dev/null || { echo -e "${RED}[ERROR] playerctl necessario.${RESET}" >&2; exit 1; }
+    check_and_install playerctl "$(detect_installer)" "playerctl" 2>/dev/null || { echo -e "${RED}[ERROR] playerctl necessario.${RESET}" >&2; exit 127; }
 fi
 
 get_players() {

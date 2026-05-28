@@ -43,23 +43,23 @@ ARG2=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -a|--add)
-            [[ -z "${2-}" ]] && { echo "Flag --add requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --add requer um valor" >&2; exit 2; }
             ACTION="add"; ARG1="$2"; shift 2 ;;
         -s|--search)
-            [[ -z "${2-}" ]] && { echo "Flag --search requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --search requer um valor" >&2; exit 2; }
             ACTION="search"; ARG1="$2"; shift 2 ;;
         -t|--tag)
-            [[ -z "${2-}" ]] && { echo "Flag --tag requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --tag requer um valor" >&2; exit 2; }
             ACTION="tag"; ARG1="$2"; shift 2 ;;
         -d|--delete)
-            [[ -z "${2-}" ]] && { echo "Flag --delete requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --delete requer um valor" >&2; exit 2; }
             ACTION="delete"; ARG1="$2"; shift 2 ;;
         -l|--list) ACTION="list"; shift ;;
         -e|--edit)
-            [[ -z "${2-}" ]] && { echo "Flag --edit requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --edit requer um valor" >&2; exit 2; }
             ACTION="edit"; ARG1="$2"; shift 2 ;;
         --export)
-            [[ -z "${2-}" ]] && { echo "Flag --export requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --export requer um valor" >&2; exit 2; }
             ACTION="export"; ARG1="$2"; shift 2 ;;
         --help|-h)
             echo ""
@@ -174,6 +174,7 @@ case "$ACTION" in
         fi
         found=false
         tmp=$(mktemp)
+        trap 'rm -f "$tmp"' EXIT
         while IFS='|' read -r id timestamp nota; do
             if [ "$id" = "$ARG1" ]; then
                 found=true
@@ -211,9 +212,9 @@ case "$ACTION" in
         echo "$old_note" > "$tmp_file"
         ${EDITOR:-nano} "$tmp_file"
         new_note=$(cat "$tmp_file" | head -1)
-        rm -f "$tmp_file"
 
         tmp=$(mktemp)
+        trap 'rm -f "$tmp_file" "$tmp"' EXIT
         while IFS='|' read -r id timestamp nota; do
             if [ "$id" = "$ARG1" ]; then
                 echo "${id}|${timestamp}|${new_note}"

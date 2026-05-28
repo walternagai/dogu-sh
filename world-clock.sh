@@ -184,7 +184,7 @@ show_clock() {
 }
 
 if $LIVE_MODE; then
-    trap 'echo -e "\n\n  ${DIM}Ate logo!${RESET}\n"; exit 0' INT
+    trap 'echo -e "\n\n  ${DIM}Ate logo!${RESET}\n"; exit 130' INT TERM
     while true; do
         show_clock
         sleep 1

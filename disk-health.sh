@@ -1,13 +1,13 @@
 #!/bin/bash
 # disk-health.sh — Verifica saude SMART do disco e alerta problemas (Linux)
-# Usage: ./disk-health.sh [options]
-# Options:
-#   --all           Show all SMART attributes (verbose)
-#   --json          Output in JSON format
-#   --watch N       Recheck every N seconds
-#   --notify        Desktop notification on critical issues
-#   --help          Show this help
-#   --version       Show version
+# Uso: ./disk-health.sh [opcoes]
+# Opcoes:
+#   --all           Mostra todos os atributos SMART (verbose)
+#   --json          Saida em formato JSON
+#   --watch N       Re-verificar a cada N segundos
+#   --notify        Notificacao desktop em problemas criticos
+#   --help          Mostra esta ajuda
+#   --version       Mostra versao
 
 set -euo pipefail
 
@@ -52,24 +52,24 @@ while [[ $# -gt 0 ]]; do
         --notify|-n) USE_NOTIFY=true; shift ;;
         --help|-h)
             echo ""
-            echo "  disk-health.sh — Check disk SMART health and alert on issues"
+            echo "  disk-health.sh — Verifica saude SMART do disco e alerta problemas"
             echo ""
-            echo "  Usage: ./disk-health.sh [options]"
+            echo "  Uso: ./disk-health.sh [opcoes]"
             echo ""
-            echo "  Options:"
-            echo "    --all           Show all SMART attributes (verbose)"
-            echo "    --json          Output in JSON format"
-            echo "    --watch N       Recheck every N seconds"
-            echo "    --notify        Desktop notification on critical issues"
-            echo "    --help          Show this help"
-            echo "    --version       Show version"
+            echo "  Opcoes:"
+            echo "    --all           Mostra todos os atributos SMART (verbose)"
+            echo "    --json          Saida em formato JSON"
+            echo "    --watch N       Re-verificar a cada N segundos"
+            echo "    --notify        Notificacao desktop em problemas criticos"
+            echo "    --help          Mostra esta ajuda"
+            echo "    --version       Mostra versao"
             echo ""
-            echo "  Requires: smartmontools (smartctl)"
+            echo "  Requer: smartmontools (smartctl)"
             echo "    sudo apt install smartmontools"
             echo "    sudo dnf install smartmontools"
             echo "    sudo pacman -S smartmontools"
             echo ""
-            echo "  Examples:"
+            echo "  Exemplos:"
             echo "    ./disk-health.sh"
             echo "    ./disk-health.sh --all"
             echo "    ./disk-health.sh --watch 300 --notify"
@@ -93,18 +93,18 @@ send_notify() {
 
 check_smartctl_access() {
     if ! command -v smartctl &>/dev/null; then
-        echo -e "  ${RED}Error: smartctl not found.${RESET}" >&2
-        echo -e "  ${DIM}Install: sudo apt install smartmontools${RESET}" >&2
-        echo -e "  ${DIM}Or: sudo dnf install smartmontools / sudo pacman -S smartmontools${RESET}" >&2
-        exit 1
+        echo -e "  ${RED}Erro: smartctl nao encontrado.${RESET}" >&2
+        echo -e "  ${DIM}Instale: sudo apt install smartmontools${RESET}" >&2
+        echo -e "  ${DIM}Ou: sudo dnf install smartmontools / sudo pacman -S smartmontools${RESET}" >&2
+        exit 127
     fi
     local test_disk
     test_disk=$(scan_disks | head -1)
     if [ -n "$test_disk" ] && ! smartctl -i "/dev/$test_disk" &>/dev/null; then
         local script_path
         script_path=$(command -v disk-health.sh 2>/dev/null || realpath "$0" 2>/dev/null || echo "$0")
-        echo -e "  ${RED}Error: smartctl requires root privileges to read disk data.${RESET}" >&2
-        echo -e "  ${DIM}Try: sudo $script_path${RESET}" >&2
+        echo -e "  ${RED}Erro: smartctl requer privilegios root para ler dados do disco.${RESET}" >&2
+        echo -e "  ${DIM}Tente: sudo $script_path${RESET}" >&2
         exit 1
     fi
 }
@@ -123,6 +123,7 @@ human_size() {
 CRITICAL_ATTRS="5,10,11,196,197,198,201"
 WARNING_ATTRS="1,3,4,7,9,12,192,193,194,196,197,198,199,200,201,220"
 
+declare -A CRITICAL_MAP
 CRITICAL_MAP[5]="Reallocated Sectors"
 CRITICAL_MAP[10]="Spin Retry Count"
 CRITICAL_MAP[11]="Calibration Retry Count"
@@ -131,6 +132,7 @@ CRITICAL_MAP[197]="Current Pending Sector"
 CRITICAL_MAP[198]="Offline Uncorrectable"
 CRITICAL_MAP[201]="Soft Read Error Rate"
 
+declare -A WARN_MAP
 WARN_MAP[1]="Read Error Rate"
 WARN_MAP[3]="Spin-Up Time"
 WARN_MAP[4]="Start/Stop Count"
@@ -151,7 +153,6 @@ critical_disks=0
 unknown_disks=0
 
 scan_disks() {
-    local disks=""
     if [ -d /dev/disk/by-id/ ]; then
         for link in /dev/disk/by-id/*; do
             local target
@@ -234,7 +235,7 @@ check_disk() {
         disk_status="disabled"
         status_icon="${YELLOW}⚠${RESET}"
         warning_disks=$((warning_disks + 1))
-        disk_issues="SMART not enabled"
+        disk_issues="SMART nao ativado"
     elif [ "$overall_status" = "PASSED" ]; then
         disk_status="healthy"
         status_icon="${GREEN}✓${RESET}"
@@ -308,7 +309,13 @@ check_disk() {
             disabled) json_status="disabled" ;;
             *) json_status="unknown" ;;
         esac
-        echo "  {\"disk\":\"$disk\",\"model\":\"$model\",\"serial\":\"$serial\",\"capacity\":\"$capacity\",\"status\":\"$json_status\",\"issues\":\"$disk_issues\"},"
+        local entry="{\"disk\":\"$disk\",\"model\":\"$model\",\"serial\":\"$serial\",\"capacity\":\"$capacity\",\"status\":\"$json_status\",\"issues\":\"$disk_issues\"}"
+        if $JSON_FIRST; then
+            echo "    $entry"
+            JSON_FIRST=false
+        else
+            echo "   ,$entry"
+        fi
         return
     fi
 
@@ -386,7 +393,7 @@ run_check() {
     disks=$(scan_disks)
 
     if [ -z "$disks" ]; then
-        echo -e "  ${DIM}No disks found.${RESET}"
+        echo -e "  ${DIM}Nenhum disco encontrado.${RESET}"
         exit 0
     fi
 
@@ -397,11 +404,12 @@ run_check() {
     unknown_disks=0
 
     echo ""
-    echo -e "  ${BOLD}Disk Health Check${RESET}  ${DIM}$(date '+%Y-%m-%d %H:%M:%S')${RESET}"
+    echo -e "  ${BOLD}Verificacao de Saude do Disco${RESET}  ${DIM}$(date '+%Y-%m-%d %H:%M:%S')${RESET}"
     echo ""
 
     if $JSON_OUTPUT; then
         echo "  ["
+        JSON_FIRST=true
     fi
 
     while IFS= read -r disk; do
@@ -415,20 +423,20 @@ run_check() {
     fi
 
     echo "  ─────────────────────────────────"
-    echo -e "  ${BOLD}Summary:${RESET}"
-    echo -e "  ${GREEN}✓${RESET} Healthy:    ${GREEN}${BOLD}$healthy_disks${RESET}"
-    echo -e "  ${YELLOW}⚠${RESET} Warning:    ${YELLOW}${BOLD}$warning_disks${RESET}"
-    echo -e "  ${RED}✗${RESET} Critical:   ${RED}${BOLD}$critical_disks${RESET}"
-    echo -e "  ${DIM}○${RESET} Unknown:    ${DIM}${BOLD}$unknown_disks${RESET}"
+    echo -e "  ${BOLD}Resumo:${RESET}"
+    echo -e "  ${GREEN}✓${RESET} Saudaveis:   ${GREEN}${BOLD}$healthy_disks${RESET}"
+    echo -e "  ${YELLOW}⚠${RESET} Aviso:       ${YELLOW}${BOLD}$warning_disks${RESET}"
+    echo -e "  ${RED}✗${RESET} Critico:      ${RED}${BOLD}$critical_disks${RESET}"
+    echo -e "  ${DIM}○${RESET} Desconhecido: ${DIM}${BOLD}$unknown_disks${RESET}"
     echo "  ─────────────────────────────────"
 
     if [ "$critical_disks" -gt 0 ]; then
         echo ""
-        echo -e "  ${RED}${BOLD}ACTION REQUIRED:${RESET} ${RED}Replace failing disks immediately!${RESET}"
-        echo -e "  ${RED}Back up all data from critical disks.${RESET}"
+        echo -e "  ${RED}${BOLD}ACAO NECESSARIA:${RESET} ${RED}Substitua discos com falha imediatamente!${RESET}"
+        echo -e "  ${RED}Faca backup de todos os dados dos discos criticos.${RESET}"
     elif [ "$warning_disks" -gt 0 ]; then
         echo ""
-        echo -e "  ${YELLOW}Monitor warning disks closely. Consider replacing soon.${RESET}"
+        echo -e "  ${YELLOW}Monitore discos com aviso atentamente. Considere substituir em breve.${RESET}"
     fi
 
     echo ""
@@ -440,7 +448,7 @@ if [ "$WATCH_INTERVAL" -gt 0 ]; then
     while true; do
         clear 2>/dev/null || true
         run_check
-        echo -e "  ${DIM}Next check in ${WATCH_INTERVAL}s — Ctrl+C to exit${RESET}"
+        echo -e "  ${DIM}Proxima verificacao em ${WATCH_INTERVAL}s — Ctrl+C para sair${RESET}"
         sleep "$WATCH_INTERVAL"
     done
 else

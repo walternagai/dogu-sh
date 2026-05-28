@@ -29,6 +29,17 @@ warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 
 
+DEP_HELPER="./dependency-helper.sh"
+[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
+if [ -f "$DEP_HELPER" ]; then
+    source "$DEP_HELPER"
+    INSTALLER=$(detect_installer)
+    check_and_install "light" "$INSTALLER"
+    check_and_install "brightnessctl" "$INSTALLER"
+    check_and_install "xrandr" "$INSTALLER"
+fi
+
+
 ACTION="get"
 VALUE="5"
 

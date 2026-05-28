@@ -133,6 +133,7 @@ case "$ACTION" in
         fi
         found=false
         tmp=$(mktemp)
+        trap 'rm -f "$tmp"' EXIT
         while IFS='|' read -r id pri text date status; do
             if [ "$id" = "$ARG1" ]; then
                 found=true
@@ -156,6 +157,7 @@ case "$ACTION" in
         fi
         found=false
         tmp=$(mktemp)
+        trap 'rm -f "$tmp"' EXIT
         while IFS='|' read -r id pri text date status; do
             if [ "$id" = "$ARG1" ]; then
                 found=true
@@ -179,6 +181,7 @@ case "$ACTION" in
         fi
         found=false
         tmp=$(mktemp)
+        trap 'rm -f "$tmp"' EXIT
         while IFS='|' read -r id pri text date status; do
             if [ "$id" = "$ARG1" ]; then
                 found=true
@@ -201,6 +204,7 @@ case "$ACTION" in
         fi
         found=false
         tmp=$(mktemp)
+        trap 'rm -f "$tmp"' EXIT
         while IFS='|' read -r id pri text date status; do
             if [ "$id" = "$ARG1" ]; then
                 found=true
@@ -224,6 +228,7 @@ case "$ACTION" in
         fi
         found=false
         tmp=$(mktemp)
+        trap 'rm -f "$tmp"' EXIT
         while IFS='|' read -r id pri text date status; do
             if [ "$id" = "$ARG1" ]; then
                 found=true
@@ -242,6 +247,7 @@ case "$ACTION" in
 
     clean)
         tmp=$(mktemp)
+        trap 'rm -f "$tmp"' EXIT
         while IFS='|' read -r id pri text date status; do
             if [ "$status" != "done" ]; then
                 echo "${id}|${pri}|${text}|${date}|${status}" >> "$tmp"
@@ -285,7 +291,6 @@ case "$ACTION" in
                         A) pri_str="${RED}${BOLD}(${pri})${RESET}" ;;
                         B) pri_str="${YELLOW}${BOLD}(${pri})${RESET}" ;;
                         C) pri_str="${CYAN}${BOLD}(${pri})${RESET}" ;;
-        --) shift; break ;;
                         *) pri_str="${DIM}(${pri})${RESET}" ;;
                     esac
                 fi

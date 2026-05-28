@@ -90,7 +90,7 @@ SOURCE="${SOURCE%/}"
 if [ -z "${POSITIONAL_ARGS[1]:-}" ]; then
     echo "Erro: destino nao especificado." >&2
     echo "Uso: quick-backup.sh [origem] <destino>" >&2
-    exit 1
+    exit 2
 fi
 
 DEST="${POSITIONAL_ARGS[1]}"

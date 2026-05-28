@@ -109,9 +109,9 @@ cleanup() {
         echo -e "  ${DIM}Use --laps para ver as voltas registradas.${RESET}"
     fi
     echo ""
-    exit 0
+    exit 130
 }
-trap cleanup INT
+trap cleanup INT TERM
 
 while true; do
     if ! $PAUSED; then

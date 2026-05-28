@@ -112,6 +112,7 @@ fi
 
 EXCLUDE_FILE=$(mktemp)
 trap 'rm -f "$EXCLUDE_FILE"' EXIT
+trap 'exit 130' INT TERM
 
 cat > "$EXCLUDE_FILE" <<'EXCLUDES'
 .git
@@ -205,7 +206,7 @@ if $WATCH; then
     if ! command -v inotifywait &>/dev/null; then
         echo -e "  ${RED}Erro: inotifywait nao encontrado.${RESET}" >&2
         echo -e "  ${DIM}Instale: sudo apt install inotify-tools${RESET}" >&2
-        exit 1
+        exit 127
     fi
 
     echo ""

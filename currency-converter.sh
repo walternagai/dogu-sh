@@ -1,5 +1,5 @@
 #!/bin/bash
-# currency-converter.sh — Cotacao de moedas em tempo real via API
+# currency-converter.sh — Cotacao de moedas em tempo real via API (Linux)
 # Uso: ./currency-converter.sh [opcoes]
 # Opcoes:
 #   -f, --from CURRENCY  Moeda de origem (padrao: USD)
@@ -82,11 +82,11 @@ FROM_CUR=$(echo "$FROM_CUR" | tr '[:lower:]' '[:upper]')
 TO_CUR=$(echo "$TO_CUR" | tr '[:lower:]' '[:upper}')
 
 if ! command -v curl &>/dev/null; then
-    check_and_install curl "$(detect_installer)" "curl" 2>/dev/null || { echo -e "${RED}[ERROR] curl necessario.${RESET}" >&2; exit 1; }
+    check_and_install curl "$(detect_installer)" "curl" 2>/dev/null || { echo -e "${RED}[ERROR] curl necessario.${RESET}" >&2; exit 127; }
 fi
 
 if ! command -v jq &>/dev/null; then
-    check_and_install jq "$(detect_installer) jq" 2>/dev/null || { echo -e "${RED}[ERROR] jq necessario.${RESET}" >&2; exit 1; }
+    check_and_install jq "$(detect_installer) jq" 2>/dev/null || { echo -e "${RED}[ERROR] jq necessario.${RESET}" >&2; exit 127; }
 fi
 
 POPULAR_CURRENCIES="USD BRL EUR GBP JPY CAD AUD CHF CNY INR MXN ARS KRW NZD SEK NOK DKK ZAR RUB TRY PLN"

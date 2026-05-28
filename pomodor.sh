@@ -43,16 +43,16 @@ CLEAN_ALL=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -w|--work)
-            [[ -z "${2-}" ]] && { echo "Flag --work requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --work requer um valor" >&2; exit 2; }
             WORK_MINS="${2:-25}"; shift 2 ;;
         -b|--break)
-            [[ -z "${2-}" ]] && { echo "Flag --break requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --break requer um valor" >&2; exit 2; }
             BREAK_MINS="${2:-5}"; shift 2 ;;
         -l|--long-break)
-            [[ -z "${2-}" ]] && { echo "Flag --long-break requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --long-break requer um valor" >&2; exit 2; }
             LONG_BREAK_MINS="${2:-15}"; shift 2 ;;
         -c|--cycles)
-            [[ -z "${2-}" ]] && { echo "Flag --cycles requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --cycles requer um valor" >&2; exit 2; }
             CYCLES_BEFORE_LONG="${2:-4}"; shift 2 ;;
         --status|-s) ACTION="status"; shift ;;
         --reset) ACTION="reset"; shift ;;
@@ -194,12 +194,12 @@ case "$ACTION" in
     reset)
         if [ -f "$HISTORY_FILE" ]; then
             tmp_file=$(mktemp)
+            trap 'rm -f "$tmp_file"' EXIT
             awk -F',' -v d="$TODAY" '$1 != d' "$HISTORY_FILE" > "$tmp_file"
             echo "data,horario,tipo,minutos" > "$HISTORY_FILE"
             if [ -s "$tmp_file" ]; then
                 tail -n +2 "$tmp_file" >> "$HISTORY_FILE"
             fi
-            rm -f "$tmp_file"
         fi
         echo -e "  ${GREEN}✓${RESET} Contagem do dia resetada."
         echo ""

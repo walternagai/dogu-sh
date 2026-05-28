@@ -1,5 +1,5 @@
 #!/bin/bash
-# dns-lookup.sh — Lookup DNS (A, AAAA, MX, NS, TXT, CNAME)
+# dns-lookup.sh — Lookup DNS (A, AAAA, MX, NS, TXT, CNAME) (Linux)
 # Uso: ./dns-lookup.sh [opcoes]
 # Opcoes:
 #   -d, --domain DOM    Dominio para consultar
@@ -27,6 +27,16 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+
+
+DEP_HELPER="./dependency-helper.sh"
+[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
+if [ -f "$DEP_HELPER" ]; then
+    source "$DEP_HELPER"
+    INSTALLER=$(detect_installer)
+    check_and_install "dig" "$INSTALLER"
+    check_and_install "nslookup" "$INSTALLER"
+fi
 
 
 DOMAIN=""
@@ -92,7 +102,7 @@ if ! command -v dig &>/dev/null; then
     else
         echo -e "  ${RED}Erro: dig ou nslookup necessarios.${RESET}"
         echo -e "  ${DIM}Instale: dnsutils (Debian) ou bind-utils (Fedora)${RESET}"
-        exit 1
+        exit 127
     fi
 else
     USE_NSLOOKUP=false

@@ -76,6 +76,10 @@ if ! command -v pandoc &>/dev/null; then
     error "pandoc nao encontrado. Instale com: sudo apt install pandoc"
 fi
 
+# --- temp file ---
+TMP_ERR=$(mktemp)
+trap 'rm -f "$TMP_ERR"' EXIT
+
 # --- variaveis ---
 OUTPUT_DIR=""
 RECURSIVE=false
@@ -103,7 +107,7 @@ while [[ $# -gt 0 ]]; do
         -v|--version) echo "docx-to-md.sh $VERSION"; exit 0 ;;
         -*)
             echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
-            exit 1
+            exit 2
             ;;
         --) shift; break ;;
         *)
@@ -216,12 +220,12 @@ convert_file() {
         --wrap=none \
         --extract-media="$media_dir" \
         -o "$output" \
-        "$input" 2>/tmp/docx-to-md-err; then
+        "$input" 2>"$TMP_ERR"; then
         echo -e "  ${GREEN}✓${RESET} ${DIM}$(basename "$input")${RESET} ${DIM}→${RESET} ${BOLD}$(basename "$output")${RESET}"
         (( CONVERTED++ )) || true
     else
         local err_msg
-        err_msg=$(head -1 /tmp/docx-to-md-err 2>/dev/null)
+        err_msg=$(head -1 "$TMP_ERR" 2>/dev/null)
         echo -e "  ${RED}✗${RESET} Falha ao converter: $(basename "$input")"
         [ -n "$err_msg" ] && echo -e "    ${DIM}$err_msg${RESET}"
         (( ERRORS++ )) || true

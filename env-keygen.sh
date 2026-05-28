@@ -145,7 +145,7 @@ while [[ $# -gt 0 ]]; do
         --) shift; break ;;
         *)
             echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
-            exit 1
+            exit 2
             ;;
     esac
 done

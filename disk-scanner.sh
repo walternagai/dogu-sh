@@ -1,5 +1,5 @@
 #!/bin/bash
-# disk-scanner.sh — Show largest files and folders on disk (Linux)
+# disk-scanner.sh — Identifica os maiores arquivos e pastas no disco (Linux)
 # Uso: ./disk-scanner.sh [pasta] [quantidade]   (padrao: ~/  20)
 # Opcoes:
 #   --help          Mostra esta ajuda
@@ -45,20 +45,30 @@ show_help() {
     echo ""
 }
 
-case "${1:-}" in
-    --help|-h)
-        show_help
-        exit 0
-        ;;
-    --version|-V)
-        echo "disk-scanner.sh $VERSION"
-        exit 0
-        ;;
-esac
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        --version|-V)
+            echo "disk-scanner.sh $VERSION"
+            exit 0
+            ;;
+        --) shift; break ;;
+        *)
+            if [[ "$1" =~ ^- ]]; then
+                echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
+                exit 2
+            fi
+            POSITIONAL+=("$1"); shift ;;
+    esac
+done
 
-TARGET="${1:-$HOME}"
+TARGET="${POSITIONAL[0]:-$HOME}"
 TARGET="${TARGET%/}"
-COUNT="${2:-20}"
+COUNT="${POSITIONAL[1]:-20}"
 
 if [ ! -d "$TARGET" ]; then
     echo "Erro: '$TARGET' nao e um diretorio valido." >&2

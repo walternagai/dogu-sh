@@ -1,6 +1,8 @@
 #!/bin/bash
 # menu-launcher.sh — Menu interativo com barra luminosa para selecao de scripts
 # Uso: ./menu-launcher.sh
+# Opcoes:
+#   --fzf            Usa fzf para selecao rapida
 
 set -euo pipefail
 
@@ -469,6 +471,29 @@ fzf_mode() {
 }
 
 main() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --fzf)
+                USE_FZF=true
+                ;;
+            --help|-h)
+                echo ""
+                echo "  menu-launcher.sh — Menu interativo com barra luminosa para selecao de scripts"
+                echo ""
+                echo "  Uso: ./menu-launcher.sh [opcoes]"
+                echo ""
+                echo "  Opcoes:"
+                echo "    --fzf            Usa fzf para selecao rapida"
+                echo "    --help|-h        Mostra esta ajuda"
+                echo "    --version|-V     Mostra versao"
+                echo ""
+                exit 0
+                ;;
+            --version|-V) echo "menu-launcher.sh $VERSION"; exit 0 ;;
+        esac
+        shift
+    done
+
     build_categories
 
     if [ ${#CAT_NAMES[@]} -eq 0 ]; then
@@ -476,7 +501,7 @@ main() {
         exit 1
     fi
 
-    if [[ "${1-}" == "--fzf" ]] && command -v fzf &>/dev/null; then
+    if [ "${USE_FZF:-false}" = true ] && command -v fzf &>/dev/null; then
         while true; do
             local selected
             selected=$(fzf_mode)
@@ -487,7 +512,7 @@ main() {
         exit 0
     fi
 
-    trap 'restore_terminal; show_cursor; echo ""; exit 0' INT TERM
+    trap 'restore_terminal; show_cursor; echo ""; exit 130' INT TERM
     setup_terminal
     hide_cursor
 

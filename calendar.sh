@@ -105,6 +105,7 @@ fi
 
 if [ -n "$REMOVE_ID" ]; then
     tmp_file=$(mktemp)
+    trap 'rm -f "$tmp_file"' EXIT
     head -1 "$EVENTS_FILE" > "$tmp_file"
     grep -v "^${REMOVE_ID}," "$EVENTS_FILE" | tail -n +2 >> "$tmp_file"
     mv "$tmp_file" "$EVENTS_FILE"

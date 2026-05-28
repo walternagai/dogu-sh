@@ -125,7 +125,7 @@ while [[ $# -gt 0 ]]; do
         -v|--version) echo "pdf-to-md.sh $VERSION"; exit 0 ;;
         -*)
             echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
-            exit 1
+            exit 2
             ;;
         --) shift; break ;;
         *)
@@ -282,7 +282,7 @@ convert_file() {
     tmp_text=$(mktemp)
     tmp_err=$(mktemp)
     tmp_dir=$(mktemp -d)
-    trap 'rm -f "$tmp_text" "$tmp_err"; rm -rf "$tmp_dir"' RETURN
+    trap 'rm -f "$tmp_text" "$tmp_err"; rm -rf "$tmp_dir"' EXIT
 
     local page_break_flag="-nopgbrk"
     if [ "$KEEP_PAGE_BREAKS" = true ]; then
@@ -298,7 +298,7 @@ convert_file() {
             (( ERRORS++ )) || true
             rm -f "$tmp_text" "$tmp_err"
             rm -rf "$tmp_dir"
-            trap - RETURN
+            trap - EXIT
             return
         fi
     fi
@@ -314,7 +314,7 @@ convert_file() {
                 (( ERRORS++ )) || true
                 rm -f "$tmp_text" "$tmp_err"
                 rm -rf "$tmp_dir"
-                trap - RETURN
+                trap - EXIT
                 return
             fi
         else
@@ -323,7 +323,7 @@ convert_file() {
             (( ERRORS++ )) || true
             rm -f "$tmp_text" "$tmp_err"
             rm -rf "$tmp_dir"
-            trap - RETURN
+            trap - EXIT
             return
         fi
     fi
@@ -341,7 +341,7 @@ convert_file() {
 
     rm -f "$tmp_err"
     rm -rf "$tmp_dir"
-    trap - RETURN
+    trap - EXIT
 }
 
 for file in "${INPUT_FILES[@]}"; do

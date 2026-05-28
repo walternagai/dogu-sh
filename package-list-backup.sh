@@ -31,6 +31,20 @@ warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 
 
+DEP_HELPER="./dependency-helper.sh"
+[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
+if [ -f "$DEP_HELPER" ]; then
+    source "$DEP_HELPER"
+    INSTALLER=$(detect_installer)
+    check_and_install "snap" "$INSTALLER"
+    check_and_install "flatpak" "$INSTALLER"
+    check_and_install "npm" "$INSTALLER"
+    check_and_install "pip" "$INSTALLER"
+    check_and_install "cargo" "$INSTALLER"
+    check_and_install "python3" "$INSTALLER"
+fi
+
+
 ACTION=""
 BACKUP_FILE=""
 FORMAT="txt"
@@ -518,6 +532,7 @@ if [ "$ACTION" = "diff" ]; then
 
     TMPWORK=$(mktemp -d)
     trap 'rm -rf "$TMPWORK"' EXIT
+    trap 'exit 130' INT TERM
 
     current_system=$(collect_system 2>/dev/null)
     echo "$current_system" > "$TMPWORK/current_system.txt"

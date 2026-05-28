@@ -25,7 +25,7 @@ warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "fzf" "$INSTALLER" "fzf"; fi
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "fzf" "$INSTALLER"; fi
 
 
 
@@ -67,7 +67,7 @@ while [[ $# -gt 0 ]]; do
         --) shift; break ;;
         *)
             echo -e "${RED}Opcao desconhecida: $1${RESET}"
-            exit 1
+            exit 2
             ;;
     esac
 done
@@ -75,7 +75,7 @@ done
 if ! command -v fzf &>/dev/null; then
     echo -e "${RED}Erro: fzf e necessario para este script.${RESET}"
     echo -e "Instale via: sudo apt install fzf (ou equivalente da sua distro)"
-    exit 1
+    exit 127
 fi
 
 echo -e "${CYAN}${BOLD}dogu-sh Process Killer${RESET}"
@@ -107,7 +107,7 @@ echo -e "${YELLOW}Processos selecionados:${RESET}"
 echo "$SELECTED" | awk '{printf "  PID %-8s USER %-10s CPU %5s%%  MEM %5s%%  %s\n", $1, $2, $3, $4, $11}'
 
 echo ""
-read -p "Confirmar termino (sinal $SIGNAL)? [s/N] " CONFIRM
+read -r -p "Confirmar termino (sinal $SIGNAL)? [s/N] " CONFIRM
 if [[ ! "$CONFIRM" =~ ^[Ss]$ ]]; then
     echo -e "${DIM}Operacao cancelada.${RESET}"
     exit 0

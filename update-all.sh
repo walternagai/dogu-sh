@@ -117,9 +117,9 @@ run_or_dry() {
     fi
     local errout
     errout=$(mktemp)
+    trap 'rm -f "$errout"' EXIT
     if "$@" 2>"$errout"; then
         printf "  ${GREEN}✓${RESET} %-50s\n" "$label"
-        rm -f "$errout"
     else
         printf "  ${RED}✗${RESET} %-50s ${DIM}(falha)${RESET}\n" "$label"
         if [ -s "$errout" ]; then
@@ -127,7 +127,6 @@ run_or_dry() {
                 echo -e "    ${DIM}$line${RESET}"
             done
         fi
-        rm -f "$errout"
     fi
 }
 

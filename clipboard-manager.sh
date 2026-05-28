@@ -18,7 +18,7 @@ readonly VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 readonly GREEN='\033[1;32m'
-readonly YELLOW='033[1;33m'
+readonly YELLOW='\033[1;33m'
 readonly RED='\033[1;31m'
 readonly CYAN='\033[1;36m'
 readonly BLUE='\033[1;34m'

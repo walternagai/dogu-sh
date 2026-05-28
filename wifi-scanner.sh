@@ -53,19 +53,30 @@ show_help() {
     echo ""
 }
 
-case "${1:-}" in
-    --help|-h)
-        show_help
-        exit 0
-        ;;
-    --version|-V)
-        echo "wifi-scanner.sh $VERSION"
-        exit 0
-        ;;
-esac
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        --version|-V)
+            echo "wifi-scanner.sh $VERSION"
+            exit 0
+            ;;
+        --) shift; break ;;
+        *)
+            if [[ "$1" =~ ^- ]]; then
+                echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
+                exit 2
+            fi
+            break
+            ;;
+    esac
+done
 
 TMPDIR_WORK=$(mktemp -d)
 trap 'rm -rf "$TMPDIR_WORK"' EXIT
+trap 'exit 130' INT TERM
 
 PARSED_FILE="$TMPDIR_WORK/parsed.txt"
 CHANNEL_COUNTS="$TMPDIR_WORK/channel_counts.txt"
@@ -179,7 +190,7 @@ scan_networks() {
     else
         echo -e "  ${RED}Erro: nenhuma ferramenta de scan Wi-Fi encontrada.${RESET}" >&2
         echo -e "  ${DIM}Instale NetworkManager (nmcli) ou wireless-tools (iwlist).${RESET}" >&2
-        exit 1
+        exit 127
     fi
 }
 

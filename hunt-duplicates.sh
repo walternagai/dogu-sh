@@ -222,7 +222,7 @@ fi
 
 if $USE_DELETE && ! $FORCE; then
     echo -e "${RED}ATENCAO: --delete ira deletar permanentemente os arquivos!${RESET}" >&2
-    read -p "Confirmar exclusao permanente de duplicatas? [s/N]: " confirm
+    read -r -p "Confirmar exclusao permanente de duplicatas? [s/N]: " confirm
     if [[ ! "$confirm" =~ ^[Ss]$ ]]; then
         echo "Operacao cancelada." >&2
         exit 0
@@ -232,7 +232,7 @@ fi
 if $WATCH_MODE; then
     check_and_install inotifywait "$(detect_installer)" "inotify-tools" 2>/dev/null || {
         echo "Erro: inotifywait nao encontrado. Instale inotify-tools." >&2
-        exit 1
+        exit 127
     }
 fi
 
@@ -262,6 +262,7 @@ get_mime_category() {
 
 TMPDIR_WORK=$(mktemp -d)
 trap 'rm -rf "$TMPDIR_WORK"' EXIT
+trap 'exit 130' INT TERM
 
 SIZE_FILE="$TMPDIR_WORK/sizes"
 HASH_FILE="$TMPDIR_WORK/hashes"

@@ -177,13 +177,15 @@ while [[ $# -gt 0 ]]; do
         --remote|-r) shift; cmd_remote "$1" "$2" "$3" "$4"; exit 0 ;;
         --daemon|-d) DAEMON=true; shift ;;
         --list) cmd_list; exit 0 ;;
-        --stop) shift; cmd_stop "$1"; exit 0 ;;
+        --stop)
+            [[ -z "${2-}" ]] && { echo -e "${RED}Erro: Porta obrigatoria para --stop${RESET}" >&2; exit 2; }
+            shift; cmd_stop "$1"; exit 0 ;;
         --help|-h) usage ;;
         --version|-V) echo "ssh-tunnel-mgr.sh $VERSION"; exit 0 ;;
         --) shift; break ;;
         *)
             echo -e "${RED}Opcao desconhecida: $1${RESET}"
-            exit 1
+            exit 2
             ;;
     esac
 done

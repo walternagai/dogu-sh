@@ -82,7 +82,7 @@ fi
 # --- verificacao de openpyxl ---
 if ! python3 -c "import openpyxl" 2>/dev/null; then
     echo -e "${YELLOW}[WARN]${RESET} Modulo Python 'openpyxl' nao encontrado."
-    read -p "  Deseja instalar agora via pip? [s/N] " _choice < /dev/tty
+    read -r -p "  Deseja instalar agora via pip? [s/N] " _choice < /dev/tty
     if [[ "$_choice" =~ ^[Ss]$ ]]; then
         echo -e "${CYAN}[INFO]${RESET} Instalando openpyxl..."
         if python3 -m pip install --quiet openpyxl; then
@@ -112,15 +112,15 @@ INPUT_FILES=()
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -o|--output)
-            [ -z "$2" ] && error "Flag --output requer um diretorio como argumento."
+            [[ -z "${2-}" ]] && error "Flag --output requer um diretorio como argumento."
             OUTPUT_DIR="$2"; shift 2 ;;
         -r|--recursive)
             RECURSIVE=true; shift ;;
         -d|--delimiter)
-            [ -z "$2" ] && error "Flag --delimiter requer um caractere como argumento."
+            [[ -z "${2-}" ]] && error "Flag --delimiter requer um caractere como argumento."
             DELIMITER="$2"; shift 2 ;;
         -S|--sheet)
-            [ -z "$2" ] && error "Flag --sheet requer o nome da aba como argumento."
+            [[ -z "${2-}" ]] && error "Flag --sheet requer o nome da aba como argumento."
             SHEET_FILTER="$2"; shift 2 ;;
         --always-suffix)
             ALWAYS_SUFFIX=true; shift ;;
@@ -132,7 +132,7 @@ while [[ $# -gt 0 ]]; do
         -v|--version) echo "xlsx-to-csv.sh $VERSION"; exit 0 ;;
         -*)
             echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
-            exit 1
+            exit 2
             ;;
         --) shift; break ;;
         *)

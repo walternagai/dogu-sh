@@ -52,25 +52,25 @@ while [[ $# -gt 0 ]]; do
             DATA_DIR="$2"; shift 2 ;;
         --help)
             echo ""
-            echo "  speedtest-log.sh — Run speedtests and keep history in CSV"
+            echo "  speedtest-log.sh — Executa testes de velocidade e mantem historico em CSV"
             echo ""
-            echo "  Usage: ./speedtest-log.sh [options]"
+            echo "  Uso: ./speedtest-log.sh [opcoes]"
             echo ""
-            echo "  Options:"
-            echo "    --run           Run a speedtest now (default)"
-            echo "    --history       Show test history"
-            echo "    --today         Show today's results only"
-            echo "    --chart         Show ASCII chart of recent results"
-            echo "    --csv           Export full history as CSV"
-            echo "    --output DIR    Data directory (default: ~/.local/share/speedtest-log)"
-            echo "    --help          Show this help"
-            echo "    --version       Show version"
+            echo "  Opcoes:"
+            echo "    --run           Executa um teste de velocidade agora (padrao)"
+            echo "    --history       Mostra historico de testes"
+            echo "    --today         Mostra apenas resultados de hoje"
+            echo "    --chart         Mostra grafico ASCII dos resultados recentes"
+            echo "    --csv           Exporta historico completo como CSV"
+            echo "    --output DIR    Diretorio de dados (padrao: ~/.local/share/speedtest-log)"
+            echo "    --help          Mostra esta ajuda"
+            echo "    --version       Mostra versao"
             echo ""
-            echo "  Requires: speedtest-cli or speedtest"
+            echo "  Requer: speedtest-cli ou speedtest"
             echo "    pip install speedtest-cli"
-            echo "    or: sudo apt install speedtest-cli"
+            echo "    ou: sudo apt install speedtest-cli"
             echo ""
-            echo "  Examples:"
+            echo "  Exemplos:"
             echo "    ./speedtest-log.sh"
             echo "    ./speedtest-log.sh --chart"
             echo "    ./speedtest-log.sh --today"
@@ -106,20 +106,20 @@ run_test() {
     cmd=$(detect_speedtest)
 
     if [ -z "$cmd" ]; then
-        echo -e "  ${RED}Error: speedtest-cli not found.${RESET}" >&2
-        echo -e "  ${DIM}Install: pip install speedtest-cli${RESET}" >&2
-        exit 1
+        echo -e "  ${RED}Erro: speedtest-cli nao encontrado.${RESET}" >&2
+        echo -e "  ${DIM}Instale: pip install speedtest-cli${RESET}" >&2
+        exit 127
     fi
 
     echo ""
-    echo -e "  ${BOLD}Running speedtest...${RESET}"
-    echo -e "  ${DIM}Using: $cmd${RESET}"
+    echo -e "  ${BOLD}Executando speedtest...${RESET}"
+    echo -e "  ${DIM}Usando: $cmd${RESET}"
     echo ""
 
     local output
     output=$($cmd --simple 2>&1) || {
-        echo -e "  ${RED}Speedtest failed.${RESET}" >&2
-        echo -e "  ${DIM}Try: $cmd --simple${RESET}" >&2
+        echo -e "  ${RED}Speedtest falhou.${RESET}" >&2
+        echo -e "  ${DIM}Tente: $cmd --simple${RESET}" >&2
         exit 1
     }
 
@@ -150,14 +150,14 @@ run_test() {
 
     echo "$now,$isp,$server,$ping,$download,$upload,0,0" >> "$CSV_FILE"
 
-    echo -e "  ${BOLD}Results:${RESET}"
+    echo -e "  ${BOLD}Resultados:${RESET}"
     echo ""
     echo -e "  Ping:      ${CYAN}${ping} ms${RESET}"
     echo -e "  Download:  ${GREEN}${download} Mbps${RESET}"
     echo -e "  Upload:    ${YELLOW}${upload} Mbps${RESET}"
     echo -e "  Server:    ${DIM}${server:-unknown}${RESET}"
     echo ""
-    echo -e "  ${DIM}Saved to: $CSV_FILE${RESET}"
+    echo -e "  ${DIM}Salvo em: $CSV_FILE${RESET}"
     echo ""
 }
 
@@ -165,12 +165,12 @@ show_history() {
     local lines="${1:-20}"
 
     if [ ! -s "$CSV_FILE" ]; then
-        echo -e "  ${DIM}No test history found.${RESET}"
+        echo -e "  ${DIM}Nenhum historico de testes encontrado.${RESET}"
         return
     fi
 
     echo ""
-    echo -e "  ${BOLD}Speedtest History${RESET} (last $lines)"
+    echo -e "  ${BOLD}Historico de Speedtest${RESET} (ultimos $lines)"
     echo ""
     printf "  %-20s %-8s %-12s %-12s %s\n" "Date" "Ping" "Download" "Upload" "Server"
     printf "  %-20s %-8s %-12s %-12s %s\n" "────────────────────" "────────" "────────────" "────────────" "──────────"
@@ -216,7 +216,7 @@ show_today() {
     today=$(date '+%Y-%m-%d')
 
     if [ ! -s "$CSV_FILE" ]; then
-        echo -e "  ${DIM}No test history found.${RESET}"
+        echo -e "  ${DIM}Nenhum historico de testes encontrado.${RESET}"
         return
     fi
 
@@ -226,13 +226,13 @@ show_today() {
 
     if [ "$today_count" -eq 0 ]; then
         echo ""
-        echo -e "  ${DIM}No tests run today ($today).${RESET}"
+        echo -e "  ${DIM}Nenhum teste realizado hoje ($today).${RESET}"
         echo ""
         return
     fi
 
     echo ""
-    echo -e "  ${BOLD}Today's Results ($today)${RESET} — $today_count test(s)"
+    echo -e "  ${BOLD}Resultados de Hoje ($today)${RESET} — $today_count teste(s)"
     echo ""
 
     local avg_ping avg_dl avg_ul
@@ -248,8 +248,8 @@ show_today() {
     echo -e "  Avg Download:  ${GREEN}${avg_dl} Mbps${RESET}"
     echo -e "  Avg Upload:    ${YELLOW}${avg_ul} Mbps${RESET}"
     echo ""
-    echo -e "  Best DL:       ${GREEN}${max_dl} Mbps${RESET}"
-    echo -e "  Worst DL:      ${RED}${min_dl} Mbps${RESET}"
+    echo -e "  Melhor DL:  ${GREEN}${max_dl} Mbps${RESET}"
+    echo -e "  Pior DL:    ${RED}${min_dl} Mbps${RESET}"
 
     echo ""
     show_history 10
@@ -259,7 +259,7 @@ show_chart() {
     local count="${1:-30}"
 
     if [ ! -s "$CSV_FILE" ]; then
-        echo -e "  ${DIM}No test history found.${RESET}"
+        echo -e "  ${DIM}Nenhum historico de testes encontrado.${RESET}"
         return
     fi
 
@@ -290,7 +290,7 @@ show_chart() {
     fi
 
     echo ""
-    echo -e "  ${BOLD}Download Speed Chart${RESET} (last $count tests, max ${max_dl} Mbps)"
+    echo -e "  ${BOLD}Grafico de Velocidade de Download${RESET} (ultimos $count testes, max ${max_dl} Mbps)"
     echo ""
     echo -e "  ${DIM}Mbps${RESET}"
 
@@ -332,7 +332,7 @@ show_chart() {
     done <<< "$data"
 
     echo ""
-    echo -e "  ${DIM}Scale: ${max_dl} Mbps | █ = download speed${RESET}"
+    echo -e "  ${DIM}Escala: ${max_dl} Mbps | █ = velocidade de download${RESET}"
     echo ""
 }
 
@@ -340,7 +340,7 @@ export_csv() {
     if [ -s "$CSV_FILE" ]; then
         cat "$CSV_FILE"
     else
-        echo -e "  ${DIM}No data to export.${RESET}" >&2
+        echo -e "  ${DIM}Nenhum dado para exportar.${RESET}" >&2
         exit 1
     fi
 }

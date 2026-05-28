@@ -41,13 +41,13 @@ SIZE=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -t|--text)
-            [[ -z "${2-}" ]] && { echo "Flag --text requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --text requer um valor" >&2; exit 2; }
             QR_TEXT="$2"; shift 2 ;;
         -o|--output)
-            [[ -z "${2-}" ]] && { echo "Flag --output requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --output requer um valor" >&2; exit 2; }
             OUTPUT_FILE="$2"; shift 2 ;;
         -s|--size)
-            [[ -z "${2-}" ]] && { echo "Flag --size requer um valor" >&2; exit 1; }
+            [[ -z "${2-}" ]] && { echo "Flag --size requer um valor" >&2; exit 2; }
             SIZE="$2"; shift 2 ;;
         --help|-h)
             echo ""
@@ -88,7 +88,7 @@ if [ -z "$QR_TEXT" ]; then
 fi
 
 if ! command -v qrencode &>/dev/null; then
-    check_and_install qrencode "$(detect_installer)" "qrencode" 2>/dev/null || { echo -e "${RED}[ERROR] qrencode necessario.${RESET}" >&2; exit 1; }
+    check_and_install qrencode "$(detect_installer)" "qrencode" 2>/dev/null || { echo -e "${RED}[ERROR] qrencode necessario.${RESET}" >&2; exit 127; }
 fi
 
 if [ -n "$OUTPUT_FILE" ]; then

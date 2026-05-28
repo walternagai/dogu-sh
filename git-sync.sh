@@ -409,6 +409,7 @@ fi
 
 TMPWORK=$(mktemp -d)
 trap 'rm -rf "$TMPWORK"' EXIT
+trap 'exit 130' INT TERM
 
 REPO_LIST="$TMPWORK/repos.txt"
 

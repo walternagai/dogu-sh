@@ -43,6 +43,15 @@ warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 
 
+DEP_HELPER="./dependency-helper.sh"
+[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
+if [ -f "$DEP_HELPER" ]; then
+    source "$DEP_HELPER"
+    INSTALLER=$(detect_installer)
+    check_and_install "nvidia-smi" "$INSTALLER"
+fi
+
+
 INTERVAL=5
 LOG_FILE="/tmp/nvidia-gpu-monitor.log"
 ALERT_LOG="/tmp/nvidia-gpu-monitor-alerts.log"
@@ -72,32 +81,32 @@ while [[ $# -gt 0 ]]; do
         --daemon|-d) DAEMON=true; shift ;;
         --help|-h)
             echo ""
-            echo "  nvidia-gpu-monitor.sh — Monitor NVIDIA GPU activity in background"
+            echo "  nvidia-gpu-monitor.sh — Monitora atividade da GPU NVIDIA em segundo plano"
             echo ""
-            echo "  Usage: ./nvidia-gpu-monitor.sh [options]"
+            echo "  Uso: ./nvidia-gpu-monitor.sh [opcoes]"
             echo ""
-            echo "  Options:"
-            echo "    --interval N    Sampling interval in seconds (default: 5)"
-            echo "    --output FILE   Log file path (default: /tmp/nvidia-gpu-monitor.log)"
-            echo "    --temp N        Temperature alert threshold °C (default: 80)"
-            echo "    --retention N   Log retention in days (default: 7)"
-            echo "    --once          Collect once and exit"
-            echo "    --notify        Desktop notification on alerts"
-            echo "    --daemon        Run as daemon (redirect output to log file)"
-            echo "    --stop          Stop background monitor"
-            echo "    --help          Show this help"
-            echo "    --version       Show version"
+            echo "  Opcoes:"
+            echo "    --interval N    Intervalo de amostragem em segundos (padrao: 5)"
+            echo "    --output FILE   Caminho do arquivo de log (padrao: /tmp/nvidia-gpu-monitor.log)"
+            echo "    --temp N        Limiar de alerta de temperatura °C (padrao: 80)"
+            echo "    --retention N   Retencao do log em dias (padrao: 7)"
+            echo "    --once          Coleta uma vez e sai"
+            echo "    --notify        Notificacao de desktop em alertas"
+            echo "    --daemon        Roda como daemon (redireciona saida para arquivo de log)"
+            echo "    --stop          Para monitor em segundo plano"
+            echo "    --help          Mostra esta ajuda"
+            echo "    --version       Mostra versao"
             echo ""
-            echo "  Background usage:"
+            echo "  Uso em segundo plano:"
             echo "    nohup ./nvidia-gpu-monitor.sh &"
-            echo "    ./nvidia-gpu-monitor.sh --daemon            (recommended)"
+            echo "    ./nvidia-gpu-monitor.sh --daemon            (recomendado)"
             echo "    nohup ./nvidia-gpu-monitor.sh --interval 10 --temp 75 &"
             echo ""
-            echo "  Stop background monitor:"
+            echo "  Parar monitor em segundo plano:"
             echo "    ./nvidia-gpu-monitor.sh --stop"
             echo "    kill \$(cat /tmp/nvidia-gpu-monitor.pid)"
             echo ""
-            echo "  Requires: NVIDIA drivers + nvidia-smi"
+            echo "  Requer: drivers NVIDIA + nvidia-smi"
             echo ""
             exit 0
             ;;
@@ -108,13 +117,13 @@ while [[ $# -gt 0 ]]; do
                 if kill -0 "$PID" 2>/dev/null; then
                     kill -TERM "$PID" 2>/dev/null
                     rm -f "$PID_FILE"
-                    echo -e "  ${GREEN}Stopped nvidia-gpu-monitor (PID $PID)${RESET}"
+                    echo -e "  ${GREEN}nvidia-gpu-monitor interrompido (PID $PID)${RESET}"
                 else
                     rm -f "$PID_FILE"
-                    echo -e "  ${YELLOW}Process $PID not running (stale PID file removed)${RESET}"
+                    echo -e "  ${YELLOW}Processo $PID nao esta rodando (arquivo PID obsoleto removido)${RESET}"
                 fi
             else
-                echo -e "  ${YELLOW}No PID file found. Monitor may not be running.${RESET}"
+                echo -e "  ${YELLOW}Nenhum arquivo PID encontrado. Monitor pode nao estar rodando.${RESET}"
             fi
             exit 0
             ;;
@@ -132,9 +141,9 @@ for candidate in /usr/bin/nvidia-smi /usr/sbin/nvidia-smi /usr/local/bin/nvidia-
 done
 
 if [ -z "$NVIDIA_SMI" ]; then
-    echo -e "  ${RED}Error: nvidia-smi not found.${RESET}" >&2
-    echo -e "  PATH searched: $PATH" >&2
-    echo -e "  Install NVIDIA drivers:" >&2
+    echo -e "  ${RED}Erro: nvidia-smi nao encontrado.${RESET}" >&2
+    echo -e "  PATH verificado: $PATH" >&2
+    echo -e "  Instale drivers NVIDIA:" >&2
     echo -e "    sudo apt install nvidia-driver-535   # Debian/Ubuntu" >&2
     echo -e "    sudo dnf install xorg-x11-drv-nvidia # Fedora" >&2
     echo -e "    sudo pacman -S nvidia                  # Arch" >&2
@@ -142,9 +151,9 @@ if [ -z "$NVIDIA_SMI" ]; then
 fi
 
 if ! "$NVIDIA_SMI" &>/dev/null; then
-    echo -e "  ${RED}Error: nvidia-smi failed. No NVIDIA GPU detected or driver issue.${RESET}" >&2
+    echo -e "  ${RED}Erro: nvidia-smi falhou. Nenhuma GPU NVIDIA detectada ou problema de driver.${RESET}" >&2
     "$NVIDIA_SMI" &>"$ERR_FILE" || true
-    echo -e "  Details logged to: $ERR_FILE" >&2
+    echo -e "  Detalhes salvos em: $ERR_FILE" >&2
     cat "$ERR_FILE" >&2
     exit 1
 fi
@@ -196,7 +205,7 @@ collect_gpu_data() {
         --format=csv,noheader 2>"$ERR_FILE")
     rc=$?
     if [ $rc -ne 0 ] || [ -z "$core_output" ]; then
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: nvidia-smi core query failed (rc=$rc)" >> "$LOG_FILE"
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERRO: consulta nvidia-smi falhou (rc=$rc)" >> "$LOG_FILE"
         [ -s "$ERR_FILE" ] && cat "$ERR_FILE" >> "$LOG_FILE"
         : > "$ERR_FILE"
         return 1
@@ -233,7 +242,7 @@ log_alert() {
 
     {
         echo "================================================================"
-        echo "  TEMPERATURE ALERT — ${timestamp}"
+        echo "  ALERTA DE TEMPERATURA — ${timestamp}"
         echo "================================================================"
         echo "  GPU ${gpu_idx}: ${gpu_name}"
         echo "  Temperature:  ${temp}°C (threshold: ${TEMP_THRESHOLD}°C)"
@@ -246,13 +255,13 @@ log_alert() {
         echo "  Mem Clock:    ${mem_clock} MHz"
         echo "  P-State:      ${pstate}"
         if [ -n "$processes" ]; then
-            echo "  Active Processes:"
+            echo "  Processos Ativos:"
             echo "$processes" | while IFS=, read -r pid uuid pname pmem; do
                 pmem=$(echo "$pmem" | sed 's/ MiB//' | xargs)
                 printf "    PID %-8s  %-30s  %s MiB\n" "$pid" "$pname" "$pmem"
             done
         else
-            echo "  No active compute processes"
+            echo "  Nenhum processo de computacao ativo"
         fi
         echo "================================================================"
         echo ""
@@ -327,8 +336,8 @@ if ! $ONCE && ! $DAEMON; then
     if [ -f "$PID_FILE" ]; then
         OLD_PID=$(cat "$PID_FILE")
         if kill -0 "$OLD_PID" 2>/dev/null; then
-            echo -e "  ${YELLOW}nvidia-gpu-monitor already running (PID $OLD_PID)${RESET}" >&2
-            echo -e "  Use --stop to stop it first." >&2
+            echo -e "  ${YELLOW}nvidia-gpu-monitor ja esta rodando (PID $OLD_PID)${RESET}" >&2
+            echo -e "  Use --stop para interrompe-lo primeiro." >&2
             exit 1
         fi
         rm -f "$PID_FILE"
@@ -340,16 +349,16 @@ if $DAEMON; then
     if [ -f "$PID_FILE" ]; then
         OLD_PID=$(cat "$PID_FILE")
         if kill -0 "$OLD_PID" 2>/dev/null; then
-            echo -e "  ${YELLOW}nvidia-gpu-monitor already running (PID $OLD_PID)${RESET}" >&2
-            echo -e "  Use --stop to stop it first." >&2
+            echo -e "  ${YELLOW}nvidia-gpu-monitor ja esta rodando (PID $OLD_PID)${RESET}" >&2
+            echo -e "  Use --stop para interrompe-lo primeiro." >&2
             exit 1
         fi
         rm -f "$PID_FILE"
     fi
     echo $$ > "$PID_FILE"
-    echo -e "  ${GREEN}Starting nvidia-gpu-monitor in daemon mode (PID $$)${RESET}"
+    echo -e "  ${GREEN}Iniciando nvidia-gpu-monitor em modo daemon (PID $$)${RESET}"
     echo -e "  ${DIM}Log: ${LOG_FILE}${RESET}"
-    echo -e "  ${DIM}Stop with: ./nvidia-gpu-monitor.sh --stop${RESET}"
+    echo -e "  ${DIM}Parar com: ./nvidia-gpu-monitor.sh --stop${RESET}"
     exec >> "$LOG_FILE" 2>&1
     disown 2>/dev/null || true
 fi
@@ -364,13 +373,13 @@ log_both() {
 }
 
 log_both "  ${BOLD}nvidia-gpu-monitor.sh v${VERSION}${RESET}"
-log_both "  ${DIM}Interval: ${INTERVAL}s | Temp alert: ${TEMP_THRESHOLD}°C | Retention: ${RETENTION_DAYS} days${RESET}"
+log_both "  ${DIM}Intervalo: ${INTERVAL}s | Alerta temp: ${TEMP_THRESHOLD}°C | Retencao: ${RETENTION_DAYS} dias${RESET}"
 log_both "  ${DIM}Log: ${LOG_FILE}${RESET}"
 log_both "  ${DIM}Alert log: ${ALERT_LOG}${RESET}"
 
 if ! $ONCE; then
     log_both "  ${DIM}PID: $$ (PID file: ${PID_FILE})${RESET}"
-    log_both "  ${DIM}Stop with: kill \$\$ or ./nvidia-gpu-monitor.sh --stop${RESET}"
+    log_both "  ${DIM}Parar com: kill \$\$ ou ./nvidia-gpu-monitor.sh --stop${RESET}"
 fi
 
 log_both ""
@@ -439,8 +448,8 @@ monitor_loop() {
                     "$power_draw" "$power_limit" "$fan_speed" \
                     "$sm_clock" "$mem_clock" "$pstate" "$process_data"
 
-                echo -e "  ${RED}${BOLD}⚠  TEMPERATURE ALERT: GPU ${idx} at ${temp_c}°C (threshold: ${TEMP_THRESHOLD}°C)${RESET}"
-                send_notify "GPU Temperature Alert" "GPU ${idx} (${name}) at ${temp_c}°C — exceeds ${TEMP_THRESHOLD}°C" "critical"
+                echo -e "  ${RED}${BOLD}⚠  ALERTA DE TEMPERATURA: GPU ${idx} a ${temp_c}°C (limite: ${TEMP_THRESHOLD}°C)${RESET}"
+                send_notify "Alerta de Temperatura GPU" "GPU ${idx} (${name}) a ${temp_c}°C — excede ${TEMP_THRESHOLD}°C" "critical"
             fi
 
             fan_speed="N/A"; power_draw="N/A"; power_limit="N/A"

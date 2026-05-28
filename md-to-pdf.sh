@@ -108,6 +108,7 @@ fi
 HEADER_TEX=$(mktemp /tmp/pandoc_header.XXXXXX.tex)
 MEDIA_DIR=$(mktemp -d /tmp/pandoc_media.XXXXXX)
 trap 'rm -f "$HEADER_TEX"; rm -rf "$MEDIA_DIR"' EXIT
+trap 'exit 130' INT TERM
 
 cat > "$HEADER_TEX" <<LATEX
 % --- Fonte sans-serif via fontspec (requer XeLaTeX ou LuaLaTeX) ---
