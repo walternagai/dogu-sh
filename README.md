@@ -88,6 +88,7 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `pdf-to-md.sh`: Converte arquivos `.pdf` para Markdown (`.md`) extraindo texto via `pdftotext`, com OCR opcional para PDFs escaneados.
 - `md-to-pdf.sh`: Converte arquivos `.md` para PDF usando pandoc + XeLaTeX com suporte a imagens PNG e SVG.
 - `xlsx-to-csv.sh`: Converte arquivos `.xlsx` para CSV via openpyxl — cada aba vira um `.csv` separado.
+- `yt-transcript.sh`: Baixa transcrições de vídeos do YouTube em inglês e/ou português (txt, srt, vtt).
 
 ### 🖥️ Sistema e Monitoramento
 - `battery-monitor.sh`: Status da bateria, alerta de nível baixo/crítico.
@@ -183,6 +184,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `pdf-to-md.sh` | `pdftotext` (`poppler-utils`/`poppler`), `tesseract` (opcional para `--ocr`) |
 | `md-to-pdf.sh` | `pandoc` `texlive-xetex`, `rsvg-convert` (`librsvg2-bin` para SVG) |
 | `xlsx-to-csv.sh` | `python3`, `openpyxl` (pip) |
+| `yt-transcript.sh` | `yt-dlp` |
 
 ## 📝 Notas
 - A maioria dos scripts suporta a flag `--dry-run` para visualização das alterações antes de aplicá-las.
