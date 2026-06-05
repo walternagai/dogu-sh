@@ -2,7 +2,7 @@
 
 > **dōgu** (道具) — *substantivo japonês*: ferramenta, instrumento, utensílio.
 
-Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sistema, não é uma plataforma — é o seu kit de ferramentas Bash para automação, manutenção e Docker em Linux.
+Uma coleção de **76 ferramentas Bash precisas** para artesãos do terminal. Não é um sistema, não é uma plataforma — é o seu kit de instrumentos para Docker, sistema, rede, produtividade, criptografia, conversão e muito mais em Linux/macOS.
 
 ## 🚀 Funcionalidades
 
@@ -30,21 +30,20 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `docker-secret-scanner.sh`: Detecção de segredos expostos em variáveis de ambiente e labels.
 - `docker-bottleneck-detect.sh`: Detecção de gargalos e desperdício de recursos comparando limites vs uso real.
 
-### 🛡️ Segurança
+### 🛡️ Segurança e Criptografia
 - `ssh-key-manager.sh`: Geração, listagem, rotação e distribuição de chaves SSH entre hosts.
 - `ssh-tunnel-mgr.sh`: Gerenciador de túneis SSH (local e remoto).
-- `process-killer.sh`: Seletor interativo de processos para término via fzf.
+- `env-keygen.sh`: Gera chaves secretas seguras para arquivos `.env` (hex, base64, uuid, django, fernet, rails, alnum, ascii, numeric, password).
 
 ### 🛠️ Sistema e Manutenção
 - `clean-cache.sh`: Limpeza de arquivos temporários e caches de apps.
 - `clean-system.sh`: Limpeza profunda do sistema baseada na distro.
-- `disk-health.sh`: Monitoramento de saúde SMART do disco.
+- `disk-health.sh`: Monitoramento de saúde SMART do disco (suporte a NVMe).
 - `disk-scanner.sh`: Identificação de arquivos e pastas volumosas.
 - `disk-space.sh`: Espaço disponível nos discos com identificação de tipo (SSD/NVMe/HDD).
-- `hunt-duplicates.sh`: Busca de arquivos duplicados via SHA-256.
+- `hunt-duplicates.sh`: Busca de arquivos duplicados via SHA-256 (v2 com 18 melhorias).
 - `organize-downloads.sh`: Organização automática de arquivos por extensão.
-
-### 📦 Pacotes e Atualizações
+- `dir-summary.sh`: Resumo de diretório com distribuição visual, top arquivos, subdiretórios e idade.
 - `update-all.sh`: Atualiza pacotes do sistema + linguagens (npm, pip, cargo, brew) em um comando.
 - `package-list-backup.sh`: Exporta/importa lista de pacotes instalados para replicar máquina.
 - `snap-flatpak-manager.sh`: Lista, atualiza e limpa snaps e flatpaks.
@@ -54,14 +53,8 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `folder-sync.sh`: Sincronização de diretórios.
 - `git-sync.sh`: Sincronização em massa de múltiplos repositórios Git, com commit via Ollama e resolução interativa de conflitos.
 
-### ⚙️ Produtividade e Utilidades
-- `setup-workspace.sh`: Gerenciador de layouts de multi-monitores.
-- `pomodor.sh`: Timer Pomodoro com notificações.
-- `speedtest-log.sh`: Histórico de testes de velocidade de internet em CSV.
-- `wifi-scanner.sh`: Escaneamento de redes Wi-Fi e sugestão de canais.
-- `clipboard-manager.sh`: Histórico do clipboard com busca e persistência.
-- `log-analyzer.sh`: Analisador de logs com coloração e filtros.
-- `dir-summary.sh`: Resumo de diretório com distribuição visual, top arquivos, subdiretórios e idade.
+### ⚙️ Infraestrutura
+- `dependency-helper.sh`: Biblioteca compartilhada de verificação e auto-instalação de dependências.
 
 ### 🔢 Calculadoras e Conversores
 - `calculator.sh`: Calculadora interativa com histórico e suporte a expressões (bc).
@@ -83,7 +76,12 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 - `password-gen.sh`: Gerador de senhas configurável (tamanho, chars, quantidade, passphrase).
 - `qr-gen.sh`: Gera QR Code no terminal ou salva como PNG.
 - `base64-tool.sh`: Codifica/decodifica Base64, URL encode, hex.
-- `env-keygen.sh`: Gera chaves secretas seguras para arquivos .env (hex, base64, uuid, django, fernet, rails, alnum, ascii, numeric, password).
+- `clipboard-manager.sh`: Histórico do clipboard com busca e persistência.
+- `setup-workspace.sh`: Gerenciador de layouts de multi-monitores com perfis salvos.
+- `pomodor.sh`: Timer Pomodoro com notificações.
+- `speedtest-log.sh`: Histórico de testes de velocidade de internet em CSV.
+- `wifi-scanner.sh`: Escaneamento de redes Wi-Fi e sugestão de canais.
+- `log-analyzer.sh`: Analisador de logs com coloração e filtros.
 - `docx-to-md.sh`: Converte arquivos `.docx` para Markdown (`.md`) via pandoc — suporte a lote e modo recursivo.
 - `pdf-to-md.sh`: Converte arquivos `.pdf` para Markdown (`.md`) extraindo texto via `pdftotext`, com OCR opcional para PDFs escaneados.
 - `md-to-pdf.sh`: Converte arquivos `.md` para PDF usando pandoc + XeLaTeX com suporte a imagens PNG e SVG.
@@ -92,12 +90,13 @@ Uma coleção de ferramentas precisas para artesãos do terminal. Não é um sis
 
 ### 🖥️ Sistema e Monitoramento
 - `battery-monitor.sh`: Status da bateria, alerta de nível baixo/crítico.
-- `nvidia-gpu-monitor.sh`: Monitoramento de atividade e temperatura de GPUs NVIDIA.
+- `nvidia-gpu-monitor.sh`: Monitoramento em background de atividade e temperatura de GPUs NVIDIA (modo daemon com alertas).
 - `brightness.sh`: Controle de brilho do monitor (up/down/set).
 - `screenshot.sh`: Captura de tela (full, area, window) com salvamento automático.
 - `volume.sh`: Controle de volume e mute via PulseAudio/PipeWire.
 - `media-control.sh`: Controla players MPRIS (play/pause/next/prev) + now playing.
 - `dark-mode.sh`: Alterna tema claro/escuro em GTK e terminais.
+- `process-killer.sh`: Seletor interativo de processos para término via fzf (SIGTERM antes de SIGKILL).
 
 ### 🌐 Rede e Lookup
 - `ip-info.sh`: Info do IP público, ISP, localização geográfica.
@@ -170,25 +169,37 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `wifi-scanner.sh` | `nmcli` (NetworkManager) / `iwlist` (wireless-tools) |
 | `git-sync.sh` | `git`, `ollama` (opcional, para commits com IA) |
 | `ssh-key-manager.sh` | `ssh-keygen`, `ssh-copy-id` |
+| `ssh-tunnel-mgr.sh` | `ssh`, `autossh` (opcional, para túneis persistentes) |
 | `clipboard-manager.sh` | `xclip` (X11) / `wl-clipboard` (Wayland) |
+| `nvidia-gpu-monitor.sh` | `nvidia-smi` (drivers NVIDIA) |
 | `package-list-backup.sh` | gerenciador de pacotes da distro |
 | `calculator.sh` | `bc` |
 | `currency-converter.sh` | `curl`, `jq` |
 | `qr-gen.sh` | `qrencode` |
 | `screenshot.sh` | `scrot` ou `maim` (+ `slop` para área) |
 | `media-control.sh` | `playerctl` |
+| `volume.sh` | `pactl` (PulseAudio/PipeWire) |
+| `brightness.sh` | `brightnessctl` ou `xbacklight` |
+| `dark-mode.sh` | `gsettings` (GTK), `dconf` (opcional) |
 | `whois.sh` | `whois` |
 | `dns-lookup.sh` | `dig` (dnsutils/bind-utils) ou `nslookup` |
-| `ip-info.sh` | `curl` |
+| `ip-info.sh` | `curl`, `jq` |
+| `port-check.sh` | `bash` `/dev/tcp` (nativo) ou `nc` (netcat) |
 | `docx-to-md.sh` | `pandoc` |
 | `pdf-to-md.sh` | `pdftotext` (`poppler-utils`/`poppler`), `tesseract` (opcional para `--ocr`) |
-| `md-to-pdf.sh` | `pandoc` `texlive-xetex`, `rsvg-convert` (`librsvg2-bin` para SVG) |
+| `md-to-pdf.sh` | `pandoc`, `texlive-xetex`, `rsvg-convert` (`librsvg2-bin` para SVG) |
 | `xlsx-to-csv.sh` | `python3`, `openpyxl` (pip) |
-| `yt-transcript.sh` | `yt-dlp` |
+| `yt-transcript.sh` | `yt-dlp`, `jq` (opcional, para pretty-print) |
+| `fzf` (opcional) | habilita menus interativos no `menu-launcher.sh` e em scripts com seletor |
 
 ## 📝 Notas
 - A maioria dos scripts suporta a flag `--dry-run` para visualização das alterações antes de aplicá-las.
 - Execute qualquer script com `--help` para ver todas as opções disponíveis.
+- Para **desinstalar** todos os scripts, execute `./install-scripts.sh --uninstall` — remove os links em `~/.local/bin` e limpa a entrada do PATH.
+- Para ver o número de dependências suportadas, execute `./dependency-helper.sh --help`.
+
+## 🛠️ Guia do Desenvolvedor
+Consulte [SCRIPTING_GUIDE.md](./SCRIPTING_GUIDE.md) para o guia completo de boas práticas: boilerplate obrigatório, paleta de cores, padrões de `--help`/`--version`, integração com `dependency-helper.sh`, tratamento de sinais, exit codes, portabilidade e checklist para novos scripts.
 
 ## 📖 git-sync.sh — Detalhes
 
