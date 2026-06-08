@@ -1,0 +1,21 @@
+{
+  "name": "dogu-sh",
+  "version": "1.0.0",
+  "description": "> **dōgu** (道具) — *substantivo japonês*: ferramenta, instrumento, utensílio.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/walternagai/dogu-sh.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/walternagai/dogu-sh/issues"
+  },
+  "homepage": "https://github.com/walternagai/dogu-sh#readme"
+}
