@@ -84,6 +84,7 @@ Uma coleção de **76 ferramentas Bash precisas** para artesãos do terminal. N�
 - `log-analyzer.sh`: Analisador de logs com coloração e filtros.
 - `docx-to-md.sh`: Converte arquivos `.docx` para Markdown (`.md`) via pandoc — suporte a lote e modo recursivo.
 - `pdf-to-md.sh`: Converte arquivos `.pdf` para Markdown (`.md`) extraindo texto via `pdftotext`, com OCR opcional para PDFs escaneados.
+- `pdf-to-jpg.sh`: Converte arquivos `.pdf` em imagens JPG via `pdftoppm`, com controle de qualidade, resolução e páginas.
 - `md-to-pdf.sh`: Converte arquivos `.md` para PDF usando pandoc + XeLaTeX com suporte a imagens PNG e SVG.
 - `xlsx-to-csv.sh`: Converte arquivos `.xlsx` para CSV via openpyxl — cada aba vira um `.csv` separado.
 - `yt-transcript.sh`: Baixa transcrições de vídeos do YouTube em inglês e/ou português (txt, srt, vtt).
@@ -187,6 +188,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `port-check.sh` | `bash` `/dev/tcp` (nativo) ou `nc` (netcat) |
 | `docx-to-md.sh` | `pandoc` |
 | `pdf-to-md.sh` | `pdftotext` (`poppler-utils`/`poppler`), `tesseract` (opcional para `--ocr`) |
+| `pdf-to-jpg.sh` | `pdftoppm` (`poppler-utils`/`poppler`) |
 | `md-to-pdf.sh` | `pandoc`, `texlive-xetex`, `rsvg-convert` (`librsvg2-bin` para SVG) |
 | `xlsx-to-csv.sh` | `python3`, `openpyxl` (pip) |
 | `yt-transcript.sh` | `yt-dlp`, `jq` (opcional, para pretty-print) |
