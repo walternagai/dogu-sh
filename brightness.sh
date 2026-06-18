@@ -42,6 +42,7 @@ fi
 
 ACTION="get"
 VALUE="5"
+DRY_RUN=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -55,6 +56,7 @@ while [[ $# -gt 0 ]]; do
             [[ -z "${2-}" ]] && { echo "Flag --set requer um valor" >&2; exit 1; }
             ACTION="set"; VALUE="$2"; shift 2 ;;
         --get|-g) ACTION="get"; shift ;;
+        --dry-run) DRY_RUN=true; shift ;;
         --help|-h)
             echo ""
             echo "  brightness.sh — Controle de brilho do monitor"
@@ -66,6 +68,7 @@ while [[ $# -gt 0 ]]; do
             echo "    -d, --down N    Diminui brilho em N% (padrao: 5)"
             echo "    -s, --set N     Define brilho para N% (0-100)"
             echo "    --get           Mostra brilho atual"
+            echo "    --dry-run       Preview sem alterar"
             echo "    --help          Mostra esta ajuda"
             echo "    --version       Mostra versao"
             echo ""
@@ -172,15 +175,23 @@ case "$ACTION" in
     up)
         new=$((current + VALUE))
         [ "$new" -gt 100 ] && new=100
-        set_brightness "$backend" "$new"
-        echo -e "  ${GREEN}✓${RESET} Brilho: ${current}% → ${new}%"
+        if [[ "$DRY_RUN" == false ]]; then
+            set_brightness "$backend" "$new"
+            echo -e "  ${GREEN}✓${RESET} Brilho: ${current}% → ${new}%"
+        else
+            echo -e "  ${DIM}[Dry-run] Brilho: ${current}% → ${new}%${RESET}"
+        fi
         ;;
 
     down)
         new=$((current - VALUE))
         [ "$new" -lt 1 ] && new=1
-        set_brightness "$backend" "$new"
-        echo -e "  ${GREEN}✓${RESET} Brilho: ${current}% → ${new}%"
+        if [[ "$DRY_RUN" == false ]]; then
+            set_brightness "$backend" "$new"
+            echo -e "  ${GREEN}✓${RESET} Brilho: ${current}% → ${new}%"
+        else
+            echo -e "  ${DIM}[Dry-run] Brilho: ${current}% → ${new}%${RESET}"
+        fi
         ;;
 
     set)
@@ -188,7 +199,11 @@ case "$ACTION" in
             echo -e "  ${RED}Valor invalido. Use 0-100.${RESET}"
             exit 1
         fi
-        set_brightness "$backend" "$VALUE"
-        echo -e "  ${GREEN}✓${RESET} Brilho definido: ${VALUE}%"
+        if [[ "$DRY_RUN" == false ]]; then
+            set_brightness "$backend" "$VALUE"
+            echo -e "  ${GREEN}✓${RESET} Brilho definido: ${VALUE}%"
+        else
+            echo -e "  ${DIM}[Dry-run] Brilho definido: ${VALUE}%${RESET}"
+        fi
         ;;
 esac

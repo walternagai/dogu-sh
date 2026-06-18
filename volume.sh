@@ -47,6 +47,7 @@ fi
 ACTION="get"
 VALUE="5"
 DEVICE="sink"
+DRY_RUN=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -63,6 +64,7 @@ while [[ $# -gt 0 ]]; do
         --get|-g) ACTION="get"; shift ;;
         --source) DEVICE="source"; shift ;;
         --list|-l) ACTION="list"; shift ;;
+        --dry-run) DRY_RUN=true; shift ;;
         --help|-h)
             echo ""
             echo "  volume.sh — Controle de volume via PulseAudio/PipeWire"
@@ -77,6 +79,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --get           Mostra volume atual"
             echo "    --source        Opera no microfone"
             echo "    --list          Lista dispositivos de audio"
+            echo "    --dry-run       Preview sem alterar"
             echo "    --help          Mostra esta ajuda"
             echo "    --version       Mostra versao"
             echo ""
@@ -281,20 +284,32 @@ case "$ACTION" in
         current=$(get_volume "$DEVICE")
         new=$((current + VALUE))
         [ "$new" -gt 150 ] && new=150
-        set_volume_pct "$new" "$DEVICE"
+        if [[ "$DRY_RUN" == false ]]; then
+            set_volume_pct "$new" "$DEVICE"
+        fi
         muted=$(get_mute_status "$DEVICE")
         label=$([ "$DEVICE" = "source" ] && echo "microfone" || echo "speaker")
-        show_volume_bar "$new" "$muted" "$label"
+        if [[ "$DRY_RUN" == true ]]; then
+            echo -e "  ${DIM}[Dry-run] Volume: ${current}% → ${new}%${RESET}"
+        else
+            show_volume_bar "$new" "$muted" "$label"
+        fi
         ;;
 
     down)
         current=$(get_volume "$DEVICE")
         new=$((current - VALUE))
         [ "$new" -lt 0 ] && new=0
-        set_volume_pct "$new" "$DEVICE"
+        if [[ "$DRY_RUN" == false ]]; then
+            set_volume_pct "$new" "$DEVICE"
+        fi
         muted=$(get_mute_status "$DEVICE")
         label=$([ "$DEVICE" = "source" ] && echo "microfone" || echo "speaker")
-        show_volume_bar "$new" "$muted" "$label"
+        if [[ "$DRY_RUN" == true ]]; then
+            echo -e "  ${DIM}[Dry-run] Volume: ${current}% → ${new}%${RESET}"
+        else
+            show_volume_bar "$new" "$muted" "$label"
+        fi
         ;;
 
     set)
@@ -303,18 +318,29 @@ case "$ACTION" in
             exit 1
         fi
         [ "$VALUE" -gt 150 ] && VALUE=150
-        set_volume_pct "$VALUE" "$DEVICE"
+        if [[ "$DRY_RUN" == false ]]; then
+            set_volume_pct "$VALUE" "$DEVICE"
+        fi
         muted=$(get_mute_status "$DEVICE")
         label=$([ "$DEVICE" = "source" ] && echo "microfone" || echo "speaker")
-        show_volume_bar "$VALUE" "$muted" "$label"
+        if [[ "$DRY_RUN" == true ]]; then
+            current=$(get_volume "$DEVICE")
+            echo -e "  ${DIM}[Dry-run] Volume: ${current}% → ${VALUE}%${RESET}"
+        else
+            show_volume_bar "$VALUE" "$muted" "$label"
+        fi
         ;;
 
     mute)
-        toggle_mute "$DEVICE"
+        if [[ "$DRY_RUN" == false ]]; then
+            toggle_mute "$DEVICE"
+        fi
         muted=$(get_mute_status "$DEVICE")
         vol=$(get_volume "$DEVICE")
         label=$([ "$DEVICE" = "source" ] && echo "microfone" || echo "speaker")
-        if [ "$muted" = "yes" ]; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo -e "  ${DIM}[Dry-run] Alternaria mute do ${label}${RESET}"
+        elif [ "$muted" = "yes" ]; then
             echo -e "  ${DIM}🔇 ${label} mutado${RESET}"
         else
             echo -e "  ${GREEN}🔊 ${label} ativo (${vol}%)${RESET}"

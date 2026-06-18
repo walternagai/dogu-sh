@@ -179,12 +179,24 @@ if $SNAP_ONLY; then
                     snap list --all 2>/dev/null | grep 'disabled' | awk '{print "    " $1 " " $2 " (disabled)"}'
                     echo ""
 
-                    if ! $DRY_RUN; then
-                        snap list --all 2>/dev/null | grep 'disabled' | awk '{print $1, $2}' | while read -r name rev; do
-                            run_or_dry "snap remove $name $rev" sudo snap remove "$name" --revision="$rev"
-                        done
-                    else
-                        echo -e "  ${DIM}[dry-run] Removeria $disabled_snaps snap(s) desabilitado(s)${RESET}"
+                    do_clean=true
+                    if [[ "$DRY_RUN" == false ]]; then
+                        printf "  Remover snap(s) desabilitado(s)? [s/N]: "
+                        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+                        case "$confirm" in
+                            [sS]) ;;
+                            *) echo -e "  ${DIM}Operacao cancelada.${RESET}"; do_clean=false ;;
+                        esac
+                    fi
+
+                    if $do_clean; then
+                        if ! $DRY_RUN; then
+                            snap list --all 2>/dev/null | grep 'disabled' | awk '{print $1, $2}' | while read -r name rev; do
+                                run_or_dry "snap remove $name $rev" sudo snap remove "$name" --revision="$rev"
+                            done
+                        else
+                            echo -e "  ${DIM}[dry-run] Removeria $disabled_snaps snap(s) desabilitado(s)${RESET}"
+                        fi
                     fi
                 else
                     echo -e "  ${GREEN}✓${RESET} Nenhum snap desabilitado para limpar"
@@ -256,7 +268,18 @@ if $FLATPAK_ONLY; then
 
                 if [ "$unused_count" -gt 0 ]; then
                     echo -e "  ${YELLOW}$unused_count${RESET} runtime(s)/app(s) nao utilizada(s)"
-                    run_or_dry "flatpak uninstall --unused -y" flatpak uninstall --unused -y
+                    do_clean=true
+                    if [[ "$DRY_RUN" == false ]]; then
+                        printf "  Remover flatpak(s) nao utilizado(s)? [s/N]: "
+                        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+                        case "$confirm" in
+                            [sS]) ;;
+                            *) echo -e "  ${DIM}Operacao cancelada.${RESET}"; do_clean=false ;;
+                        esac
+                    fi
+                    if $do_clean; then
+                        run_or_dry "flatpak uninstall --unused -y" flatpak uninstall --unused -y
+                    fi
                 else
                     echo -e "  ${GREEN}✓${RESET} Nenhum flatpak nao utilizado para limpar"
                 fi

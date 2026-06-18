@@ -23,8 +23,6 @@ for p in ${NVIDIA_PATHS//:/ }; do
 done
 export PATH
 
-ERR_FILE="/tmp/nvidia-gpu-monitor-err.log"
-
 readonly VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
@@ -42,6 +40,8 @@ success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 
+ERR_FILE=$(mktemp)
+trap 'rm -f "$ERR_FILE"' EXIT
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"

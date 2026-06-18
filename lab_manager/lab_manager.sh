@@ -14,6 +14,7 @@ set -euo pipefail
 
 readonly VERSION="2.0.0"
 SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 STATE_DIR="$HOME/.lab_manager"
 MANIFEST_FILE="$STATE_DIR/manifest.json"
@@ -26,13 +27,14 @@ AI_VENV="$VENV_BASE/ai-tools"
 DOTNET_VERSION="8.0"
 OPENWEBUI_PORT=3000
 
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
+readonly RED='\033[1;31m'
+readonly GREEN='\033[1;32m'
 readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly CYAN='\033[0;36m'
+readonly BLUE='\033[1;34m'
+readonly CYAN='\033[1;36m'
 readonly BOLD='\033[1m'
-readonly NC='\033[0m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
 
 log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
@@ -56,22 +58,22 @@ setup_logging() {
     exec > >(tee -a "$LOG_FILE") 2>&1
 }
 
-log_info()    { echo -e "${BLUE}[INFO]${NC}  $1"; }
-log_success() { echo -e "${GREEN}[OK]${NC}    $1"; }
-log_warn()    { echo -e "${YELLOW}[WARN]${NC}  $1"; }
-log_error()   { echo -e "${RED}[FAIL]${NC}  $1"; }
-log_step()    { echo -e "${CYAN}${BOLD}==>${NC} $1"; }
+log_info()    { echo -e "${BLUE}[INFO]${RESET}  $1"; }
+log_success() { echo -e "${GREEN}[OK]${RESET}    $1"; }
+log_warn()    { echo -e "${YELLOW}[WARN]${RESET}  $1"; }
+log_error()   { echo -e "${RED}[FAIL]${RESET}  $1"; }
+log_step()    { echo -e "${CYAN}${BOLD}==>${RESET} $1"; }
 
 print_header() {
     echo ""
-    echo -e "${BOLD}================================================================${NC}"
-    echo -e "${BOLD} $1${NC}"
-    echo -e "${BOLD}================================================================${NC}"
+    echo -e "${BOLD}================================================================${RESET}"
+    echo -e "${BOLD} $1${RESET}"
+    echo -e "${BOLD}================================================================${RESET}"
 }
 
 print_section() {
     echo ""
-    echo -e "${CYAN}--- $1 ---${NC}"
+    echo -e "${CYAN}--- $1 ---${RESET}"
 }
 
 # ==============================================================================
@@ -206,7 +208,7 @@ manifest_init() {
     if [ ! -f "$MANIFEST_FILE" ]; then
         cat > "$MANIFEST_FILE" << MANIFEST_EOF
 {
-  "script_version": "$SCRIPT_VERSION",
+  "script_version": "$VERSION",
   "created": "$(date -Iseconds)",
   "updated": "$(date -Iseconds)",
   "system": {
@@ -692,15 +694,19 @@ do_install_dotnet() {
 
     sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list 2>/dev/null || true
 
-    wget -q "https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb" -O /tmp/packages-microsoft-prod.deb 2>/dev/null || {
+    local ms_deb
+    ms_deb=$(mktemp)
+    wget -q "https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb" -O "$ms_deb" 2>/dev/null || {
         log_warn "Failed to download Microsoft repo package"
+        rm -f "$ms_deb"
         return 0
     }
-    sudo dpkg -i /tmp/packages-microsoft-prod.deb 2>/dev/null || {
+    sudo dpkg -i "$ms_deb" 2>/dev/null || {
         log_warn "Failed to install Microsoft repo package"
+        rm -f "$ms_deb"
         return 0
     }
-    rm -f /tmp/packages-microsoft-prod.deb
+    rm -f "$ms_deb"
 
     sudo apt update 2>/dev/null || true
     apt_install_to_manifest "dotnet-sdk-$DOTNET_VERSION"
@@ -854,9 +860,11 @@ do_install_browsers() {
 
     read -p "Install Google Chrome? [y/N]: " -n 1 -r; echo
     if [[ $REPLY =~ ^[Yy]$ ]] && ! is_installed google-chrome; then
-        wget -q "https://dl.google.com/linux/direct/google-chrome-stable_current_${OS_ARCH}.deb" -O /tmp/chrome.deb
-        sudo dpkg -i /tmp/chrome.deb 2>/dev/null || sudo apt install -f -y 2>/dev/null || true
-        rm -f /tmp/chrome.deb
+        local chrome_deb
+        chrome_deb=$(mktemp)
+        wget -q "https://dl.google.com/linux/direct/google-chrome-stable_current_${OS_ARCH}.deb" -O "$chrome_deb"
+        sudo dpkg -i "$chrome_deb" 2>/dev/null || sudo apt install -f -y 2>/dev/null || true
+        rm -f "$chrome_deb"
         manifest_add_to_array "apt_packages" "google-chrome-stable"
     fi
 
@@ -1048,11 +1056,11 @@ test_command() {
     if command -v "$cmd" &>/dev/null; then
         local ver
         ver=$("$cmd" --version 2>&1 | head -1 || echo "installed")
-        echo -e "  ${GREEN}[PASS]${NC} $name: $ver"
+        echo -e "  ${GREEN}[PASS]${RESET} $name: $ver"
         PASSED_TESTS=$((PASSED_TESTS + 1))
         return 0
     else
-        echo -e "  ${RED}[FAIL]${NC} $name: NOT INSTALLED"
+        echo -e "  ${RED}[FAIL]${RESET} $name: NOT INSTALLED"
         FAILED_TESTS=$((FAILED_TESTS + 1))
         return 1
     fi
@@ -1062,11 +1070,11 @@ test_flatpak_app() {
     local app_id="$1" name="$2"
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
     if flatpak list --app 2>/dev/null | grep -q "$app_id"; then
-        echo -e "  ${GREEN}[PASS]${NC} Flatpak: $name"
+        echo -e "  ${GREEN}[PASS]${RESET} Flatpak: $name"
         PASSED_TESTS=$((PASSED_TESTS + 1))
         return 0
     else
-        echo -e "  ${RED}[FAIL]${NC} Flatpak: $name NOT INSTALLED"
+        echo -e "  ${RED}[FAIL]${RESET} Flatpak: $name NOT INSTALLED"
         FAILED_TESTS=$((FAILED_TESTS + 1))
         return 1
     fi
@@ -1078,11 +1086,11 @@ test_python_import() {
     if [ -d "$venv" ] && "$venv/bin/python" -c "import $module" &>/dev/null; then
         local ver
         ver=$("$venv/bin/python" -c "import $module; print(getattr($module, '__version__', 'installed'))" 2>/dev/null || echo "installed")
-        echo -e "  ${GREEN}[PASS]${NC} Python ($name): $ver"
+        echo -e "  ${GREEN}[PASS]${RESET} Python ($name): $ver"
         PASSED_TESTS=$((PASSED_TESTS + 1))
         return 0
     else
-        echo -e "  ${YELLOW}[WARN]${NC} Python ($name): not found in $venv"
+        echo -e "  ${YELLOW}[WARN]${RESET} Python ($name): not found in $venv"
         WARNINGS=$((WARNINGS + 1))
         return 1
     fi
@@ -1092,11 +1100,11 @@ test_service() {
     local svc="$1" name="$2"
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
     if systemctl is-active --quiet "$svc" 2>/dev/null; then
-        echo -e "  ${GREEN}[PASS]${NC} Service $name: active"
+        echo -e "  ${GREEN}[PASS]${RESET} Service $name: active"
         PASSED_TESTS=$((PASSED_TESTS + 1))
         return 0
     else
-        echo -e "  ${YELLOW}[WARN]${NC} Service $name: inactive"
+        echo -e "  ${YELLOW}[WARN]${RESET} Service $name: inactive"
         WARNINGS=$((WARNINGS + 1))
         return 1
     fi
@@ -1106,11 +1114,11 @@ test_container() {
     local cname="$1"
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
     if command -v docker &>/dev/null && docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${cname}$"; then
-        echo -e "  ${GREEN}[PASS]${NC} Container $cname: running"
+        echo -e "  ${GREEN}[PASS]${RESET} Container $cname: running"
         PASSED_TESTS=$((PASSED_TESTS + 1))
         return 0
     else
-        echo -e "  ${YELLOW}[WARN]${NC} Container $cname: not running"
+        echo -e "  ${YELLOW}[WARN]${RESET} Container $cname: not running"
         WARNINGS=$((WARNINGS + 1))
         return 1
     fi
@@ -1120,11 +1128,11 @@ test_shell_config() {
     local rc="$1" name="$2"
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
     if [ -f "$rc" ] && grep -q "$MANAGED_BLOCK_START" "$rc"; then
-        echo -e "  ${GREEN}[PASS]${NC} $name: managed block present"
+        echo -e "  ${GREEN}[PASS]${RESET} $name: managed block present"
         PASSED_TESTS=$((PASSED_TESTS + 1))
         return 0
     else
-        echo -e "  ${YELLOW}[WARN]${NC} $name: no managed block"
+        echo -e "  ${YELLOW}[WARN]${RESET} $name: no managed block"
         WARNINGS=$((WARNINGS + 1))
         return 1
     fi
@@ -1151,11 +1159,11 @@ do_test() {
                 test_command "zsh" "zsh"
                 if [ -d "$HOME/.oh-my-zsh" ]; then
                     TOTAL_TESTS=$((TOTAL_TESTS + 1))
-                    echo -e "  ${GREEN}[PASS]${NC} Oh My Zsh: installed"
+                    echo -e "  ${GREEN}[PASS]${RESET} Oh My Zsh: installed"
                     PASSED_TESTS=$((PASSED_TESTS + 1))
                 else
                     TOTAL_TESTS=$((TOTAL_TESTS + 1))
-                    echo -e "  ${YELLOW}[WARN]${NC} Oh My Zsh: not installed"
+                    echo -e "  ${YELLOW}[WARN]${RESET} Oh My Zsh: not installed"
                     WARNINGS=$((WARNINGS + 1))
                 fi
                 test_shell_config "$HOME/.bashrc" ".bashrc"
@@ -1180,11 +1188,11 @@ do_test() {
                 test_python_import "$JUPYTER_VENV" "matplotlib" "Matplotlib"
                 if [ -f "$JUPYTER_VENV/bin/jupyter-lab" ]; then
                     TOTAL_TESTS=$((TOTAL_TESTS + 1))
-                    echo -e "  ${GREEN}[PASS]${NC} Jupyter Lab: installed in venv"
+                    echo -e "  ${GREEN}[PASS]${RESET} Jupyter Lab: installed in venv"
                     PASSED_TESTS=$((PASSED_TESTS + 1))
                 else
                     TOTAL_TESTS=$((TOTAL_TESTS + 1))
-                    echo -e "  ${YELLOW}[WARN]${NC} Jupyter Lab: not found in venv"
+                    echo -e "  ${YELLOW}[WARN]${RESET} Jupyter Lab: not found in venv"
                     WARNINGS=$((WARNINGS + 1))
                 fi
                 ;;
@@ -1242,7 +1250,7 @@ do_test() {
     done
 
     echo ""
-    echo -e "${BOLD}Test Summary: total=$TOTAL_TESTS passed=$PASSED_TESTS failed=$FAILED_TESTS warnings=$WARNINGS${NC}"
+    echo -e "${BOLD}Test Summary: total=$TOTAL_TESTS passed=$PASSED_TESTS failed=$FAILED_TESTS warnings=$WARNINGS${RESET}"
 }
 
 # ==============================================================================
@@ -1261,7 +1269,7 @@ do_validate() {
 
     cat > "$report_file" << JSONEOF
 {
-  "script_version": "$SCRIPT_VERSION",
+  "script_version": "$VERSION",
   "timestamp": "$(date -Iseconds)",
   "system": {
     "id": "$OS_ID",
@@ -1283,7 +1291,7 @@ JSONEOF
 
     log_success "JSON report: $report_file"
     echo ""
-    echo -e "${BOLD}Success rate: ${rate}%${NC}"
+    echo -e "${BOLD}Success rate: ${rate}%${RESET}"
     if [ "$FAILED_TESTS" -gt 0 ]; then
         log_warn "$FAILED_TESTS test(s) failed"
     fi
@@ -1561,16 +1569,16 @@ do_status() {
 
     detect_os
 
-    echo -e "${BOLD}System:${NC}       $OS_NAME $OS_VERSION_ID ($OS_ARCH)"
-    echo -e "${BOLD}Ubuntu base:${NC}  ${OS_UBUNTU_BASE:-N/A}"
+    echo -e "${BOLD}System:${RESET}       $OS_NAME $OS_VERSION_ID ($OS_ARCH)"
+    echo -e "${BOLD}Ubuntu base:${RESET}  ${OS_UBUNTU_BASE:-N/A}"
     echo ""
 
     if [ ! -f "$MANIFEST_FILE" ]; then
-        echo -e "${YELLOW}No manifest found. No components installed by this script.${NC}"
+        echo -e "${YELLOW}No manifest found. No components installed by this script.${RESET}"
         return 0
     fi
 
-    echo -e "${BOLD}Installed components:${NC}"
+    echo -e "${BOLD}Installed components:${RESET}"
     if command -v jq &>/dev/null; then
         jq -r '.installed_components[] | "  \(.name): \(.status) (\(.date))"' "$MANIFEST_FILE" 2>/dev/null
     else
@@ -1578,26 +1586,25 @@ do_status() {
     fi
 
     echo ""
-    echo -e "${BOLD}Venvs:${NC}"
+    echo -e "${BOLD}Venvs:${RESET}"
     [ -d "$JUPYTER_VENV" ] && echo "  jupyter:  $JUPYTER_VENV" || echo "  jupyter:  not created"
     [ -d "$AI_VENV" ] && echo "  ai-tools: $AI_VENV" || echo "  ai-tools: not created"
 
     echo ""
-    echo -e "${BOLD}Shell:${NC}"
+    echo -e "${BOLD}Shell:${RESET}"
     echo "  current:  $SHELL"
     [ -f "$HOME/.zshrc" ] && echo "  zshrc:    present" || echo "  zshrc:    not found"
     [ -d "$HOME/.oh-my-zsh" ] && echo "  oh-my-zsh:installed" || echo "  oh-my-zsh:not installed"
 
     echo ""
-    echo -e "${BOLD}Manifest:${NC}    $MANIFEST_FILE"
-    echo -e "${BOLD}Log:${NC}         $LOG_FILE"
+    echo -e "${BOLD}Manifest:${RESET}    $MANIFEST_FILE"
+    echo -e "${BOLD}Log:${RESET}         $LOG_FILE"
 }
 
 # ==============================================================================
 # GENERATE SAMPLES
 # ==============================================================================
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SAMPLES_SCRIPT="$SCRIPT_DIR/projetos_por_linguagem.py"
 
 do_generate_samples() {
@@ -1639,11 +1646,11 @@ do_generate_samples() {
 
 show_main_menu() {
     clear
-    echo -e "${BOLD}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BOLD}║             LAB MANAGER - Dev Environment Setup            ║${NC}"
-    echo -e "${BOLD}║                      v$SCRIPT_VERSION                          ║${NC}"
-    echo -e "${BOLD}║  Ubuntu | Linux Mint | Zorin OS | Pop!_OS | Derivatives    ║${NC}"
-    echo -e "${BOLD}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BOLD}╔══════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${BOLD}║             LAB MANAGER - Dev Environment Setup            ║${RESET}"
+    echo -e "${BOLD}║                      v$VERSION                          ║${RESET}"
+    echo -e "${BOLD}║  Ubuntu | Linux Mint | Zorin OS | Pop!_OS | Derivatives    ║${RESET}"
+    echo -e "${BOLD}╚══════════════════════════════════════════════════════════════╝${RESET}"
     echo ""
     echo "  1) Install components"
     echo "  2) Configure (shell, git)"
@@ -1656,12 +1663,12 @@ show_main_menu() {
     echo ""
     echo "  0) Exit"
     echo ""
-    echo -e "  ${CYAN}────────────────────────────────────────────────────────────${NC}"
+    echo -e "  ${CYAN}────────────────────────────────────────────────────────────${RESET}"
 }
 
 show_install_menu() {
     echo ""
-    echo -e "${BOLD}Install Components${NC}"
+    echo -e "${BOLD}Install Components${RESET}"
     echo ""
     echo "  1) Base system   (curl, git, flatpak, build-essential...)"
     echo "  2) Shell         (zsh, oh-my-zsh optional)"
@@ -1684,8 +1691,8 @@ show_install_menu() {
 
 show_uninstall_menu() {
     echo ""
-    echo -e "${BOLD}Uninstall Components${NC}"
-    echo -e "${YELLOW}  Only components installed by this script will be removed${NC}"
+    echo -e "${BOLD}Uninstall Components${RESET}"
+    echo -e "${YELLOW}  Only components installed by this script will be removed${RESET}"
     echo ""
     echo "  1) Base      7) Node.js"
     echo "  2) Shell     8) Rust"
@@ -1770,7 +1777,7 @@ menu_uninstall() {
 
 menu_restore() {
     echo ""
-    echo -e "${BOLD}Restore Configuration Files${NC}"
+    echo -e "${BOLD}Restore Configuration Files${RESET}"
     echo ""
     echo "  1) Restore .bashrc"
     echo "  2) Restore .zshrc"

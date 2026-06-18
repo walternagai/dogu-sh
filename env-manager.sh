@@ -6,7 +6,9 @@
 set -euo pipefail
 
 
-# Cores
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
 readonly GREEN='\033[1;32m'
 readonly YELLOW='\033[1;33m'
 readonly RED='\033[1;31m'
@@ -15,9 +17,6 @@ readonly BLUE='\033[1;34m'
 readonly BOLD='\033[1m'
 readonly DIM='\033[0;90m'
 readonly RESET='\033[0m'
-
-readonly VERSION="1.0.0"
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 TARGET_DIR=""
 while [[ $# -gt 0 ]]; do
@@ -43,15 +42,13 @@ while [[ $# -gt 0 ]]; do
 done
 TARGET_DIR="${TARGET_DIR:-$(pwd)}"
 
-log() { echo -e "${CYAN}[INFO]${RESET} $1"; }
+log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
+success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; fi
-
-
-success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 
 if [ ! -d "$TARGET_DIR" ]; then
     error "Diretório não encontrado: $TARGET_DIR"

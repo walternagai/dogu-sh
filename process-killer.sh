@@ -10,6 +10,13 @@
 set -euo pipefail
 
 
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
+DEP_HELPER="./dependency-helper.sh"
+[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "fzf" "$INSTALLER"; fi
+
 readonly GREEN='\033[1;32m'
 readonly YELLOW='\033[1;33m'
 readonly RED='\033[1;31m'
@@ -23,15 +30,6 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
-DEP_HELPER="./dependency-helper.sh"
-[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "fzf" "$INSTALLER"; fi
-
-
-
-
-readonly VERSION="1.0.0"
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 SIGNAL="SIGTERM"
 USER_FILTER=""

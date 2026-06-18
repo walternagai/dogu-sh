@@ -15,6 +15,13 @@
 set -euo pipefail
 
 
+readonly VERSION="1.0.0"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
+DEP_HELPER="./dependency-helper.sh"
+[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
+if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "ssh" "$INSTALLER" "openssh-client"; fi
+
 readonly GREEN='\033[1;32m'
 readonly YELLOW='\033[1;33m'
 readonly RED='\033[1;31m'
@@ -28,17 +35,9 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
-DEP_HELPER="./dependency-helper.sh"
-[ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "ssh" "$INSTALLER" "openssh-client"; fi
-
-
-
-
-readonly VERSION="1.0.0"
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 DAEMON=false
+DRY_RUN=false
 
 usage() {
     echo ""
@@ -54,6 +53,7 @@ usage() {
     echo "    --daemon|-d      Executa o tunel em segundo plano"
     echo "    --list            Lista tuneis SSH ativos"
     echo "    --stop PORTA      Encerra tunel na porta especificada"
+    echo "    --dry-run         Preview sem executar"
     echo "    --help            Mostra esta ajuda"
     echo "    --version         Mostra versao"
     echo ""
@@ -105,6 +105,14 @@ cmd_stop() {
         exit 1
     fi
 
+    if [[ "$DRY_RUN" == true ]]; then
+        echo -e "  ${DIM}[Dry-run] Encerraria processo(s) na porta $port:${RESET}"
+        for pid in $pids; do
+            echo -e "  ${DIM}  kill -TERM $pid${RESET}"
+        done
+        return
+    fi
+
     echo -e "${YELLOW}Encerrando processo(s) na porta $port...${RESET}"
     for pid in $pids; do
         if kill -TERM "$pid" 2>/dev/null; then
@@ -128,6 +136,13 @@ cmd_create() {
     fi
 
     echo -e "${CYAN}${BOLD}Tunel local:${RESET} localhost:$lport -> $dest:$rport (via $ssh_host)"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        local cmd="ssh"
+        $DAEMON && cmd="ssh -f"
+        echo -e "  ${DIM}[Dry-run] $cmd -L $lport:$dest:$rport -N $ssh_host${RESET}"
+        return
+    fi
 
     if [ "$DAEMON" = true ]; then
         ssh -f -N -L "$lport:$dest:$rport" "$ssh_host"
@@ -157,6 +172,13 @@ cmd_remote() {
 
     echo -e "${CYAN}${BOLD}Tunel reverso:${RESET} $ssh_host:$rport -> $dest:$lport"
 
+    if [[ "$DRY_RUN" == true ]]; then
+        local cmd="ssh"
+        $DAEMON && cmd="ssh -f"
+        echo -e "  ${DIM}[Dry-run] $cmd -R $rport:$dest:$lport -N $ssh_host${RESET}"
+        return
+    fi
+
     if [ "$DAEMON" = true ]; then
         ssh -f -N -R "$rport:$dest:$lport" "$ssh_host"
         if [ $? -eq 0 ]; then
@@ -177,6 +199,7 @@ while [[ $# -gt 0 ]]; do
         --remote|-r) shift; cmd_remote "$1" "$2" "$3" "$4"; exit 0 ;;
         --daemon|-d) DAEMON=true; shift ;;
         --list) cmd_list; exit 0 ;;
+        --dry-run) DRY_RUN=true; shift ;;
         --stop)
             [[ -z "${2-}" ]] && { echo -e "${RED}Erro: Porta obrigatoria para --stop${RESET}" >&2; exit 2; }
             shift; cmd_stop "$1"; exit 0 ;;

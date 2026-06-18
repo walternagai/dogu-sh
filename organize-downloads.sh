@@ -144,6 +144,13 @@ if $DRY_RUN; then
     echo -e "  ${YELLOW}[DRY-RUN]${RESET} Preview sem mover arquivos"
 fi
 
+printf "  Organizar arquivos em ${BOLD}$TARGET${RESET}? [s/N]: "
+read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+case "$confirm" in
+    [sS]) ;;
+    *) echo -e "  ${DIM}Operacao cancelada.${RESET}"; exit 0 ;;
+esac
+
 echo -e "  Escaneando ${BOLD}$TARGET${RESET}..."
 
 process_file() {

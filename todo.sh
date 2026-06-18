@@ -106,6 +106,7 @@ next_id() {
 rewrite_file() {
     local tmp
     tmp=$(mktemp)
+    trap 'rm -f "$tmp"' EXIT
     while IFS= read -r line; do
         echo "$line"
     done > "$tmp"

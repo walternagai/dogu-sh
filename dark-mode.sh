@@ -30,6 +30,7 @@ error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 
 
 ACTION="toggle"
+DRY_RUN=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -37,6 +38,7 @@ while [[ $# -gt 0 ]]; do
         --light|-l) ACTION="light"; shift ;;
         --toggle|-t) ACTION="toggle"; shift ;;
         --status|-s) ACTION="status"; shift ;;
+        --dry-run) DRY_RUN=true; shift ;;
         --help|-h)
             echo ""
             echo "  dark-mode.sh — Alterna tema claro/escuro"
@@ -48,6 +50,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --light    Ativa tema claro"
             echo "    --toggle   Alterna entre claro/escuro (padrao)"
             echo "    --status   Mostra tema atual"
+            echo "    --dry-run  Preview sem alterar"
             echo "    --help     Mostra esta ajuda"
             echo "    --version  Mostra versao"
             echo ""
@@ -198,23 +201,39 @@ case "$ACTION" in
         ;;
 
     dark)
-        set_theme "dark"
-        echo -e "  ${CYAN}🌙 Tema escuro ativado${RESET}"
+        if [[ "$DRY_RUN" == false ]]; then
+            set_theme "dark"
+            echo -e "  ${CYAN}🌙 Tema escuro ativado${RESET}"
+        else
+            echo -e "  ${DIM}[Dry-run] Ativaria tema escuro${RESET}"
+        fi
         ;;
 
     light)
-        set_theme "light"
-        echo -e "  ${YELLOW}☀ Tema claro ativado${RESET}"
+        if [[ "$DRY_RUN" == false ]]; then
+            set_theme "light"
+            echo -e "  ${YELLOW}☀ Tema claro ativado${RESET}"
+        else
+            echo -e "  ${DIM}[Dry-run] Ativaria tema claro${RESET}"
+        fi
         ;;
 
     toggle)
         current=$(get_current_theme)
         if [ "$current" = "dark" ]; then
-            set_theme "light"
-            echo -e "  ${YELLOW}☀ Tema claro ativado${RESET}"
+            if [[ "$DRY_RUN" == false ]]; then
+                set_theme "light"
+                echo -e "  ${YELLOW}☀ Tema claro ativado${RESET}"
+            else
+                echo -e "  ${DIM}[Dry-run] Alternaria para tema claro${RESET}"
+            fi
         else
-            set_theme "dark"
-            echo -e "  ${CYAN}🌙 Tema escuro ativado${RESET}"
+            if [[ "$DRY_RUN" == false ]]; then
+                set_theme "dark"
+                echo -e "  ${CYAN}🌙 Tema escuro ativado${RESET}"
+            else
+                echo -e "  ${DIM}[Dry-run] Alternaria para tema escuro${RESET}"
+            fi
         fi
         ;;
 esac
