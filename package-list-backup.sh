@@ -6,14 +6,17 @@
 #   --import FILE   Instala pacotes a partir de arquivo
 #   --diff FILE     Compara pacotes atuais com arquivo
 #   --format FMT    Formato de saida: txt (padrao) ou json
-#   --scope SCOPE   Escopo: all (padrao), system, snap, flatpak, npm, pip, cargo
+#   --scope SCOPE   Escopo: all (padrao), system, snap, flatpak, npm, pip, cargo, brew
+#   --versions      Inclui versoes dos pacotes (afeta apenas --export)
+#   --exclude PAT   Exclui pacotes que casam com o padrao (ex: --exclude linux-*)
+#   --include PAT   Inclui apenas pacotes que casam com o padrao
 #   --dry-run       Preview sem executar
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
 
 set -euo pipefail
 
-readonly SCRIPT_VERSION="1.0.0"
+readonly SCRIPT_VERSION="2.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 readonly GREEN='\033[1;32m'
@@ -30,34 +33,29 @@ success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 
-
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ]; then
     source "$DEP_HELPER"
     INSTALLER=$(detect_installer)
-    check_and_install "snap" "$INSTALLER"
-    check_and_install "flatpak" "$INSTALLER"
-    check_and_install "npm" "$INSTALLER"
-    check_and_install "pip" "$INSTALLER"
-    check_and_install "cargo" "$INSTALLER"
-    check_and_install "python3" "$INSTALLER"
 fi
-
 
 ACTION=""
 BACKUP_FILE=""
 FORMAT="txt"
 SCOPE="all"
 DRY_RUN=false
+VERSIONS=false
+EXCLUDE_PATTERN=""
+INCLUDE_PATTERN=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --export|-e)
-            [[ -z "${2-}" ]] && { echo "Flag --export requer um valor" >&2; exit 1; }
+        --export|-e|--backup)
+            [[ -z "${2-}" ]] && { echo "Flag $1 requer um valor" >&2; exit 1; }
             ACTION="export"; BACKUP_FILE="$2"; shift 2 ;;
-        --import|-i)
-            [[ -z "${2-}" ]] && { echo "Flag --import requer um valor" >&2; exit 1; }
+        --import|-i|--restore)
+            [[ -z "${2-}" ]] && { echo "Flag $1 requer um valor" >&2; exit 1; }
             ACTION="import"; BACKUP_FILE="$2"; shift 2 ;;
         --diff|-d)
             [[ -z "${2-}" ]] && { echo "Flag --diff requer um valor" >&2; exit 1; }
@@ -68,6 +66,13 @@ while [[ $# -gt 0 ]]; do
         --scope|-s)
             [[ -z "${2-}" ]] && { echo "Flag --scope requer um valor" >&2; exit 1; }
             SCOPE="$2"; shift 2 ;;
+        --exclude)
+            [[ -z "${2-}" ]] && { echo "Flag --exclude requer um valor" >&2; exit 1; }
+            EXCLUDE_PATTERN="$2"; shift 2 ;;
+        --include)
+            [[ -z "${2-}" ]] && { echo "Flag --include requer um valor" >&2; exit 1; }
+            INCLUDE_PATTERN="$2"; shift 2 ;;
+        --versions|-V) VERSIONS=true; shift ;;
         --dry-run) DRY_RUN=true; shift ;;
         --help|-h)
             echo ""
@@ -76,21 +81,27 @@ while [[ $# -gt 0 ]]; do
             echo "  Uso: ./package-list-backup.sh [opcoes]"
             echo ""
             echo "  Opcoes:"
-            echo "    --export FILE   Exporta lista de pacotes para arquivo"
-            echo "    --import FILE   Instala pacotes a partir de arquivo"
-            echo "    --diff FILE     Compara pacotes atuais com arquivo"
-            echo "    --format FMT    Formato: txt (padrao) ou json"
-            echo "    --scope SCOPE   Escopo: all, system, snap, flatpak, npm, pip, cargo"
-            echo "    --dry-run       Preview sem executar"
-            echo "    --help          Mostra esta ajuda"
-            echo "    --version       Mostra versao"
+            echo "    --export FILE    Exporta lista de pacotes para arquivo"
+            echo "    --import FILE    Instala pacotes a partir de arquivo"
+            echo "    --diff FILE      Compara pacotes atuais com arquivo"
+            echo "    --backup FILE    Alias para --export"
+            echo "    --restore FILE   Alias para --import"
+            echo "    --format FMT     Formato: txt (padrao) ou json"
+            echo "    --scope SCOPE    Escopo: all, system, snap, flatpak, npm, pip, cargo, brew"
+            echo "    --versions       Inclui versoes dos pacotes (so export)"
+            echo "    --exclude PAD    Exclui pacotes que casam com padrao glob"
+            echo "    --include PAD    Inclui apenas pacotes que casam com padrao glob"
+            echo "    --dry-run        Preview sem executar"
+            echo "    --help           Mostra esta ajuda"
+            echo "    --version        Mostra versao"
             echo ""
             echo "  Exemplos:"
             echo "    ./package-list-backup.sh --export pacotes.txt"
             echo "    ./package-list-backup.sh --export pacotes.json --format json"
+            echo "    ./package-list-backup.sh --export pkg.txt --scope system --versions"
             echo "    ./package-list-backup.sh --import pacotes.txt --dry-run"
             echo "    ./package-list-backup.sh --diff pacotes.txt"
-            echo "    ./package-list-backup.sh --export pkg.txt --scope system"
+            echo "    ./package-list-backup.sh --export pkg.txt --exclude 'linux-*'"
             echo ""
             exit 0
             ;;
@@ -111,34 +122,17 @@ if [ -z "$BACKUP_FILE" ]; then
 fi
 
 detect_distro() {
+    local id="unknown"
     if [ -f /etc/os-release ]; then
-        . /etc/os-release 2>/dev/null || true
-        echo "${ID:-unknown}"
+        id=$(. /etc/os-release 2>/dev/null && echo "${ID:-unknown}" || echo "unknown")
     elif [ -f /etc/debian_version ]; then
-        echo "debian"
+        id="debian"
     elif [ -f /etc/fedora-release ]; then
-        echo "fedora"
+        id="fedora"
     elif [ -f /etc/arch-release ]; then
-        echo "arch"
-    else
-        echo "unknown"
+        id="arch"
     fi
-}
-
-detect_installer_for() {
-    local pkg_type="$1"
-    case "$pkg_type" in
-        apt) echo "sudo apt-get install -y" ;;
-        pacman) echo "sudo pacman -S --noconfirm" ;;
-        dnf) echo "sudo dnf install -y" ;;
-        snap) echo "sudo snap install" ;;
-        flatpak) echo "flatpak install -y" ;;
-        npm) echo "npm install -g" ;;
-        pip) echo "pip install" ;;
-        cargo) echo "cargo install" ;;
-        brew) echo "brew install" ;;
-        *) echo "echo" ;;
-    esac
+    echo "$id"
 }
 
 DISTRO=$(detect_distro)
@@ -155,44 +149,109 @@ echo ""
 
 should_collect() {
     local scope_name="$1"
-    if [ "$SCOPE" = "all" ] || [ "$SCOPE" = "$scope_name" ]; then
-        return 0
+    [ "$SCOPE" = "all" ] || [ "$SCOPE" = "$scope_name" ]
+}
+
+matches_filter() {
+    local pkg="$1"
+    if [ -n "$INCLUDE_PATTERN" ]; then
+        case "$pkg" in
+            $INCLUDE_PATTERN) return 0 ;;
+            *) return 1 ;;
+        esac
     fi
-    return 1
+    if [ -n "$EXCLUDE_PATTERN" ]; then
+        case "$pkg" in
+            $EXCLUDE_PATTERN) return 1 ;;
+        esac
+    fi
+    return 0
 }
 
 collect_system() {
+    local pkgs=""
     case "$DISTRO" in
         debian|ubuntu|linuxmint|pop*|elementary|kali)
-            dpkg --get-selections 2>/dev/null | grep -v deinstall | awk '{print $1}' | sort
+            if $VERSIONS; then
+                pkgs=$(apt-mark showmanual 2>/dev/null | while IFS= read -r pkg; do
+                    ver=$(apt-cache policy "$pkg" 2>/dev/null | grep 'Candidate:' | head -1 | awk '{print $2}')
+                    [ -z "$pkg" ] && continue
+                    if [ -n "$ver" ]; then
+                        echo "${pkg}=${ver}"
+                    else
+                        echo "$pkg"
+                    fi
+                done || true)
+            else
+                pkgs=$(apt-mark showmanual 2>/dev/null || true)
+            fi
             ;;
         fedora|rhel|centos|rocky|alma*)
-            rpm -qa --qf '%{NAME}\n' 2>/dev/null | sort
+            if $VERSIONS; then
+                pkgs=$(rpm -qa --qf '%{NAME}-%{VERSION}\n' 2>/dev/null | sort || true)
+            else
+                pkgs=$(rpm -qa --qf '%{NAME}\n' 2>/dev/null | sort || true)
+            fi
             ;;
         arch|manjaro|endeavouros|garuda*)
-            pacman -Qe 2>/dev/null | awk '{print $1}' | sort
-            ;;
-        *)
-            echo "# distro nao suportada" >&2
+            if $VERSIONS; then
+                pkgs=$(pacman -Qe 2>/dev/null | awk '{print $1"="$2}' || true)
+            else
+                pkgs=$(pacman -Qe 2>/dev/null | awk '{print $1}' || true)
+            fi
             ;;
     esac
+    echo "$pkgs"
+}
+
+collect_repos() {
+    local repos=""
+    case "$DISTRO" in
+        debian|ubuntu|linuxmint|pop*|elementary|kali)
+            if [ -d /etc/apt/sources.list.d ]; then
+                repos=$(find /etc/apt/sources.list.d -name '*.list' -o -name '*.sources' 2>/dev/null | sort || true)
+            fi
+            ;;
+    esac
+    echo "$repos"
 }
 
 collect_snap() {
     if command -v snap &>/dev/null; then
-        snap list 2>/dev/null | tail -n +2 | awk '{print $1}' | sort
+        if $VERSIONS; then
+            snap list 2>/dev/null | tail -n +2 | awk '{print $1"="$2}' | sort || true
+        else
+            snap list 2>/dev/null | tail -n +2 | awk '{print $1}' | sort || true
+        fi
     fi
 }
 
 collect_flatpak() {
     if command -v flatpak &>/dev/null; then
-        flatpak list --app --columns=application 2>/dev/null | tail -n +1 | sort
+        if $VERSIONS; then
+            flatpak list --app --columns=application,version 2>/dev/null | awk -F$'\t' '{print $1"="$2}' | sort || true
+        else
+            flatpak list --app --columns=application 2>/dev/null | sort || true
+        fi
     fi
 }
 
 collect_npm() {
     if command -v npm &>/dev/null; then
-        npm ls -g --depth=0 --json 2>/dev/null | python3 -c "
+        if $VERSIONS; then
+            npm ls -g --depth=0 --json 2>/dev/null | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    deps = data.get('dependencies', {})
+    for name in sorted(deps.keys()):
+        ver = deps[name].get('version', '')
+        print(f'{name}={ver}' if ver else name)
+except:
+    pass
+" 2>/dev/null || true
+        else
+            npm ls -g --depth=0 --json 2>/dev/null | python3 -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -201,7 +260,8 @@ try:
         print(name)
 except:
     pass
-" 2>/dev/null
+" 2>/dev/null || true
+        fi
     fi
 }
 
@@ -209,7 +269,18 @@ collect_pip() {
     if command -v pip &>/dev/null || command -v pip3 &>/dev/null; then
         local cmd="pip3"
         command -v pip3 &>/dev/null || cmd="pip"
-        $cmd list --format=json 2>/dev/null | python3 -c "
+        if $VERSIONS; then
+            $cmd list --format=json 2>/dev/null | python3 -c "
+import sys, json
+try:
+    pkgs = json.load(sys.stdin)
+    for p in sorted(pkgs, key=lambda x: x['name']):
+        print(f'{p[\"name\"]}={p[\"version\"]}')
+except:
+    pass
+" 2>/dev/null || true
+        else
+            $cmd list --format=json 2>/dev/null | python3 -c "
 import sys, json
 try:
     pkgs = json.load(sys.stdin)
@@ -217,14 +288,106 @@ try:
         print(p['name'])
 except:
     pass
-" 2>/dev/null
+" 2>/dev/null || true
+        fi
     fi
 }
 
 collect_cargo() {
     if command -v cargo &>/dev/null; then
-        cargo install --list 2>/dev/null | grep -E '^[a-z]' | awk '{print $1}' | sort
+        if $VERSIONS; then
+            cargo install --list 2>/dev/null | grep -E '^[a-z]' | awk '{print $1"="$2}' | sort || true
+        else
+            cargo install --list 2>/dev/null | grep -E '^[a-z]' | awk '{print $1}' | sort || true
+        fi
     fi
+}
+
+collect_brew() {
+    if command -v brew &>/dev/null; then
+        if $VERSIONS; then
+            brew list --formula --versions 2>/dev/null | sort || true
+        else
+            brew list --formula 2>/dev/null | sort || true
+        fi
+    fi
+}
+
+escape_json_string() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    printf '%s' "$s"
+}
+
+write_json_array() {
+    local section="$1"
+    local data="$2"
+    local first_ref="$3"
+    local count=0
+
+    if [ -z "$data" ]; then
+        return
+    fi
+
+    local pkg_array=()
+    while IFS= read -r pkg; do
+        [ -z "$pkg" ] && continue
+        matches_filter "$pkg" || continue
+        pkg_array+=("$pkg")
+    done <<< "$data"
+
+    [ ${#pkg_array[@]} -eq 0 ] && return
+
+    if [ "$first_ref" = "false" ]; then
+        printf ',\n' >> "$BACKUP_FILE"
+    fi
+
+    printf '  "%s": [\n' "$section" >> "$BACKUP_FILE"
+    local i
+    for i in "${!pkg_array[@]}"; do
+        local escaped
+        escaped=$(escape_json_string "${pkg_array[$i]}")
+        if [ "$i" -lt $((${#pkg_array[@]} - 1)) ]; then
+            printf '    "%s",\n' "$escaped" >> "$BACKUP_FILE"
+        else
+            printf '    "%s"\n' "$escaped" >> "$BACKUP_FILE"
+        fi
+    done
+    printf '  ]' >> "$BACKUP_FILE"
+}
+
+write_txt_section() {
+    local section="$1"
+    local data="$2"
+
+    if [ -z "$data" ]; then
+        return
+    fi
+
+    local pkg_count=0
+    echo "[$section]" >> "$BACKUP_FILE"
+    while IFS= read -r pkg; do
+        [ -z "$pkg" ] && continue
+        matches_filter "$pkg" || continue
+        echo "$pkg" >> "$BACKUP_FILE"
+        pkg_count=$((pkg_count + 1))
+    done <<< "$data"
+    echo "" >> "$BACKUP_FILE"
+}
+
+collect_section() {
+    local scope="$1"
+    case "$scope" in
+        system)  collect_system 2>/dev/null || true ;;
+        snap)    collect_snap 2>/dev/null || true ;;
+        flatpak) collect_flatpak 2>/dev/null || true ;;
+        npm)     collect_npm 2>/dev/null || true ;;
+        pip)     collect_pip 2>/dev/null || true ;;
+        cargo)   collect_cargo 2>/dev/null || true ;;
+        brew)    collect_brew 2>/dev/null || true ;;
+        repos)   collect_repos 2>/dev/null || true ;;
+    esac
 }
 
 # =============================================
@@ -237,168 +400,65 @@ if [ "$ACTION" = "export" ]; then
 
     if [ "$FORMAT" = "json" ]; then
         echo "{" > "$BACKUP_FILE"
-        echo "  \"timestamp\": \"$(date -Iseconds)\"," >> "$BACKUP_FILE"
-        echo "  \"distro\": \"$DISTRO\"," >> "$BACKUP_FILE"
+        printf '  "timestamp": "%s",\n' "$(date -Iseconds)" >> "$BACKUP_FILE"
+        printf '  "distro": "%s",\n' "$DISTRO" >> "$BACKUP_FILE"
 
         first_section=true
 
-        if should_collect "system"; then
-            system_pkgs=$(collect_system 2>/dev/null)
-            if [ -n "$system_pkgs" ]; then
-                $first_section || echo "," >> "$BACKUP_FILE"
-                first_section=false
-                echo "  \"system\": [" >> "$BACKUP_FILE"
-                echo "$system_pkgs" | while IFS= read -r pkg; do
-                    [ -z "$pkg" ] && continue
-                    echo "    \"$pkg\"," >> "$BACKUP_FILE"
-                done
-                printf '  ]' >> "$BACKUP_FILE"
+        for section in system snap flatpak npm pip cargo brew; do
+            if should_collect "$section"; then
+                section_data=$(collect_section "$section")
+                if [ -n "$section_data" ]; then
+                    write_json_array "$section" "$section_data" "$first_section"
+                    first_section=false
+                fi
             fi
-        fi
+        done
 
-        if should_collect "snap"; then
-            snap_pkgs=$(collect_snap 2>/dev/null)
-            if [ -n "$snap_pkgs" ]; then
-                $first_section || echo "," >> "$BACKUP_FILE"
+        if should_collect "system" && [ "$DISTRO" = "ubuntu" ] || should_collect "system" && [[ "$DISTRO" =~ ^(linuxmint|pop|elementary)$ ]]; then
+            repos_data=$(collect_repos)
+            if [ -n "$repos_data" ]; then
+                write_json_array "repos" "$repos_data" "$first_section"
                 first_section=false
-                echo "" >> "$BACKUP_FILE"
-                echo "  \"snap\": [" >> "$BACKUP_FILE"
-                echo "$snap_pkgs" | while IFS= read -r pkg; do
-                    [ -z "$pkg" ] && continue
-                    echo "    \"$pkg\"," >> "$BACKUP_FILE"
-                done
-                printf '  ]' >> "$BACKUP_FILE"
-            fi
-        fi
-
-        if should_collect "flatpak"; then
-            flatpak_pkgs=$(collect_flatpak 2>/dev/null)
-            if [ -n "$flatpak_pkgs" ]; then
-                $first_section || echo "," >> "$BACKUP_FILE"
-                first_section=false
-                echo "" >> "$BACKUP_FILE"
-                echo "  \"flatpak\": [" >> "$BACKUP_FILE"
-                echo "$flatpak_pkgs" | while IFS= read -r pkg; do
-                    [ -z "$pkg" ] && continue
-                    echo "    \"$pkg\"," >> "$BACKUP_FILE"
-                done
-                printf '  ]' >> "$BACKUP_FILE"
-            fi
-        fi
-
-        if should_collect "npm"; then
-            npm_pkgs=$(collect_npm 2>/dev/null)
-            if [ -n "$npm_pkgs" ]; then
-                $first_section || echo "," >> "$BACKUP_FILE"
-                first_section=false
-                echo "" >> "$BACKUP_FILE"
-                echo "  \"npm\": [" >> "$BACKUP_FILE"
-                echo "$npm_pkgs" | while IFS= read -r pkg; do
-                    [ -z "$pkg" ] && continue
-                    echo "    \"$pkg\"," >> "$BACKUP_FILE"
-                done
-                printf '  ]' >> "$BACKUP_FILE"
-            fi
-        fi
-
-        if should_collect "pip"; then
-            pip_pkgs=$(collect_pip 2>/dev/null)
-            if [ -n "$pip_pkgs" ]; then
-                $first_section || echo "," >> "$BACKUP_FILE"
-                first_section=false
-                echo "" >> "$BACKUP_FILE"
-                echo "  \"pip\": [" >> "$BACKUP_FILE"
-                echo "$pip_pkgs" | while IFS= read -r pkg; do
-                    [ -z "$pkg" ] && continue
-                    echo "    \"$pkg\"," >> "$BACKUP_FILE"
-                done
-                printf '  ]' >> "$BACKUP_FILE"
-            fi
-        fi
-
-        if should_collect "cargo"; then
-            cargo_pkgs=$(collect_cargo 2>/dev/null)
-            if [ -n "$cargo_pkgs" ]; then
-                $first_section || echo "," >> "$BACKUP_FILE"
-                first_section=false
-                echo "" >> "$BACKUP_FILE"
-                echo "  \"cargo\": [" >> "$BACKUP_FILE"
-                echo "$cargo_pkgs" | while IFS= read -r pkg; do
-                    [ -z "$pkg" ] && continue
-                    echo "    \"$pkg\"," >> "$BACKUP_FILE"
-                done
-                printf '  ]' >> "$BACKUP_FILE"
             fi
         fi
 
         echo "" >> "$BACKUP_FILE"
         echo "}" >> "$BACKUP_FILE"
 
-        sed -i 's/,\(\s*\]\)/\1/g' "$BACKUP_FILE" 2>/dev/null || true
-
     else
         echo "# Package List Backup — $(date -Iseconds)" > "$BACKUP_FILE"
         echo "# Distro: $DISTRO" >> "$BACKUP_FILE"
         echo "" >> "$BACKUP_FILE"
 
-        if should_collect "system"; then
-            echo "[system]" >> "$BACKUP_FILE"
-            collect_system 2>/dev/null | while IFS= read -r pkg; do
-                [ -z "$pkg" ] && continue
-                echo "$pkg" >> "$BACKUP_FILE"
-            done
-            echo "" >> "$BACKUP_FILE"
-        fi
-
-        if should_collect "snap"; then
-            echo "[snap]" >> "$BACKUP_FILE"
-            collect_snap 2>/dev/null | while IFS= read -r pkg; do
-                [ -z "$pkg" ] && continue
-                echo "$pkg" >> "$BACKUP_FILE"
-            done
-            echo "" >> "$BACKUP_FILE"
-        fi
-
-        if should_collect "flatpak"; then
-            echo "[flatpak]" >> "$BACKUP_FILE"
-            collect_flatpak 2>/dev/null | while IFS= read -r pkg; do
-                [ -z "$pkg" ] && continue
-                echo "$pkg" >> "$BACKUP_FILE"
-            done
-            echo "" >> "$BACKUP_FILE"
-        fi
-
-        if should_collect "npm"; then
-            echo "[npm]" >> "$BACKUP_FILE"
-            collect_npm 2>/dev/null | while IFS= read -r pkg; do
-                [ -z "$pkg" ] && continue
-                echo "$pkg" >> "$BACKUP_FILE"
-            done
-            echo "" >> "$BACKUP_FILE"
-        fi
-
-        if should_collect "pip"; then
-            echo "[pip]" >> "$BACKUP_FILE"
-            collect_pip 2>/dev/null | while IFS= read -r pkg; do
-                [ -z "$pkg" ] && continue
-                echo "$pkg" >> "$BACKUP_FILE"
-            done
-            echo "" >> "$BACKUP_FILE"
-        fi
-
-        if should_collect "cargo"; then
-            echo "[cargo]" >> "$BACKUP_FILE"
-            collect_cargo 2>/dev/null | while IFS= read -r pkg; do
-                [ -z "$pkg" ] && continue
-                echo "$pkg" >> "$BACKUP_FILE"
-            done
-            echo "" >> "$BACKUP_FILE"
-        fi
+        total_pkgs=0
+        for section in system snap flatpak npm pip cargo brew; do
+            if should_collect "$section"; then
+                section_data=$(collect_section "$section")
+                if [ -n "$section_data" ]; then
+                    write_txt_section "$section" "$section_data"
+                    section_count=$(echo "$section_data" | grep -c '.' || echo 0)
+                    total_pkgs=$((total_pkgs + section_count))
+                fi
+            fi
+        done
     fi
 
     file_lines=$(wc -l < "$BACKUP_FILE" | tr -d ' ')
     file_size=$(du -h "$BACKUP_FILE" 2>/dev/null | awk '{print $1}')
-    echo -e "  ${GREEN}✓${RESET} Exportado: ${BOLD}$BACKUP_FILE${RESET} ($file_lines linhas, $file_size)"
+
+    total_pkgs=0
+    for section in system snap flatpak npm pip cargo brew; do
+        if should_collect "$section"; then
+            section_data=$(collect_section "$section")
+            if [ -n "$section_data" ]; then
+                section_count=$(echo "$section_data" | grep -c '.' || echo 0)
+                total_pkgs=$((total_pkgs + section_count))
+            fi
+        fi
+    done
+
+    echo -e "  ${GREEN}✓${RESET} Exportado: ${BOLD}$BACKUP_FILE${RESET} ($total_pkgs pacotes, $file_lines linhas, $file_size)"
 fi
 
 # =============================================
@@ -416,17 +476,31 @@ if [ "$ACTION" = "import" ]; then
 
     install_system_pkg() {
         local pkg="$1"
+        local pkg_name="${pkg%%=*}"
         case "$DISTRO" in
             debian|ubuntu|linuxmint|pop*|elementary|kali)
-                sudo apt-get install -y "$pkg" 2>/dev/null
+                sudo apt-get install -y "$pkg_name" 2>/dev/null
                 ;;
             fedora|rhel|centos|rocky|alma*)
-                sudo dnf install -y "$pkg" 2>/dev/null
+                sudo dnf install -y "$pkg_name" 2>/dev/null
                 ;;
             arch|manjaro|endeavouros|garuda*)
-                sudo pacman -S --noconfirm "$pkg" 2>/dev/null
+                sudo pacman -S --noconfirm "$pkg_name" 2>/dev/null
                 ;;
         esac
+    }
+
+    install_pip_pkg() {
+        local pkg="$1"
+        local pkg_name="${pkg%%=*}"
+        local pip_cmd="pip3"
+        command -v pip3 &>/dev/null || pip_cmd="pip"
+
+        if [ -f /usr/lib/python3/EXTERNALLY-MANAGED ]; then
+            $pip_cmd install --break-system-packages "$pkg_name" 2>/dev/null
+        else
+            $pip_cmd install "$pkg_name" 2>/dev/null
+        fi
     }
 
     current_section=""
@@ -439,9 +513,105 @@ if [ "$ACTION" = "import" ]; then
         [[ "$line" =~ ^# ]] && continue
         [ -z "$line" ] && continue
 
+        if [[ "$line" =~ ^\{ ]]; then
+            if ! command -v jq &>/dev/null; then
+                echo -e "  ${RED}Formato JSON detectado mas 'jq' nao encontrado.${RESET}"
+                echo -e "  ${YELLOW}Instale jq ou use formato txt para importacao.${RESET}"
+                exit 1
+            fi
+            current_section=""
+            installed=0
+            failed=0
+
+            for section in system snap flatpak npm pip cargo brew; do
+                pkgs=$(jq -r --arg s "$section" '.[$s] // [] | .[]' "$BACKUP_FILE" 2>/dev/null || true)
+                if [ -n "$pkgs" ]; then
+                    echo -e "  ${BOLD}── Secao: $section ──${RESET}"
+                    while IFS= read -r pkg; do
+                        [ -z "$pkg" ] && continue
+                        if $DRY_RUN; then
+                            printf "  ${DIM}[dry-run]${RESET} %-20s %s\n" "[$section]" "$pkg"
+                            continue
+                        fi
+                        case "$section" in
+                            system)
+                                if install_system_pkg "$pkg"; then
+                                    printf "  ${GREEN}✓${RESET} %-20s %s\n" "[system]" "$pkg"
+                                    installed=$((installed + 1))
+                                else
+                                    printf "  ${RED}✗${RESET} %-20s %s\n" "[system]" "$pkg"
+                                    failed=$((failed + 1))
+                                fi
+                                ;;
+                            snap)
+                                if sudo snap install "$pkg" 2>/dev/null; then
+                                    printf "  ${GREEN}✓${RESET} %-20s %s\n" "[snap]" "$pkg"
+                                    installed=$((installed + 1))
+                                else
+                                    printf "  ${RED}✗${RESET} %-20s %s\n" "[snap]" "$pkg"
+                                    failed=$((failed + 1))
+                                fi
+                                ;;
+                            flatpak)
+                                if flatpak install -y "$pkg" 2>/dev/null; then
+                                    printf "  ${GREEN}✓${RESET} %-20s %s\n" "[flatpak]" "$pkg"
+                                    installed=$((installed + 1))
+                                else
+                                    printf "  ${RED}✗${RESET} %-20s %s\n" "[flatpak]" "$pkg"
+                                    failed=$((failed + 1))
+                                fi
+                                ;;
+                            npm)
+                                if npm install -g "$pkg" 2>/dev/null; then
+                                    printf "  ${GREEN}✓${RESET} %-20s %s\n" "[npm]" "$pkg"
+                                    installed=$((installed + 1))
+                                else
+                                    printf "  ${RED}✗${RESET} %-20s %s\n" "[npm]" "$pkg"
+                                    failed=$((failed + 1))
+                                fi
+                                ;;
+                            pip)
+                                if install_pip_pkg "$pkg"; then
+                                    printf "  ${GREEN}✓${RESET} %-20s %s\n" "[pip]" "$pkg"
+                                    installed=$((installed + 1))
+                                else
+                                    printf "  ${RED}✗${RESET} %-20s %s\n" "[pip]" "$pkg"
+                                    failed=$((failed + 1))
+                                fi
+                                ;;
+                            cargo)
+                                if cargo install "$pkg" 2>/dev/null; then
+                                    printf "  ${GREEN}✓${RESET} %-20s %s\n" "[cargo]" "$pkg"
+                                    installed=$((installed + 1))
+                                else
+                                    printf "  ${RED}✗${RESET} %-20s %s\n" "[cargo]" "$pkg"
+                                    failed=$((failed + 1))
+                                fi
+                                ;;
+                            brew)
+                                if brew install "$pkg" 2>/dev/null; then
+                                    printf "  ${GREEN}✓${RESET} %-20s %s\n" "[brew]" "$pkg"
+                                    installed=$((installed + 1))
+                                else
+                                    printf "  ${RED}✗${RESET} %-20s %s\n" "[brew]" "$pkg"
+                                    failed=$((failed + 1))
+                                fi
+                                ;;
+                        esac
+                    done <<< "$pkgs"
+                fi
+            done
+
+            echo ""
+            echo "  ─────────────────────────────────"
+            echo -e "  ${GREEN}✓${RESET} Importados: ${GREEN}${BOLD}$installed${RESET}  |  Falhas: ${RED}${BOLD}$failed${RESET}"
+            echo "  ─────────────────────────────────"
+            exit 0
+        fi
+
         if [[ "$line" =~ ^\[.*\]$ ]]; then
             current_section=$(echo "$line" | tr -d '[]')
-            echo -e "  ${BOLD}── Seção: $current_section ──${RESET}"
+            echo -e "  ${BOLD}── Secao: $current_section ──${RESET}"
             continue
         fi
 
@@ -488,7 +658,7 @@ if [ "$ACTION" = "import" ]; then
                 fi
                 ;;
             pip)
-                if pip3 install "$line" 2>/dev/null || pip install "$line" 2>/dev/null; then
+                if install_pip_pkg "$line"; then
                     printf "  ${GREEN}✓${RESET} %-20s %s\n" "[pip]" "$line"
                     installed=$((installed + 1))
                 else
@@ -502,6 +672,15 @@ if [ "$ACTION" = "import" ]; then
                     installed=$((installed + 1))
                 else
                     printf "  ${RED}✗${RESET} %-20s %s\n" "[cargo]" "$line"
+                    failed=$((failed + 1))
+                fi
+                ;;
+            brew)
+                if brew install "$line" 2>/dev/null; then
+                    printf "  ${GREEN}✓${RESET} %-20s %s\n" "[brew]" "$line"
+                    installed=$((installed + 1))
+                else
+                    printf "  ${RED}✗${RESET} %-20s %s\n" "[brew]" "$line"
                     failed=$((failed + 1))
                 fi
                 ;;
@@ -534,51 +713,101 @@ if [ "$ACTION" = "diff" ]; then
     trap 'rm -rf "$TMPWORK"' EXIT
     trap 'exit 130' INT TERM
 
-    current_system=$(collect_system 2>/dev/null)
-    echo "$current_system" > "$TMPWORK/current_system.txt"
+    is_json=false
+    first_char=$(head -c1 "$BACKUP_FILE" | tr -d '[:space:]')
+    [ "$first_char" = "{" ] && is_json=true
 
-    backup_system=$(grep -A9999 '^\[system\]' "$BACKUP_FILE" 2>/dev/null | grep -v '^\[' | grep -v '^#' | grep -v '^$' | sort)
-    echo "$backup_system" > "$TMPWORK/backup_system.txt"
+    diff_section() {
+        local section="$1"
+        local current_pkgs="$2"
+        local backup_pkgs=""
 
-    only_in_backup=$(comm -23 "$TMPWORK/backup_system.txt" "$TMPWORK/current_system.txt" 2>/dev/null)
-    only_in_current=$(comm -13 "$TMPWORK/backup_system.txt" "$TMPWORK/current_system.txt" 2>/dev/null)
+        if $is_json; then
+            if command -v jq &>/dev/null; then
+                backup_pkgs=$(jq -r --arg s "$section" '.[$s] // [] | .[]' "$BACKUP_FILE" 2>/dev/null | sed 's/=.*//' || true)
+            fi
+        else
+            backup_pkgs=$(awk -v sec="$section" '
+                /^\[/ { in_sec = ($0 == "[" sec "]") }
+                in_sec && !/^\[/ && !/^#/ && NF { print }
+            ' "$BACKUP_FILE" 2>/dev/null | sed 's/=.*//' || true)
+        fi
 
-    missing_count=0
-    new_count=0
+        if [ -z "$backup_pkgs" ] && [ -z "$current_pkgs" ]; then
+            return
+        fi
 
-    if [ -n "$only_in_backup" ]; then
-        missing_count=$(echo "$only_in_backup" | grep -c '.' 2>/dev/null || echo 0)
-        missing_count=$(echo "$missing_count" | tr -d '[:space:]')
-    fi
-    if [ -n "$only_in_current" ]; then
-        new_count=$(echo "$only_in_current" | grep -c '.' 2>/dev/null || echo 0)
-        new_count=$(echo "$new_count" | tr -d '[:space:]')
-    fi
+        echo "$current_pkgs" | sort > "$TMPWORK/current_${section}.txt" 2>/dev/null || true
+        echo "$backup_pkgs" | sort > "$TMPWORK/backup_${section}.txt" 2>/dev/null || true
 
-    [[ "$missing_count" =~ ^[0-9]+$ ]] || missing_count=0
-    [[ "$new_count" =~ ^[0-9]+$ ]] || new_count=0
+        local only_backup only_current missing_count new_count
+        only_backup=$(comm -23 "$TMPWORK/backup_${section}.txt" "$TMPWORK/current_${section}.txt" 2>/dev/null || true)
+        only_current=$(comm -13 "$TMPWORK/backup_${section}.txt" "$TMPWORK/current_${section}.txt" 2>/dev/null || true)
 
-    if [ "$missing_count" -gt 0 ]; then
-        echo -e "  ${YELLOW}No backup mas nao instalados ($missing_count):${RESET}"
-        echo "$only_in_backup" | while IFS= read -r pkg; do
-            [ -z "$pkg" ] && continue
-            echo -e "    ${RED}- $pkg${RESET}"
-        done
-        echo ""
-    fi
+        missing_count=0
+        new_count=0
 
-    if [ "$new_count" -gt 0 ]; then
-        echo -e "  ${CYAN}Instalados mas nao no backup ($new_count):${RESET}"
-        echo "$only_in_current" | while IFS= read -r pkg; do
-            [ -z "$pkg" ] && continue
-            echo -e "    ${GREEN}+ $pkg${RESET}"
-        done
-        echo ""
-    fi
+        if [ -n "$only_backup" ]; then
+            missing_count=$(echo "$only_backup" | grep -c '.' 2>/dev/null || echo 0)
+            missing_count=$(echo "$missing_count" | tr -d '[:space:]')
+        fi
+        if [ -n "$only_current" ]; then
+            new_count=$(echo "$only_current" | grep -c '.' 2>/dev/null || echo 0)
+            new_count=$(echo "$new_count" | tr -d '[:space:]')
+        fi
 
-    if [ "$missing_count" -eq 0 ] && [ "$new_count" -eq 0 ]; then
-        echo -e "  ${GREEN}✓${RESET} Nenhuma diferenca encontrada no escopo system"
+        [[ "$missing_count" =~ ^[0-9]+$ ]] || missing_count=0
+        [[ "$new_count" =~ ^[0-9]+$ ]] || new_count=0
+
+        if [ "$missing_count" -gt 0 ] || [ "$new_count" -gt 0 ]; then
+            echo -e "  ${BOLD}── $section ──${RESET}"
+
+            if [ "$missing_count" -gt 0 ]; then
+                echo -e "    ${YELLOW}No backup mas nao instalados ($missing_count):${RESET}"
+                echo "$only_backup" | while IFS= read -r pkg; do
+                    [ -z "$pkg" ] && continue
+                    echo -e "      ${RED}- $pkg${RESET}"
+                done
+            fi
+
+            if [ "$new_count" -gt 0 ]; then
+                echo -e "    ${CYAN}Instalados mas nao no backup ($new_count):${RESET}"
+                echo "$only_current" | while IFS= read -r pkg; do
+                    [ -z "$pkg" ] && continue
+                    echo -e "      ${GREEN}+ $pkg${RESET}"
+                done
+            fi
+            echo ""
+        fi
+    }
+
+    total_missing=0
+    total_new=0
+
+    for section in system snap flatpak npm pip cargo brew; do
+        if should_collect "$section"; then
+            current_pkgs=$(collect_section "$section")
+            diff_section "$section" "$current_pkgs"
+        fi
+    done
+
+    has_diff=false
+    for f in "$TMPWORK"/current_*.txt; do
+        [ -f "$f" ] || continue
+        sec=$(basename "$f" | sed 's/current_//;s/\.txt//')
+        backup_file="$TMPWORK/backup_${sec}.txt"
+        [ -f "$backup_file" ] || continue
+        if ! comm -23 "$backup_file" "$f" | grep -q '.' 2>/dev/null && \
+           ! comm -13 "$backup_file" "$f" | grep -q '.' 2>/dev/null; then
+            continue
+        fi
+        has_diff=true
+    done
+
+    if [ "$has_diff" = false ]; then
+        echo -e "  ${GREEN}✓${RESET} Nenhuma diferenca encontrada"
     fi
 fi
 
 echo ""
+exit 0
