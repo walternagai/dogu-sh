@@ -103,6 +103,9 @@ SCRIPT_DESC=(
     [dir-summary.sh]="Resumo de diretorio: tipos, tamanhos, barras visuais, subdirs e idade"
     [md-to-pdf.sh]="Converte arquivo Markdown (.md) para PDF usando pandoc + XeLaTeX"
     [yt-transcript.sh]="Baixa transcricoes de videos do YouTube (EN e PT-BR)"
+    [api-tester.sh]="Teste rapido de APIs REST com formatacao JSON"
+    [dependency-checker.sh]="Verifica dependencias externas do projeto dogu-sh"
+    [url-shortener.sh]="Encurta URLs usando is.gd"
 )
 
 declare -A SCRIPT_CATEGORY
@@ -185,6 +188,9 @@ SCRIPT_CATEGORY=(
     [dir-summary.sh]="Sistema e Manutencao"
     [md-to-pdf.sh]="Produtividade e Notas"
     [yt-transcript.sh]="Produtividade e Notas"
+    [api-tester.sh]="Rede e Lookup"
+    [dependency-checker.sh]="Sistema e Manutencao"
+    [url-shortener.sh]="Produtividade e Notas"
 )
 
 CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup" "Seguranca e Criptografia")
