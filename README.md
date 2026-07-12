@@ -87,6 +87,7 @@ Uma coleção de **76 ferramentas Bash precisas** para artesãos do terminal. N�
 - `pdf-to-jpg.sh`: Converte arquivos `.pdf` em imagens JPG via `pdftoppm`, com controle de qualidade, resolução e páginas.
 - `md-to-pdf.sh`: Converte arquivos `.md` para PDF usando pandoc + XeLaTeX com suporte a imagens PNG e SVG.
 - `xlsx-to-csv.sh`: Converte arquivos `.xlsx` para CSV via openpyxl — cada aba vira um `.csv` separado.
+- `ris-to-csv.sh`: Converte arquivos `.ris` (citações bibliográficas) para CSV — colunas padrão, `--all-fields` ou `--fields` customizados, suporte a lote e modo recursivo.
 - `yt-transcript.sh`: Baixa transcrições de vídeos do YouTube em inglês e/ou português (txt, srt, vtt).
 
 ### 🖥️ Sistema e Monitoramento
@@ -191,6 +192,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `pdf-to-jpg.sh` | `pdftoppm` (`poppler-utils`/`poppler`) |
 | `md-to-pdf.sh` | `pandoc`, `texlive-xetex`, `rsvg-convert` (`librsvg2-bin` para SVG) |
 | `xlsx-to-csv.sh` | `python3`, `openpyxl` (pip) |
+| `ris-to-csv.sh` | `awk` (`gawk`) |
 | `yt-transcript.sh` | `yt-dlp`, `jq` (opcional, para pretty-print) |
 | `fzf` (opcional) | habilita menus interativos no `menu-launcher.sh` e em scripts com seletor |
 
