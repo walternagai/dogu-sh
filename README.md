@@ -44,6 +44,7 @@ Uma coleção de **76 ferramentas Bash precisas** para artesãos do terminal. N�
 - `hunt-duplicates.sh`: Busca de arquivos duplicados via SHA-256 (v2 com 18 melhorias).
 - `organize-downloads.sh`: Organização automática de arquivos por extensão.
 - `dir-summary.sh`: Resumo de diretório com distribuição visual, top arquivos, subdiretórios e idade.
+- `fix-exec-bit.sh`: Remove o bit de execução de arquivos de dados/documentos (útil após copiar de NTFS/exFAT, onde arquivos regulares ganham `+x` indevidamente).
 - `update-all.sh`: Atualiza pacotes do sistema + linguagens (npm, pip, cargo, brew) em um comando.
 - `package-list-backup.sh`: Exporta/importa lista de pacotes instalados para replicar máquina.
 - `snap-flatpak-manager.sh`: Lista, atualiza e limpa snaps e flatpaks.
@@ -194,6 +195,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `xlsx-to-csv.sh` | `python3`, `openpyxl` (pip) |
 | `ris-to-csv.sh` | `awk` (`gawk`) |
 | `yt-transcript.sh` | `yt-dlp`, `jq` (opcional, para pretty-print) |
+| `fix-exec-bit.sh` | nenhum (coreutils: `find`, `chmod`, `stat`, `xargs`) |
 | `fzf` (opcional) | habilita menus interativos no `menu-launcher.sh` e em scripts com seletor |
 
 ## 📝 Notas
