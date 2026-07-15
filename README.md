@@ -41,6 +41,7 @@ Uma coleção de **76 ferramentas Bash precisas** para artesãos do terminal. N�
 - `disk-health.sh`: Monitoramento de saúde SMART do disco (suporte a NVMe).
 - `disk-scanner.sh`: Identificação de arquivos e pastas volumosas.
 - `disk-space.sh`: Espaço disponível nos discos com identificação de tipo (SSD/NVMe/HDD).
+- `partitions-list.sh`: Lista todas as partições (montadas ou não) com identificação de tipo de disco.
 - `hunt-duplicates.sh`: Busca de arquivos duplicados via SHA-256 (v2 com 18 melhorias).
 - `organize-downloads.sh`: Organização automática de arquivos por extensão.
 - `dir-summary.sh`: Resumo de diretório com distribuição visual, top arquivos, subdiretórios e idade.
@@ -166,6 +167,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `docker-*.sh` | `docker` (e `docker-compose` para compose-manager) |
 | `disk-health.sh` | `smartmontools` (smartctl) |
 | `disk-space.sh` | `lsblk` (util-linux, presente por padrão) |
+| `partitions-list.sh` | `lsblk` (util-linux, presente por padrão) |
 | `folder-sync.sh`, `quick-backup.sh` | `rsync` |
 | `setup-workspace.sh` | `wmctrl`, `xdotool`, `xrandr` |
 | `speedtest-log.sh` | `speedtest-cli` |
