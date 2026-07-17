@@ -1,6 +1,6 @@
 #!/bin/bash
-# pomodor.sh — Timer Pomodoro com notificacoes (Linux)
-# Uso: ./pomodor.sh
+# pomodoro-timer.sh — Timer Pomodoro com notificacoes (Linux)
+# Uso: ./pomodoro-timer.sh
 # Opcoes:
 #   -w, --work MIN       Minutos de trabalho (padrao: 25)
 #   -b, --break MIN      Minutos de pausa (padrao: 5)
@@ -59,9 +59,9 @@ while [[ $# -gt 0 ]]; do
         --no-sound) NO_SOUND=true; shift ;;
         --help|-h)
             echo ""
-            echo "  pomodor.sh — Timer Pomodoro com notificacoes"
+            echo "  pomodoro-timer.sh — Timer Pomodoro com notificacoes"
             echo ""
-            echo "  Uso: ./pomodor.sh [opcoes]"
+            echo "  Uso: ./pomodoro-timer.sh [opcoes]"
             echo ""
             echo "  Opcoes:"
             echo "    -w, --work MIN        Minutos de trabalho (padrao: 25)"
@@ -75,13 +75,13 @@ while [[ $# -gt 0 ]]; do
             echo "    --version             Mostra versao"
             echo ""
             echo "  Exemplos:"
-            echo "    ./pomodor.sh"
-            echo "    ./pomodor.sh -w 50 -b 10"
-            echo "    ./pomodor.sh --status"
+            echo "    ./pomodoro-timer.sh"
+            echo "    ./pomodoro-timer.sh -w 50 -b 10"
+            echo "    ./pomodoro-timer.sh --status"
             echo ""
             exit 0
             ;;
-        --version|-V) echo "pomodor.sh $VERSION"; exit 0 ;;
+        --version|-V) echo "pomodoro-timer.sh $VERSION"; exit 0 ;;
         --) shift; break ;;
         *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac

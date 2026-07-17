@@ -1605,15 +1605,15 @@ do_status() {
 # GENERATE SAMPLES
 # ==============================================================================
 
-SAMPLES_SCRIPT="$SCRIPT_DIR/projetos_por_linguagem.py"
+SAMPLES_SCRIPT="$SCRIPT_DIR/projetos-por-linguagem.py"
 
 do_generate_samples() {
     local force="${1:-}"
     print_header "Generating Pedagogical Sample Projects"
 
     if [ ! -f "$SAMPLES_SCRIPT" ]; then
-        log_error "projetos_por_linguagem.py not found at: $SAMPLES_SCRIPT"
-        log_info "Make sure the script is in the same directory as lab_manager.sh"
+        log_error "projetos-por-linguagem.py not found at: $SAMPLES_SCRIPT"
+        log_info "Make sure the script is in the same directory as lab-manager.sh"
         return 1
     fi
 
@@ -1822,7 +1822,7 @@ show_help() {
 Lab Manager - Unified Development Environment Setup
 
 USAGE:
-    ./lab_manager.sh [COMMAND] [COMPONENTS...] [OPTIONS]
+    ./lab-manager.sh [COMMAND] [COMPONENTS...] [OPTIONS]
 
 COMMANDS:
     (none)              Interactive menu
@@ -1831,7 +1831,7 @@ COMMANDS:
     test                Run smoke tests
     validate            Validate and generate JSON report
     uninstall           Remove components (safe by default)
-    generate-samples    Generate pedagogical test projects (from projetos_por_linguagem.py)
+    generate-samples    Generate pedagogical test projects (from projetos-por-linguagem.py)
     status              Show manifest and system status
     restore             Restore backed-up config files
     help                Show this help
@@ -1848,18 +1848,18 @@ OPTIONS:
     -V, --version   Mostra versao
 
 EXAMPLES:
-    ./lab_manager.sh
-    ./lab_manager.sh install all
-    ./lab_manager.sh install python nodejs rust
-    ./lab_manager.sh configure shell
-    ./lab_manager.sh test python ai
-    ./lab_manager.sh validate --json
-    ./lab_manager.sh uninstall ai --safe
-    ./lab_manager.sh uninstall all
-    ./lab_manager.sh generate-samples
-    ./lab_manager.sh generate-samples --force
-    ./lab_manager.sh status
-    ./lab_manager.sh restore bashrc
+    ./lab-manager.sh
+    ./lab-manager.sh install all
+    ./lab-manager.sh install python nodejs rust
+    ./lab-manager.sh configure shell
+    ./lab-manager.sh test python ai
+    ./lab-manager.sh validate --json
+    ./lab-manager.sh uninstall ai --safe
+    ./lab-manager.sh uninstall all
+    ./lab-manager.sh generate-samples
+    ./lab-manager.sh generate-samples --force
+    ./lab-manager.sh status
+    ./lab-manager.sh restore bashrc
 HELP
 }
 
@@ -1882,7 +1882,7 @@ parse_args() {
             --safe)  shift ;;
             --force) shift ;;
             -h|--help) show_help; exit 0 ;;
-            -V|--version) echo "lab_manager.sh $VERSION"; exit 0 ;;
+            -V|--version) echo "lab-manager.sh $VERSION"; exit 0 ;;
             all) comp_args=("${COMPONENTS_ALL[@]}"); shift ;;
         --) shift; break ;;
             *) comp_args+=("$1"); shift ;;

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-download_pdfs.py — Baixa PDFs de artigos acadêmicos a partir de uma lista de URLs.
+download-pdfs.py — Baixa PDFs de artigos acadêmicos a partir de uma lista de URLs.
 
 Suporte: IEEE Xplore, ACM, Springer, ScienceDirect, Scopus, e fallback genérico.
 Baixa apenas conteúdo publicamente acessível (open access).
 
 Uso:
-    python3 download_pdfs.py urls.txt
-    python3 download_pdfs.py urls.txt --outdir ./meus_pdfs
+    python3 download-pdfs.py urls.txt
+    python3 download-pdfs.py urls.txt --outdir ./meus_pdfs
 
 Formato do arquivo de entrada: uma URL por linha.
 """

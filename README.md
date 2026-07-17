@@ -80,7 +80,7 @@ Uma coleção de **76 ferramentas Bash precisas** para artesãos do terminal. N�
 - `base64-tool.sh`: Codifica/decodifica Base64, URL encode, hex.
 - `clipboard-manager.sh`: Histórico do clipboard com busca e persistência.
 - `setup-workspace.sh`: Gerenciador de layouts de multi-monitores com perfis salvos.
-- `pomodor.sh`: Timer Pomodoro com notificações.
+- `pomodoro-timer.sh`: Timer Pomodoro com notificações.
 - `speedtest-log.sh`: Histórico de testes de velocidade de internet em CSV.
 - `wifi-scanner.sh`: Escaneamento de redes Wi-Fi e sugestão de canais.
 - `log-analyzer.sh`: Analisador de logs com coloração e filtros.
