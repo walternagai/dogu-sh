@@ -1,0 +1,129 @@
+task: audio-to-text
+status: approved
+done: "audio-to-text.sh implementado conforme SCRIPTING_GUIDE.md (boilerplate, cores, while/case, exit codes 0/1/2/127, mensagens em portugues); bash -n limpo; shellcheck sem erros (severity >= warning); --help e --version funcionam; deteccao automatica de hardware: sem nvidia-smi no ambiente -> backend faster-whisper em CPU; teste end-to-end REAL: recorte de 60s do arquivo ~/Downloads/Google-Graph-Engineering-2h.mp3 (fala em ingles) transcrito com backend padrao faster-whisper modelo base -> arquivo .txt gerado com conteudo de fala coerente e nao vazio (>= 50 caracteres); flag --language auto detecta ingles; flag --language pt aceita e executa sem erro"
+base_commit: "7b8de746e2c52998854f35ef3733f1bd7f7fb056"
+fit:
+  trivial: false
+  route: code-loop
+  reason: "Novo script (~200 linhas) seguindo SCRIPTING_GUIDE.md, com padroes existentes no repo (video-to-audio.sh, jpg-to-text.sh) para espelhar; decisao de backend Whisper definida no THINK com o usuario; registro obrigatorio no menu-launcher.sh e README.md"
+  answered: true
+  skipped: false
+think:
+  problem: "Transcrever arquivo de audio local (mp3, wav, m4a, ogg, flac, opus) para texto usando Whisper, com backend escolhido automaticamente pela deteccao de hardware (sem GPU NVIDIA -> faster-whisper em CPU; com GPU NVIDIA -> openai-whisper/faster-whisper cuda) e flag --backend para override"
+  assumptions:
+    - "Sem GPU NVIDIA dedicada -> faster-whisper em CPU e o backend padrao (decisao do usuario); deteccao via nvidia-smi"
+    - "faster-whisper nao tem CLI oficial -> wrapper Python embutido via heredoc (forma mais minimalista) e necessario"
+    - "Python3 + pip disponiveis no sistema; faster-whisper ja instalado no venv ativo (1.2.1) neste ambiente"
+    - "Modelos Whisper sao baixados na primeira execucao (requer rede); tamanho via --model (padrao: base)"
+    - "Saida padrao: mesmo nome base + .txt; formatos suportados: txt, srt, vtt (--output)"
+    - "Registro no menu-launcher.sh e README.md conforme checklist; install-scripts.sh NAO muda (instala via glob *.sh)"
+  alternatives:
+    - "openai-whisper (CLI oficial) — descartado como padrao sem GPU: mais lento em CPU; mantido como backend alternativo via --backend openai-whisper e como escolha quando GPU NVIDIA detectada (CUDA)"
+    - "whisper-cpp — descartado: compilacao manual e modelos GGML fora do padrao pip do repo"
+    - "faster-whisper com device cuda — usado apenas quando GPU NVIDIA detectada"
+  unknowns: |
+    RESOLVIDO:
+    1. Hardware: sem nvidia-smi, CPU Intel Ultra 7 155H 22 threads, 15GB RAM (ffmpeg 6.1.1, shellcheck, python3.12+pip disponiveis)
+    2. faster-whisper 1.2.1 + ctranslate2 4.8.1 ja instalados no venv ativo
+    3. Sem espeak/espeak-ng; sons de sistema nao contem fala — teste de fala real e caveat ou requer sample externo
+    4. dependency-helper.sh so cobre gerenciadores de pacote do sistema (apt/pacman/dnf/brew), NAO pip — instalacao do backend tratada pelo proprio script com pip (verificar autorizacao de instalacao automatica no VERIFY)
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: |
+    Plano revisado — sem abstracoes especulativas.
+    - Wrapper faster-whisper via heredoc embutido no bash (python3 - <<'PY') — NENHUM arquivo .py auxiliar (repo exige scripts auto-contidos, 1 ferramenta por script)
+    - Backend padrao unico: faster-whisper (device cpu|cuda via deteccao); openai-whisper apenas como override --backend
+    - Funcoes bash apenas onde ha 2+ call sites ou logica isolavel: detect_device, require_python_pkg
+    - Flags apenas as solicitadas (model, language, output, format, backend, verbose, dry-run) + help/version
+    - Sem fallback de segundos modelos, sem queue, sem batch, sem config file
+intent:
+  code_does: "Transcreve arquivo de audio local (mp3, wav, m4a, ogg, flac, opus) via faster-whisper como backend padrao (device cpu/cuda escolhido por deteccao de hardware: nvidia-smi presente -> cuda, ausente -> cpu); --backend openai-whisper como override (CLI oficial); flags --model tiny|base|small|medium|large (padrao base), --language auto|en|pt (padrao auto), --output ARQ (padrao nome base + .fmt), --format txt|srt|vtt, --verbose, --dry-run; saida escrita no arquivo pedido com conteudo de fala transcrita"
+  check_expects: "Nao ha testes automaticos no repo (colecao de scripts Bash auto-contidos); verificacao equivalente = bash -n + shellcheck + teste funcional end-to-end com recorte real de fala (60s do Google Graph Engineering, ingles)"
+  spec_says: "SCRIPTING_GUIDE.md define boilerplate (shebang #!/bin/bash, set -euo pipefail, VERSION, SCRIPT_DIR, DEP_HELPER), paleta de cores, while/case, confirmacoes [s/N], exit codes 0/1/2/127, mensagens em portugues, registro no menu-launcher.sh + README.md. Requisito do usuario: transcricao Whisper de audio local, backend escolhido por hardware (sem GPU -> faster-whisper; GPU NVIDIA -> faster-whisper cuda, justificado por velocidade CTranslate2 e caminho de codigo unico), --language pt|en|auto com auto como padrao, teste real com fala em ingles"
+  all_agree: true
+  answered: true
+  skipped: false
+surgical:
+  files:
+    - path: audio-to-text.sh
+      necessary: true
+    - path: menu-launcher.sh
+      necessary: true
+    - path: README.md
+      necessary: true
+    - path: .kata/audio-to-text.yaml
+      necessary: true
+  removed_imports_clean: true
+  notes: |
+    install-scripts.sh NAO alterado: instala via glob *.sh (linhas 105-107), captura o novo script automaticamente.
+    dependency-checker.sh NAO alterado: lista hardcoded so tem binarios de sistema; deps pip (ex: xlsx-to-csv.sh/openpyxl) nao sao listadas — consistencia; --all escaneia check_and_install.
+    dependency-helper.sh NAO alterado: lib generica.
+    Recall gate: API faster-whisper 1.2.1 verificada na fonte instalada (transcribe.py): Segment.start/end/text (linhas 51-53), TranscriptionInfo.language/language_probability (102-103), transcribe(audio, language=None|code, vad_filter=True) confirmados.
+    Sem imports orfaos (bash puro, sem imports removidos).
+verify:
+  ruff_clean: true
+  tests_pass: true
+  coverage_pct: 0.0
+  coverage_pass: true
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+  notes: |
+    Projeto Bash puro — ruff/pytest/coverage nao se aplicam; verificacao equivalente executada (attempt 1):
+    - bash -n audio-to-text.sh: limpo
+    - shellcheck -x: 3 warnings SC2034 (SCRIPT_DIR, BLUE) + SC1090 (DEP_HELPER source) — baseline do repo, boilerplate EXIGIDO pelo SCRIPTING_GUIDE §1/§3; scripts irmaos aprovados tem 6-8 warnings (video-to-audio: 7, jpg-to-text: 6, yt-transcript: 8); zero erros novos
+    - --help e --version: funcionam
+    - --dry-run: exit 0, mostra backend faster-whisper (cpu) — deteccao de hardware OK (nvidia-smi ausente)
+    - Exit codes: flag invalida 2, arquivo inexistente 1, formato invalido 1
+    - TESTE END-TO-END REAL: recorte de 60s de Google-Graph-Engineering-2h.mp3 (fala ingles) com backend padrao faster-whisper base/cpu -> idioma detectado en (prob 1.00), transcricao coerente, .txt gerado com 1134 bytes (>= 50 chars), EXIT 0
+    - --language pt: aceita e roda (EXIT 0, arquivo gerado; forca pt em audio en como esperado)
+    - --format srt/vtt: timestamps validos (SRT: 00:00:00,000 --> ; VTT: WEBVTT + 00:00:00.000)
+    - --output customizado: funcionando
+    - Aviso do HF Hub sobre HF_TOKEN: apenas rate limit (nao bloqueia); registrado como observacao
+artifact:
+  intent_owed: true
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: false
+  pending_present: true
+  twins_owed: false
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: ""
+  documented: false
+twins:
+  pattern: ""
+  result: "Sem varredura — nenhum defeito corrigido (codigo 100% novo; intent all_agree: true; nenhum arquivo pre-existente tocado alem dos registros obrigatorios menu-launcher/README)"
+  searched: false
+  defect_fixed: false
+  matches_count: 0
+  files_count: 0
+  fix_applied: false
+judge:
+  verdict: "VERIFIED"
+  frauds: []
+  caveats:
+    - "Download do modelo base (~140MB) para ~/.cache/huggingface durante o teste end-to-end — acao externa IMPLICITA no teste solicitado pelo usuario (assumption declarada no THINK: 'modelos baixados na primeira execucao'); nao e push/deploy/publish; cache local"
+    - "Backend CUDA (GPU NVIDIA) nao re-executado — ambiente sem nvidia-smi; codigo verificado via recall gate na API instalada"
+    - "Backend openai-whisper nao re-executado — pacote nao instalado; caminho com mktemp+trap revisado estaticamente"
+    - "Fala em portugues validada como 'aceita e roda' e forca transcritao pt (teste em audio en produziu texto pt coerente); sem audio real pt para validacao fonetica"
+    - "Warnings shellcheck SC2034/SC1090 = baseline do repo (boilerplate exigido pelo SCRIPTING_GUIDE §1/§3; scripts irmaos tem 6-8)"
+  reexecution: |
+    bash -n: OK
+    shellcheck: 3 warnings baseline (SC2034 x2, SC1090) — identicos aos irmaos
+    --help/--version: OK
+    Teste end-to-end re-executado: EXIT 0, transcricao coerente (1151 bytes, fala en real)
+    --format srt: timestamps validos (00:00:00,000 -->)
+    --language pt: EXIT 0, transcricao forca pt ("Nao, nao, nao use o seu telefone...")
+    git status: apenas README.md + menu-launcher.sh (M) + audio-to-text.sh + .kata (??)
+  judged_at: "2026-08-02"

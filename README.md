@@ -92,6 +92,7 @@ Uma coleção de **86 ferramentas Bash precisas** para artesãos do terminal. N�
 - `ris-to-csv.sh`: Converte arquivos `.ris` (citações bibliográficas) para CSV — colunas padrão, `--all-fields` ou `--fields` customizados, suporte a lote e modo recursivo.
 - `yt-transcript.sh`: Baixa transcrições de vídeos do YouTube em inglês e/ou português (txt, srt, vtt).
 - `video-to-audio.sh`: Extrai a trilha de áudio de vídeos via `ffmpeg` (mp3, m4a, ogg, wav, flac, opus), com modo `--copy` sem re-encode.
+- `audio-to-text.sh`: Transcreve áudios locais via Whisper (`faster-whisper` em CPU/CUDA por padrão; `--backend openai-whisper` opcional; txt, srt, vtt; `--language auto|en|pt`).
 
 ### 🖥️ Sistema e Monitoramento
 - `battery-monitor.sh`: Status da bateria, alerta de nível baixo/crítico.
@@ -199,6 +200,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `ris-to-csv.sh` | `awk` (`gawk`) |
 | `yt-transcript.sh` | `yt-dlp`, `jq` (opcional, para pretty-print) |
 | `video-to-audio.sh` | `ffmpeg` |
+| `audio-to-text.sh` | `ffmpeg`, `python3`, `faster-whisper` (pip) |
 | `fix-exec-bit.sh` | nenhum (coreutils: `find`, `chmod`, `stat`, `xargs`) |
 | `fzf` (opcional) | habilita menus interativos no `menu-launcher.sh` e em scripts com seletor |
 
