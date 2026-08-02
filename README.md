@@ -2,7 +2,7 @@
 
 > **dōgu** (道具) — *substantivo japonês*: ferramenta, instrumento, utensílio.
 
-Uma coleção de **76 ferramentas Bash precisas** para artesãos do terminal. Não é um sistema, não é uma plataforma — é o seu kit de instrumentos para Docker, sistema, rede, produtividade, criptografia, conversão e muito mais em Linux/macOS.
+Uma coleção de **86 ferramentas Bash precisas** para artesãos do terminal. Não é um sistema, não é uma plataforma — é o seu kit de instrumentos para Docker, sistema, rede, produtividade, criptografia, conversão e muito mais em Linux/macOS.
 
 ## 🚀 Funcionalidades
 
@@ -91,6 +91,7 @@ Uma coleção de **76 ferramentas Bash precisas** para artesãos do terminal. N�
 - `xlsx-to-csv.sh`: Converte arquivos `.xlsx` para CSV via openpyxl — cada aba vira um `.csv` separado.
 - `ris-to-csv.sh`: Converte arquivos `.ris` (citações bibliográficas) para CSV — colunas padrão, `--all-fields` ou `--fields` customizados, suporte a lote e modo recursivo.
 - `yt-transcript.sh`: Baixa transcrições de vídeos do YouTube em inglês e/ou português (txt, srt, vtt).
+- `video-to-audio.sh`: Extrai a trilha de áudio de vídeos via `ffmpeg` (mp3, m4a, ogg, wav, flac, opus), com modo `--copy` sem re-encode.
 
 ### 🖥️ Sistema e Monitoramento
 - `battery-monitor.sh`: Status da bateria, alerta de nível baixo/crítico.
@@ -197,6 +198,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `xlsx-to-csv.sh` | `python3`, `openpyxl` (pip) |
 | `ris-to-csv.sh` | `awk` (`gawk`) |
 | `yt-transcript.sh` | `yt-dlp`, `jq` (opcional, para pretty-print) |
+| `video-to-audio.sh` | `ffmpeg` |
 | `fix-exec-bit.sh` | nenhum (coreutils: `find`, `chmod`, `stat`, `xargs`) |
 | `fzf` (opcional) | habilita menus interativos no `menu-launcher.sh` e em scripts com seletor |
 
