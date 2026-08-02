@@ -14,7 +14,7 @@ readonly BOLD='\033[1m'
 readonly DIM='\033[0;90m'
 readonly RESET='\033[0m'
 
-readonly VERSION="1.2.0"
+readonly VERSION="1.3.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN_DIR="$HOME/.local/bin"
 DRY_RUN=false
