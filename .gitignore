@@ -1,1 +1,4 @@
 tests/
+docker-stats.csv
+package-list-*.txt
+mdi-icons/
