@@ -34,12 +34,11 @@ error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then
+if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then
     source "$DEP_HELPER"
     INSTALLER=$(detect_installer)
-    check_and_install "xxd" "$INSTALLER"
-    check_and_install "python3" "$INSTALLER"
-    check_and_install "php" "$INSTALLER"
+    check_and_install "xxd" "$INSTALLER" "vim-common"
+    check_and_install "python3" "$INSTALLER" "python3"
 fi
 
 
@@ -188,7 +187,6 @@ case "$ACTION" in
         echo ""
         ;;
 
-        --) shift; break ;;
     *)
         echo ""
         echo -e "  ${BOLD}Base64 Tool${RESET}  ${DIM}v$VERSION${RESET}"
@@ -210,10 +208,17 @@ case "$ACTION" in
             4) ACTION="url-decode"; INPUT_TEXT="$text" ;;
             5) ACTION="hex-encode"; INPUT_TEXT="$text" ;;
             6) ACTION="hex-decode"; INPUT_TEXT="$text" ;;
-        --) shift; break ;;
             *) echo -e "  ${RED}Opcao invalida.${RESET}"; exit 1 ;;
         esac
 
-        exec "$0" $(echo "-$ACTION" | sed 's/url-encode/--url-encode/; s/url-decode/--url-decode/; s/hex-encode/--hex-encode/; s/hex-decode/--hex-decode/; s/encode/-e/; s/decode/-d/') "$text"
+        case "$ACTION" in
+            encode)     FLAG="-e" ;;
+            decode)     FLAG="-d" ;;
+            url-encode) FLAG="--url-encode" ;;
+            url-decode) FLAG="--url-decode" ;;
+            hex-encode) FLAG="--hex-encode" ;;
+            hex-decode) FLAG="--hex-decode" ;;
+        esac
+        exec "$0" "$FLAG" "$text"
         ;;
 esac

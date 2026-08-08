@@ -41,7 +41,7 @@ run_prune() {
 }
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
+if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
 
 
 
@@ -137,7 +137,6 @@ confirm_action() {
     read -r confirm < /dev/tty 2>/dev/null || confirm="n"
     case "$confirm" in
         [sS]) return 0 ;;
-        --) shift; break ;;
         *) return 1 ;;
     esac
 }

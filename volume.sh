@@ -34,13 +34,13 @@ error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then
+if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then
     source "$DEP_HELPER"
     INSTALLER=$(detect_installer)
-    check_and_install "wpctl" "$INSTALLER"
-    check_and_install "pactl" "$INSTALLER"
-    check_and_install "amixer" "$INSTALLER"
-    check_and_install "bc" "$INSTALLER"
+    check_and_install "wpctl" "$INSTALLER" "wireplumber"
+    check_and_install "pactl" "$INSTALLER" "pulseaudio-utils"
+    check_and_install "amixer" "$INSTALLER" "alsa-utils"
+    check_and_install "bc" "$INSTALLER" "bc"
 fi
 
 

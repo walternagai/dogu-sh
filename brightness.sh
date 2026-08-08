@@ -31,12 +31,12 @@ error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then
+if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then
     source "$DEP_HELPER"
     INSTALLER=$(detect_installer)
-    check_and_install "light" "$INSTALLER"
-    check_and_install "brightnessctl" "$INSTALLER"
-    check_and_install "xrandr" "$INSTALLER"
+    check_and_install "light" "$INSTALLER" "light"
+    check_and_install "brightnessctl" "$INSTALLER" "brightnessctl"
+    check_and_install "xrandr" "$INSTALLER" "x11-xserver-utils"
 fi
 
 
@@ -115,7 +115,6 @@ get_current() {
             local max=$(cat "/sys/class/backlight/$bl/max_brightness" 2>/dev/null || echo 100)
             echo $((cur * 100 / max))
             ;;
-        --) shift; break ;;
         *) echo "0" ;;
     esac
 }

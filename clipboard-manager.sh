@@ -66,7 +66,6 @@ get_clipboard() {
         wl-copy) wl-paste 2>/dev/null || true ;;
         xclip) xclip -selection clipboard -o 2>/dev/null || true ;;
         xsel) xsel --clipboard --output 2>/dev/null || true ;;
-        --) shift; break ;;
         *) echo "" ;;
     esac
 }
@@ -332,7 +331,6 @@ case "$ACTION" in
                     echo "" > "$HISTORY_FILE"
                     echo -e "  ${GREEN}✓${RESET} Historico do clipboard limpo"
                     ;;
-        --) shift; break ;;
                 *)
                     echo -e "  ${DIM}Limpeza cancelada.${RESET}"
                     ;;

@@ -114,7 +114,6 @@ get_current_theme() {
                 echo "unknown"
             fi
             ;;
-        --) shift; break ;;
         *)
             if command -v gsettings &>/dev/null; then
                 local pref=$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || echo "")
@@ -169,7 +168,6 @@ set_theme() {
                 fi
             fi
             ;;
-        --) shift; break ;;
         *)
             if command -v gsettings &>/dev/null; then
                 if [ "$mode" = "dark" ]; then

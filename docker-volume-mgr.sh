@@ -35,7 +35,7 @@ warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
+if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
 
 
 
@@ -116,10 +116,8 @@ format_bytes() {
 
 get_volume_size() {
     vname="$1"
-    mountpoint
     mountpoint=$(docker volume inspect --format '{{.Mountpoint}}' "$vname" 2>/dev/null)
     if [ -d "$mountpoint" ] 2>/dev/null; then
-        sz
         sz=$(sudo du -sb "$mountpoint" 2>/dev/null | awk '{print $1}')
         if [ -n "$sz" ] && [[ "$sz" =~ ^[0-9]+$ ]]; then
             echo "$sz"
@@ -133,7 +131,6 @@ get_volume_size() {
 
 is_orphan() {
     vname="$1"
-    count
     count=$(docker ps -a --filter "volume=$vname" -q 2>/dev/null | wc -l | tr -d ' ')
     [[ "$count" =~ ^[0-9]+$ ]] || count=0
     [ "$count" -eq 0 ]
@@ -170,9 +167,7 @@ case "$ACTION" in
 
             while IFS= read -r vname; do
                 [ -z "$vname" ] && continue
-                driver
                 driver=$(docker volume inspect --format '{{.Driver}}' "$vname" 2>/dev/null)
-                mountpoint
                 mountpoint=$(docker volume inspect --format '{{.Mountpoint}}' "$vname" 2>/dev/null)
                 short_name=$(echo "$vname" | cut -c1-28)
                 short_mount=$(echo "$mountpoint" | cut -c1-28)
@@ -230,7 +225,6 @@ case "$ACTION" in
 
             echo -ne "$orphan_list" | while IFS= read -r vname; do
                 [ -z "$vname" ] && continue
-                driver
                 driver=$(docker volume inspect --format '{{.Driver}}' "$vname" 2>/dev/null)
                 short_name=$(echo "$vname" | cut -c1-28)
                 sz="?"
@@ -263,7 +257,6 @@ case "$ACTION" in
         case "$confirm" in
             [sS])
                 ;;
-        --) shift; break ;;
             *)
                 echo -e "  ${DIM}Remocao cancelada.${RESET}"
                 ;;
@@ -303,7 +296,6 @@ case "$ACTION" in
             case "$confirm" in
                 [sS])
                     ;;
-        --) shift; break ;;
                 *)
                     echo -e "  ${DIM}Remocao cancelada.${RESET}"
                     ;;
@@ -377,7 +369,6 @@ case "$ACTION" in
             exit 1
         fi
 
-        vol_exists
         vol_exists=$(docker volume ls -q -f name="^${VOLUME_NAME}$" 2>/dev/null | wc -l | tr -d ' ')
 
         if [ "$vol_exists" -eq 0 ]; then

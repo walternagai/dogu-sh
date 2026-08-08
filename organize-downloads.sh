@@ -106,7 +106,6 @@ get_category() {
             echo "Codigo" ;;
         ttf|otf|woff|woff2|eot)
             echo "Fontes" ;;
-        --) shift; break ;;
         *)
             echo "Outros" ;;
     esac
@@ -214,7 +213,6 @@ if $RECURSIVE; then
         local_dir=$(dirname "$file")
 
         # Nao organizar arquivos que ja estao dentro de subpastas de categoria
-        local parent_dir
         parent_dir=$(basename "$local_dir")
         case "$parent_dir" in
             Imagens|Documentos|Videos|Audio|Instaladores|Compactados|Codigo|Fontes|Outros)

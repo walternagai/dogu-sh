@@ -112,6 +112,8 @@ SCRIPT_DESC=(
     [api-tester.sh]="Teste rapido de APIs REST com formatacao JSON"
     [dependency-checker.sh]="Verifica dependencias externas do projeto dogu-sh"
     [url-shortener.sh]="Encurta URLs usando is.gd"
+    [download-icons.sh]="Baixa e converte icones Material Design (MDI) para PNG"
+    [lab-manager.sh]="Gerenciador de ambiente de desenvolvimento (toolchains)"
 )
 
 declare -A SCRIPT_CATEGORY
@@ -203,6 +205,8 @@ SCRIPT_CATEGORY=(
     [api-tester.sh]="Rede e Lookup"
     [dependency-checker.sh]="Sistema e Manutencao"
     [url-shortener.sh]="Produtividade e Notas"
+    [download-icons.sh]="Sistema e Manutencao"
+    [lab-manager.sh]="Instalacao e Execucao"
 )
 
 CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup" "Seguranca e Criptografia")

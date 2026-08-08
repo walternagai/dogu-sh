@@ -164,7 +164,6 @@ show_status() {
         Charging) status_color="${GREEN}" ;;
         Discharging) status_color="${YELLOW}" ;;
         Full) status_color="${GREEN}" ;;
-        --) shift; break ;;
         *) status_color="${DIM}" ;;
     esac
     echo -e "  Status:      ${status_color}${BOLD}${status}${RESET}"

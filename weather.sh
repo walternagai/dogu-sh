@@ -75,7 +75,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if ! command -v curl &>/dev/null; then
-    check_and_install curl "$(detect_installer)" "curl" 2>/dev/null || { echo -e "${RED}[ERROR] curl necessario.${RESET}" >&2; exit 1; }
+    check_and_install curl "$(detect_installer)" "curl" 2>/dev/null || { echo -e "${RED}[ERROR] curl necessario.${RESET}" >&2; exit 127; }
 fi
 
 if [ -z "$LOCATION" ]; then
@@ -113,7 +113,6 @@ case "$FORMAT" in
         fi
         echo -e "  ${CYAN}${result}${RESET}"
         ;;
-        --) shift; break ;;
     *)
         echo -e "  ${RED}Formato desconhecido: $FORMAT${RESET}"
         echo -e "  ${DIM}Use: full, compact ou simple${RESET}"

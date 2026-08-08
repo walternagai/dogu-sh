@@ -28,7 +28,7 @@ warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "bc" "$INSTALLER" "bc"; fi
+if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "bc" "$INSTALLER" "bc"; fi
 
 
 
@@ -151,7 +151,6 @@ clean_dir() {
         read -r confirm < /dev/tty 2>/dev/null || confirm="n"
         case "$confirm" in
             [sS]) ;;
-        --) shift; break ;;
             *) return ;;
         esac
     fi
@@ -205,7 +204,6 @@ clean_files_pattern() {
         read -r confirm < /dev/tty 2>/dev/null || confirm="n"
         case "$confirm" in
             [sS]) ;;
-        --) shift; break ;;
             *) return ;;
         esac
     fi
@@ -299,7 +297,6 @@ if [ "$tmp_user_files" -gt 0 ] && [ "$tmp_user_size" -gt 0 ]; then
             read -r confirm < /dev/tty 2>/dev/null || confirm="n"
             case "$confirm" in
                 [sS]) ;;
-        --) shift; break ;;
                 *) tmp_user_size=0 ;;
             esac
         fi
@@ -331,16 +328,15 @@ for profile_dir in "$HOME/.cache/google-chrome" "$HOME/.cache/chromium" "$HOME/.
     fi
 done
 
-for profile_dir in "$HOME/.cache/mozilla/firefox"; do
-    if [ -d "$profile_dir" ]; then
-        for cache_sub in "$profile_dir"/*/cache2; do
-            if [ -d "$cache_sub" ]; then
-                profile_hash=$(basename "$(dirname "$cache_sub")")
-                clean_dir "Firefox ($profile_hash)" "$cache_sub" "Cache de pagina, recriado ao navegar"
-            fi
-        done
-    fi
-done
+profile_dir="$HOME/.cache/mozilla/firefox"
+if [ -d "$profile_dir" ]; then
+    for cache_sub in "$profile_dir"/*/cache2; do
+        if [ -d "$cache_sub" ]; then
+            profile_hash=$(basename "$(dirname "$cache_sub")")
+            clean_dir "Firefox ($profile_hash)" "$cache_sub" "Cache de pagina, recriado ao navegar"
+        fi
+    done
+fi
 
 # =============================================
 # Gerenciadores de pacotes

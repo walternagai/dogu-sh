@@ -30,14 +30,16 @@ error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then
+if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then
     source "$DEP_HELPER"
     INSTALLER=$(detect_installer)
     check_and_install "tesseract" "$INSTALLER" "tesseract-ocr"
 fi
 
 if ! command -v tesseract &>/dev/null; then
-    error "tesseract nao encontrado. Instale com: sudo apt install tesseract-ocr"
+    if [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then
+        error "tesseract nao encontrado. Instale com: sudo apt install tesseract-ocr"
+    fi
 fi
 
 INPUT_FILE=""

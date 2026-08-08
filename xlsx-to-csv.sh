@@ -10,7 +10,7 @@
 #       --overwrite         Sobrescreve arquivos .csv existentes sem perguntar
 #       --dry-run           Exibe o que seria feito sem converter
 #   -h, --help              Mostra esta ajuda
-#   -v, --version           Mostra versao
+#   -V, --version           Mostra versao
 
 set -euo pipefail
 
@@ -47,7 +47,7 @@ show_help() {
     echo "        --overwrite        Sobrescreve .csv existentes sem perguntar"
     echo "        --dry-run          Simula conversao sem gravar arquivos"
     echo "    -h, --help             Mostra esta ajuda"
-    echo "    -v, --version          Mostra versao"
+    echo "    -V, --version          Mostra versao"
     echo ""
     echo "  Nomeacao dos arquivos de saida:"
     echo "    - 1 aba:       nome_arquivo.csv"
@@ -68,7 +68,7 @@ show_help() {
 for _arg in "$@"; do
     case "$_arg" in
         -h|--help)    show_help; exit 0 ;;
-        -v|--version) echo "xlsx-to-csv.sh $VERSION"; exit 0 ;;
+        -V|--version) echo "xlsx-to-csv.sh $VERSION"; exit 0 ;;
     esac
 done
 
@@ -129,7 +129,7 @@ while [[ $# -gt 0 ]]; do
         --dry-run)
             DRY_RUN=true; shift ;;
         -h|--help)    show_help; exit 0 ;;
-        -v|--version) echo "xlsx-to-csv.sh $VERSION"; exit 0 ;;
+        -V|--version) echo "xlsx-to-csv.sh $VERSION"; exit 0 ;;
         -*)
             echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2
             exit 2

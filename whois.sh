@@ -80,7 +80,7 @@ if [ -z "$DOMAIN" ]; then
 fi
 
 if ! command -v whois &>/dev/null; then
-    check_and_install whois "$(detect_installer)" "whois" 2>/dev/null || { echo -e "${RED}[ERROR] whois necessario.${RESET}" >&2; exit 1; }
+    check_and_install whois "$(detect_installer)" "whois" 2>/dev/null || { echo -e "${RED}[ERROR] whois necessario.${RESET}" >&2; exit 127; }
 fi
 
 DOMAIN=$(echo "$DOMAIN" | sed 's|https\?://||; s|/.*||')
@@ -104,16 +104,16 @@ echo -e "  ${BOLD}── WHOIS: ${DOMAIN} ──${RESET}"
 echo ""
 
 declare -A fields
-fields[("Domain Name")]=""
-fields[("Registrar")]=""
-fields[("Registrar URL")]=""
-fields[("Creation Date")]=""
-fields[("Registry Expiry Date")]=""
-fields[("Updated Date")]=""
-fields[("Registrar Abuse Contact Email")]=""
-fields[("Domain Status")]=""
-fields[("Name Server")]=""
-fields[("DNSSEC")]=""
+fields["Domain Name"]=""
+fields["Registrar"]=""
+fields["Registrar URL"]=""
+fields["Creation Date"]=""
+fields["Registry Expiry Date"]=""
+fields["Updated Date"]=""
+fields["Registrar Abuse Contact Email"]=""
+fields["Domain Status"]=""
+fields["Name Server"]=""
+fields["DNSSEC"]=""
 
 display_fields=("Domain Name" "Registrar" "Registrar URL" "Creation Date" "Registry Expiry Date" "Updated Date" "Registrar Abuse Contact Email" "Domain Status" "Name Server" "DNSSEC")
 

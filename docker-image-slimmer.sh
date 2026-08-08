@@ -30,7 +30,7 @@ warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
+if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
 
 
 
@@ -193,7 +193,6 @@ analyze_image() {
                 *postgres*) alt_suggestions="postgres:<version>-alpine" ;;
                 *mysql*) alt_suggestions="mysql:<version>-oracle ou mysql:<version>-debian" ;;
                 *ubuntu*|*debian*) alt_suggestions="<image>:<version>-slim" ;;
-        --) shift; break ;;
                 *) alt_suggestions="Verifique se existe variante alpine ou slim" ;;
             esac
             if [ -n "$alt_suggestions" ]; then

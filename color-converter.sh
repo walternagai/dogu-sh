@@ -29,7 +29,7 @@ warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "bc" "$INSTALLER" "bc"; fi
+if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "bc" "$INSTALLER" "bc"; fi
 
 
 
@@ -242,7 +242,6 @@ elif [[ "$COLOR_INPUT" =~ ^hsl\([0-9]+,[0-9]+%,?[0-9]+%?\)$ ]]; then
             2) r1=0; g1=$C; b1=$X ;;
             3) r1=0; g1=$X; b1=$C ;;
             4) r1=$X; g1=0; b1=$C ;;
-        --) shift; break ;;
             *) r1=$C; g1=0; b1=$X ;;
         esac
         R=$(echo "scale=0; ($r1 + $m) * 255" | bc)

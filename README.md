@@ -109,6 +109,19 @@ Uma coleção de **86 ferramentas Bash precisas** para artesãos do terminal. N�
 - `dns-lookup.sh`: Lookup DNS (A, AAAA, MX, NS, TXT, CNAME).
 - `port-check.sh`: Verifica se portas estão abertas em um host.
 - `whois.sh`: Consulta WHOIS de domínios.
+- `api-tester.sh`: Teste rápido de APIs REST com formatação JSON.
+- `url-shortener.sh`: Encurta URLs usando is.gd.
+
+### 🖼️ Ícones e Fontes
+- `download-icons.sh`: Baixa ícones Material Design Icons (MDI) oficiais, converte para PNG em múltiplos tamanhos e organiza em pastas.
+- `nerd-font-install.sh`: Instala Nerd Fonts no sistema com atualização do cache de fontes.
+
+### 🧠 OCR e Conversão de Imagem
+- `jpg-to-text.sh`: Extrai texto de imagens JPG/PNG via Tesseract OCR (com idiomas configuráveis).
+
+### 🧪 Desenvolvimento e Diagnóstico
+- `dependency-checker.sh`: Verifica dependências externas do projeto dōgu-sh.
+- `lab-manager.sh`: Gerenciador unificado de ambiente de desenvolvimento (toolchains Ubuntu/Derivados).
 
 ## 🛠️ Instalação e Uso
 
@@ -185,8 +198,8 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `qr-gen.sh` | `qrencode` |
 | `screenshot.sh` | `scrot` ou `maim` (+ `slop` para área) |
 | `media-control.sh` | `playerctl` |
-| `volume.sh` | `pactl` (PulseAudio/PipeWire) |
-| `brightness.sh` | `brightnessctl` ou `xbacklight` |
+| `volume.sh` | `pactl` (PulseAudio/PipeWire), `wpctl` (WirePlumber), `amixer` (alsa-utils), `bc` |
+| `brightness.sh` | `brightnessctl` ou `light`, `xrandr` (x11-xserver-utils) |
 | `dark-mode.sh` | `gsettings` (GTK), `dconf` (opcional) |
 | `whois.sh` | `whois` |
 | `dns-lookup.sh` | `dig` (dnsutils/bind-utils) ou `nslookup` |
@@ -200,6 +213,22 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `ris-to-csv.sh` | `awk` (`gawk`) |
 | `yt-transcript.sh` | `yt-dlp`, `jq` (opcional, para pretty-print) |
 | `video-to-audio.sh` | `ffmpeg` |
+| `api-tester.sh` | `curl`, `jq` |
+| `url-shortener.sh` | `curl` |
+| `jpg-to-text.sh` | `tesseract-ocr` |
+| `base64-tool.sh` | `xxd` (vim-common), `python3` |
+| `log-analyzer.sh` | `grep` |
+| `subnet-calc.sh`, `unit-converter.sh`, `color-converter.sh` | `bc` |
+| `process-killer.sh` | `fzf` |
+| `download-icons.sh` | `rsvg-convert` (librsvg2-bin), `npm` |
+| `nerd-font-install.sh` | `curl`, `unzip`, `fc-cache` (fontconfig) |
+| `env-keygen.sh` | `openssl` |
+| `dependency-checker.sh` | `grep` (audita os demais scripts) |
+| `clean-cache.sh` | `bc` |
+| `clean-system.sh` | `bc`, gerenciador de pacotes da distro |
+| `hunt-duplicates.sh` | `find`, `xargs`, `sha256sum` (coreutils) |
+| `password-gen.sh` | `bc`, `openssl` (passphrase) |
+| `weather.sh` | `curl` |
 | `audio-to-text.sh` | `ffmpeg`, `python3`, `faster-whisper` (pip) |
 | `fix-exec-bit.sh` | nenhum (coreutils: `find`, `chmod`, `stat`, `xargs`) |
 | `fzf` (opcional) | habilita menus interativos no `menu-launcher.sh` e em scripts com seletor |

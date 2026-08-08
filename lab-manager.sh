@@ -1,10 +1,13 @@
 #!/bin/bash
-# ==============================================================================
-# Lab Manager - Unified Development Environment Setup
-# ==============================================================================
-# Manages install, configure, test, validate, and uninstall of development
-# toolchains on Ubuntu and derivatives (Linux Mint, Zorin OS, Pop!_OS, etc.)
-# ==============================================================================
+# lab-manager.sh — Gerenciador unificado de ambiente de desenvolvimento (Linux)
+# Uso: ./lab-manager.sh [comando] [componentes...]
+# Comandos:
+#   install|configure|test|validate|uninstall|restore|status|help
+#   --json          Saida JSON (validate)
+#   --safe          Uninstall seguro (padrao)
+#   --force         Pular confirmacoes
+#   --help          Mostra esta ajuda
+#   --version       Mostra versao
 
 set -euo pipefail
 
@@ -12,9 +15,13 @@ set -euo pipefail
 # GLOBALS
 # ==============================================================================
 
-readonly VERSION="2.0.0"
+readonly SCRIPT_VERSION="2.0.0"
 SCRIPT_NAME="$(basename "$0")"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
+TMPDIR_WORK=$(mktemp -d)
+trap 'rm -rf "$TMPDIR_WORK"' EXIT
+trap 'rm -rf "$TMPDIR_WORK"; exit 130' INT TERM
 
 STATE_DIR="$HOME/.lab_manager"
 MANIFEST_FILE="$STATE_DIR/manifest.json"
@@ -208,7 +215,7 @@ manifest_init() {
     if [ ! -f "$MANIFEST_FILE" ]; then
         cat > "$MANIFEST_FILE" << MANIFEST_EOF
 {
-  "script_version": "$VERSION",
+  "script_version": "$SCRIPT_VERSION",
   "created": "$(date -Iseconds)",
   "updated": "$(date -Iseconds)",
   "system": {
@@ -247,7 +254,7 @@ manifest_update_field() {
     local value="$2"
     if command -v jq &>/dev/null; then
         local tmp
-        tmp=$(mktemp)
+        tmp=$(mktemp "$TMPDIR_WORK/tmp.XXXXXX")
         jq --arg v "$value" "$key = \$v" "$MANIFEST_FILE" > "$tmp" && mv "$tmp" "$MANIFEST_FILE"
     fi
 }
@@ -261,7 +268,7 @@ manifest_add_to_array() {
     fi
     if command -v jq &>/dev/null; then
         local tmp
-        tmp=$(mktemp)
+        tmp=$(mktemp "$TMPDIR_WORK/tmp.XXXXXX")
         if $is_json; then
             jq --argjson v "$value" "$key += [\$v]" "$MANIFEST_FILE" > "$tmp" && mv "$tmp" "$MANIFEST_FILE"
         else
@@ -275,7 +282,7 @@ manifest_remove_from_array() {
     local value="$2"
     if command -v jq &>/dev/null; then
         local tmp
-        tmp=$(mktemp)
+        tmp=$(mktemp "$TMPDIR_WORK/tmp.XXXXXX")
         jq --arg v "$value" "$key -= [\$v]" "$MANIFEST_FILE" > "$tmp" && mv "$tmp" "$MANIFEST_FILE"
     fi
 }
@@ -297,7 +304,7 @@ manifest_remove_component() {
     local comp="$1"
     if command -v jq &>/dev/null; then
         local tmp
-        tmp=$(mktemp)
+        tmp=$(mktemp "$TMPDIR_WORK/tmp.XXXXXX")
         jq "del(.installed_components[] | select(.name == \"$comp\"))" "$MANIFEST_FILE" > "$tmp" && mv "$tmp" "$MANIFEST_FILE"
     fi
 }
@@ -324,7 +331,7 @@ manifest_set_shell_field() {
     local val="$2"
     if [ -f "$MANIFEST_FILE" ] && command -v jq &>/dev/null; then
         local tmp
-        tmp=$(mktemp)
+        tmp=$(mktemp "$TMPDIR_WORK/tmp.XXXXXX")
         jq --arg v "$val" ".shell_config.$key = (\$v)" "$MANIFEST_FILE" > "$tmp" && mv "$tmp" "$MANIFEST_FILE"
     fi
 }
@@ -695,7 +702,7 @@ do_install_dotnet() {
     sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list 2>/dev/null || true
 
     local ms_deb
-    ms_deb=$(mktemp)
+    ms_deb=$(mktemp "$TMPDIR_WORK/ms.XXXXXX")
     wget -q "https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb" -O "$ms_deb" 2>/dev/null || {
         log_warn "Failed to download Microsoft repo package"
         rm -f "$ms_deb"
@@ -861,7 +868,7 @@ do_install_browsers() {
     read -p "Install Google Chrome? [y/N]: " -n 1 -r; echo
     if [[ $REPLY =~ ^[Yy]$ ]] && ! is_installed google-chrome; then
         local chrome_deb
-        chrome_deb=$(mktemp)
+        chrome_deb=$(mktemp "$TMPDIR_WORK/chrome.XXXXXX")
         wget -q "https://dl.google.com/linux/direct/google-chrome-stable_current_${OS_ARCH}.deb" -O "$chrome_deb"
         sudo dpkg -i "$chrome_deb" 2>/dev/null || sudo apt install -f -y 2>/dev/null || true
         rm -f "$chrome_deb"
@@ -1269,7 +1276,7 @@ do_validate() {
 
     cat > "$report_file" << JSONEOF
 {
-  "script_version": "$VERSION",
+  "script_version": "$SCRIPT_VERSION",
   "timestamp": "$(date -Iseconds)",
   "system": {
     "id": "$OS_ID",
@@ -1323,7 +1330,6 @@ uninstall_component() {
         devtools) do_uninstall_devtools ;;
         ai)     do_uninstall_ai ;;
         docker) do_uninstall_docker ;;
-        --) shift; break ;;
         *)      log_warn "Unknown component: $comp"; return 1 ;;
     esac
 
@@ -1648,7 +1654,7 @@ show_main_menu() {
     clear
     echo -e "${BOLD}╔══════════════════════════════════════════════════════════════╗${RESET}"
     echo -e "${BOLD}║             LAB MANAGER - Dev Environment Setup            ║${RESET}"
-    echo -e "${BOLD}║                      v$VERSION                          ║${RESET}"
+    echo -e "${BOLD}║                      v$SCRIPT_VERSION                          ║${RESET}"
     echo -e "${BOLD}║  Ubuntu | Linux Mint | Zorin OS | Pop!_OS | Derivatives    ║${RESET}"
     echo -e "${BOLD}╚══════════════════════════════════════════════════════════════╝${RESET}"
     echo ""
@@ -1873,6 +1879,11 @@ parse_args() {
         exit 0
     fi
 
+    case "$1" in
+        -h|--help) show_help; exit 0 ;;
+        -V|--version) echo "lab-manager.sh $SCRIPT_VERSION"; exit 0 ;;
+    esac
+
     cmd="$1"
     shift
 
@@ -1882,7 +1893,7 @@ parse_args() {
             --safe)  shift ;;
             --force) shift ;;
             -h|--help) show_help; exit 0 ;;
-            -V|--version) echo "lab-manager.sh $VERSION"; exit 0 ;;
+            -V|--version) echo "lab-manager.sh $SCRIPT_VERSION"; exit 0 ;;
             all) comp_args=("${COMPONENTS_ALL[@]}"); shift ;;
         --) shift; break ;;
             *) comp_args+=("$1"); shift ;;
@@ -1961,7 +1972,6 @@ parse_args() {
         help|--help|-h)
             show_help
             ;;
-        --) shift; break ;;
         *)
             log_error "Unknown command: $cmd"
             show_help

@@ -179,7 +179,6 @@ case "$ACTION" in
             Playing) status_icon="${GREEN}▶${RESET}" ;;
             Paused) status_icon="${YELLOW}⏸${RESET}" ;;
             Stopped) status_icon="${DIM}⏹${RESET}" ;;
-        --) shift; break ;;
             *) status_icon="${DIM}?${RESET}" ;;
         esac
 

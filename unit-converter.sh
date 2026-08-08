@@ -30,7 +30,7 @@ warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "bc" "$INSTALLER" "bc"; fi
+if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "bc" "$INSTALLER" "bc"; fi
 
 
 
@@ -101,7 +101,6 @@ convert_temp() {
             echo -e "  ${CYAN}${val}°K${RESET} = ${GREEN}${celsius}°C${RESET} (Celsius)"
             echo -e "  ${CYAN}${val}°K${RESET} = ${GREEN}$(echo "scale=2; $celsius * 9 / 5 + 32" | bc)°F${RESET} (Fahrenheit)"
             ;;
-        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}" ;;
     esac
 }
@@ -120,7 +119,6 @@ convert_length() {
         ft|feet|pes) meters=$(echo "scale=6; $val * 0.3048" | bc) ;;
         yd|yard|jardas) meters=$(echo "scale=6; $val * 0.9144" | bc) ;;
         mi|mile|milhas) meters=$(echo "scale=6; $val * 1609.344" | bc) ;;
-        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}"; return ;;
     esac
     echo -e "  ${CYAN}${val} ${from}${RESET}"
@@ -145,7 +143,6 @@ convert_weight() {
         kg|quilo|quilos|quilograma) grams=$(echo "scale=6; $val * 1000" | bc) ;;
         lb|libra|libras) grams=$(echo "scale=6; $val * 453.592" | bc) ;;
         oz|onca|oncas) grams=$(echo "scale=6; $val * 28.3495" | bc) ;;
-        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}"; return ;;
     esac
     echo -e "  ${CYAN}${val} ${from}${RESET}"
@@ -169,7 +166,6 @@ convert_volume() {
         pt|pint) liters=$(echo "scale=6; $val * 0.473176" | bc) ;;
         cup|xicara) liters=$(echo "scale=6; $val * 0.236588" | bc) ;;
         floz|oncaliquida) liters=$(echo "scale=6; $val * 0.0295735" | bc) ;;
-        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}"; return ;;
     esac
     echo -e "  ${CYAN}${val} ${from}${RESET}"
@@ -192,7 +188,6 @@ convert_speed() {
         mph|mi/h) mps=$(echo "scale=6; $val * 0.44704" | bc) ;;
         kn|nos) mps=$(echo "scale=6; $val * 0.514444" | bc) ;;
         mach) mps=$(echo "scale=6; $val * 343" | bc) ;;
-        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}"; return ;;
     esac
     echo -e "  ${CYAN}${val} ${from}${RESET}"
@@ -214,7 +209,6 @@ convert_area() {
         ha|hectare) sqm=$(echo "scale=6; $val * 10000" | bc) ;;
         acre|acres) sqm=$(echo "scale=6; $val * 4046.86" | bc) ;;
         ft2|sqft) sqm=$(echo "scale=6; $val * 0.092903" | bc) ;;
-        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}"; return ;;
     esac
     echo -e "  ${CYAN}${val} ${from}${RESET}"
@@ -240,7 +234,6 @@ convert_time() {
         w|semana) seconds=$(echo "scale=6; $val * 604800" | bc) ;;
         mo|mes) seconds=$(echo "scale=6; $val * 2592000" | bc) ;;
         y|ano) seconds=$(echo "scale=6; $val * 31536000" | bc) ;;
-        --) shift; break ;;
         *) echo -e "  ${RED}Unidade desconhecida: $from${RESET}"; return ;;
     esac
     echo -e "  ${CYAN}${val} ${from}${RESET}"
@@ -291,7 +284,6 @@ if [ -z "$CONV_TYPE" ]; then
         5|speed|vel) CONV_TYPE="speed" ;;
         6|area) CONV_TYPE="area" ;;
         7|time|tempo) CONV_TYPE="time" ;;
-        --) shift; break ;;
         *) echo -e "  ${RED}Tipo invalido${RESET}"; exit 1 ;;
     esac
 fi
@@ -314,7 +306,6 @@ case "$CONV_TYPE" in
     speed) convert_speed "$INPUT_VAL" "$FROM_UNIT" ;;
     area) convert_area "$INPUT_VAL" "$FROM_UNIT" ;;
     time) convert_time "$INPUT_VAL" "$FROM_UNIT" ;;
-        --) shift; break ;;
     *) echo -e "  ${RED}Tipo de conversao desconhecido: $CONV_TYPE${RESET}" ;;
 esac
 
