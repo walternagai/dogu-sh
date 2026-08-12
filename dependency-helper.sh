@@ -6,6 +6,7 @@
 check_and_install() {
     local pkg_name=$1
     local install_cmd=$2
+    local pkg=${3:-}
     local green="${GREEN-$'\033[1;32m'}"
     local yellow="${YELLOW-$'\033[1;33m'}"
     local red="${RED-$'\033[1;31m'}"
@@ -20,7 +21,7 @@ check_and_install() {
     read -r -p "Deseja instalar '$pkg_name' agora? [s/N]: " choice
     if [[ "$choice" =~ ^[Ss]$ ]]; then
         echo -e "${cyan}Instalando $pkg_name...${reset}"
-        if eval "$install_cmd"; then
+        if eval "$install_cmd $pkg"; then
             echo -e "${green}[SUCCESS] $pkg_name instalado.${reset}"
         else
             echo -e "${red}[ERROR] Falha ao instalar $pkg_name.${reset}"
