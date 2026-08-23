@@ -147,6 +147,22 @@ echo -e "  ${DIM}─────────────────────
 
 Usar **sempre** loop `while` com `case` para parsing de flags. Preferir `[[ ]]` a `[ ]` em condicionais bash.
 
+> **Prompts interativos DEVEM usar guard `[ -t 0 ]` antes do `read`.** Em execuções
+> não-interativas (pipe, CI, cron, redirecionamento), o `read` falha silenciosamente,
+> variáveis ficam vazias e operações destrutivas são canceladas sem aviso. O guard
+> detecta a ausência de TTY e aborta com mensagem clara:
+>
+> ```bash
+> if [ -t 0 ]; then
+>     read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+> else
+>     error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+> fi
+> ```
+>
+> **Não** usar fallback `confirm="n"` sem o guard: em pipe/CI o script aborta
+> silenciosamente, dando impressão de operação bem-sucedida.
+
 ```bash
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -368,7 +384,7 @@ Antes de considerar um script pronto, verificar:
 - [ ] Funções `log`, `warn`, `error`, `success` definidas (`warn`/`error` escrevem em stderr)
 - [ ] `--help` e `--version` implementados (`-V` para version)
 - [ ] Argumentos via `while/case` com validação de valor obrigatório e tratamento de `--`
-- [ ] Confirmações no formato `[s/N]` com `read -r`
+- [ ] Confirmações no formato `[s/N]` com `read -r`, **wrap em `if [ -t 0 ]; then ... else error ...; fi`** (ver §5)
 - [ ] `trap` + `mktemp` para arquivos temporários
 - [ ] SIGTERM antes de SIGKILL
 - [ ] Exit codes padronizados (0/1/2/127/130)
