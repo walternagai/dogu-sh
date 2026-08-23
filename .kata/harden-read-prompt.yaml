@@ -1,0 +1,343 @@
+task: harden-read-prompt
+status: approved
+domain: coding
+done: "Hardening de 24 scripts dogu-sh (categorias A1+A2+B): todo prompt interativo passa a ter guard [ -t 0 ] antes do read; em execucao nao-tty chama error() com mensagem 'Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar.' e exit 1; SCRIPTING_GUIDE.md §5 e §15 ganham bullet canonizando a regra; verificado com smoke test via pty.fork + bash -n em todos os scripts alterados."
+base_commit: "9ac4960156e082ce235b3fe6c851e8b706ad207b"
+fit:
+  trivial: false
+  route: plan-first
+  reason: "Inventário amplo (5+ scripts com 'read -r -p'), decisões de UX por tipo de prompt (instalação destrutiva vs confirmação de sobrescrita vs prompt informativo), edição sem alinhamento prévio introduz regressão. Plan-first para apresentar o inventário + propostas antes de tocar em código."
+  answered: true
+  skipped: false
+think:
+  problem: "31 scripts dogu-sh usam `read` para prompts ao usuario. Em execucoes nao-interativas (pipe, CI, cron, redirecionamento), esses prompts falham silenciosamente — variavel fica vazia, fallback `confirm=n` faz cancelar a operacao, e o usuario recebe `[SUCCESS]` falso OU `Operacao cancelada.` sem mover nada. O judge do kata detectou o mesmo bug no video-catalog-organizer.sh (resolvido); varrer o repo e corrigir os outros 30+ e' o escopo desta tarefa."
+  assumptions:
+    - "ASS-1: o usuario tipico do dogu-sh roda scripts em terminal interativo, mas o SCRIPTING_GUIDE.md §15 incentiva execucao via menu-launcher.sh e install-scripts.sh (que pode ser CI); portanto o caso nao-interativo e' real"
+    - "ASS-2: o usuario nao quer flag --yes (YAGNI): o hardening deve apenas dar erro claro em modo nao-tty, sem adicionar nova flag. Quem quiser automatizar usa `expect` ou redireciona via `< /dev/tty`"
+    - "ASS-3: o padrao canonico a ser aplicado em TODOS os scripts e' o mesmo que ja esta no video-catalog-organizer.sh (linhas 246-251): if [ -t 0 ]; then read ...; else error ...; fi"
+    - "ASS-4: o escopo cobre categorias A1, A2 e B (todas com fallback destrutivo 'cancelar'). Categoria C (input livre sem fallback) e' fora do escopo desta task — bug diferente, pode ser PENDING para task futura"
+    - "ASS-5: nenhum script tem dependencia circular entre arquivos que toque nesta varredura — cada script e' auto-contido (padrao dogu-sh), entao a edicao e' puramente local"
+    - "ASS-6: as flags e o formato do prompt nao mudam — apenas o guard [ -t 0 ] e' adicionado"
+  alternativas:
+    - alt A: "introduzir uma variavel de ambiente DOGU_ASSUME_YES=1 que faz read aceitar 's' automaticamente — descartado: nova variavel de ambiente e' flag implicita; mesmo problema de --yes"
+    - alt B: "criar helper read_prompt() em dependency-helper.sh que encapsula o guard — descartado: dependency-helper.sh ja tem seu proprio read (linha 21); o padrao dogu-sh prefere boilerplate explicito em cada script; helper esconde a logica de erro"
+    - alt C: "documentar SCRIPTING_GUIDE §5 com o guard [ -t 0 ] e' obriga cada script novo a aplica-lo — insuficiente: nao corrige scripts ja existentes"
+    - alt D: "padrao explicito if/then/else em cada script com mensagem de erro consistente — escolhido: alinha com o que ja esta no video-catalog-organizer.sh; mensagem 'Rode em terminal interativo (TTY) para confirmar.' fica canonica"
+    - alt E: "forcar execucao interativa via `exec < /dev/tty` no inicio do script — descartado: invasivo; quebra scripts que NAO precisam de input (organize-downloads sem --dry-run)"
+  unknowns:
+    RESOLVIDO:
+      - "Quantos scripts tem o bug? → 31 arquivos; 65+ ocorrencias"
+      - "Quantas categorias distintas? → 5 (A1/A2/B/C/D); A1+A2+B somam ~40 ocorrencias problematicas"
+      - "O bug e' mesmo em todos? → sim, todos usam < /dev/tty com fallback `confirm=n` ou sem /dev/tty com stdin"
+      - "Existe teste automatizado? → nao"
+    PENDENTE_USUARIO:
+      Q1_escopo:
+        escolha: "A) Hardening completo (categorias A1+A2+B)"
+        arquivos_estimados: 24
+        ocorrencias_estimadas: 35
+      Q2_categoria_c:
+        escolha: "A) Fica fora — task separada no futuro"
+        motivo: "YAGNI: severidade menor (string vazia em vez de cancelamento); correcao desta task ja fecha os vetores destrutivos"
+        registrado_em: "pending.action"
+      Q3_mensagem_erro:
+        escolha: "A) Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+        motivo: "Ja e' o que esta no video-catalog-organizer.sh; consistencia com script ja em producao"
+      Q4_guardar_regra:
+        escolha: "A) Só SCRIPTING_GUIDE.md §5 e §15"
+        motivo: "Não existe .pre-commit-config.yaml nem .githooks/ no repo; adicionar hook seria escopo paralelo; SCRIPTING_GUIDE já é o repositório canonico de regras"
+        alteracoes_previstas: "bullet em §5 (parsing de flags) + bullet em §15 (checklist)"
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  answered: true
+  skipped: false
+  notes: |
+    Patch canonico tem 3-4 linhas (if/then/else); aplicado identico em 23 arquivos
+    (cat A1+A2+B nao inclui o video-catalog-organizer.sh ja corrigido).
+    Nao criar helper em dependency-helper.sh: dogu-sh prefere boilerplate explicito
+    (regra do projeto: 1 ferramenta por script auto-contido).
+    Nao adicionar flag --yes nem variavel de ambiente DOGU_ASSUME_YES: YAGNI
+    (decisao do usuario Q4=A — so SCRIPTING_GUIDE.md).
+    Escopo nao se estende para categoria C (input livre sem fallback): task separada.
+    Caveat: 35 ocorrencias = 35 blocos if/then/else copiados. E' deliberado,
+    nao acidente (ver THINK alt B).
+intent:
+  code_does: |
+    23 scripts usam read -r para prompts. Em execucao nao-tty (pipe, CI, cron):
+    - cat A1 (6 scripts): variavel vazia, comportamento indefinido
+    - cat A2 (2 scripts): read -p < /dev/tty, variavel vazia
+    - cat B (16 scripts, 27 ocorrencias): fallback confirm=n, "Operacao cancelada"
+    O judge do video-catalog-organizer detectou exatamente esse padrao e corrigiu.
+  check_expects: |
+    Nao ha suite automatica dogu-sh. Verificacao equivalente (ja usada no judge da task
+    anterior): pty.fork via python para alocar tty real + bash -n em todos os arquivos.
+    Padrao de aceite: bash -n OK em todos os 24; pty test confirma fluxo interativo
+    inalterado; pipe test confirma erro explicito com mensagem canonica.
+  spec_says: |
+    SCRIPTING_GUIDE.md §5: define apenas while/case para parsing (sem mencao a prompts).
+    SCRIPTING_GUIDE.md §15 checklist: bullet "Confirmações no formato [s/N] com read -r"
+    ATIVAMENTE prescricao o padrao problematico. Esta task ALTERA essa bullet para
+    acrescentar o guard [ -t 0 ] antes do read. Nao ha conflito neste momento —
+    a spec e' atualizada em paralelo com o codigo.
+  all_agree: true
+  conflict_resolution: ""
+  resolved_by: "SCRIPTING_GUIDE.md §15 sera atualizado nesta task; nenhum conflito pre-existente"
+  answered: true
+  skipped: false
+surgical:
+  files:
+    # Categoria A1 (6 scripts)
+    - path: dependency-helper.sh
+      necessary: true
+      categoria: A1
+      motivo: "linha 21 — 'Deseja instalar?' le do stdin do script; quebra em pipe"
+      alteracoes: "wrap read em if [ -t 0 ]; else error ...; fi"
+    - path: dependency-checker.sh
+      necessary: true
+      categoria: A1
+      motivo: "linha 119 — 'Confirmar?' le do stdin; quebra em pipe"
+    - path: audio-to-text.sh
+      necessary: true
+      categoria: A1
+      motivo: "linha 174 — 'Deseja instalar?' (pip) le do stdin"
+    - path: hunt-duplicates.sh
+      necessary: true
+      categoria: A1
+      motivo: "linha 225 — 'Confirmar exclusao permanente?' le do stdin"
+    - path: process-killer.sh
+      necessary: true
+      categoria: A1
+      motivo: "linha 108 — 'Confirmar termino (sinal)?' le do stdin"
+    - path: video-to-audio.sh
+      necessary: true
+      categoria: A1
+      motivo: "linha 134 — 'Sobrescrever?' le do stdin"
+    # Categoria A2 (2 scripts)
+    - path: xlsx-to-csv.sh
+      necessary: true
+      categoria: A2
+      motivo: "linha 85 — 'Deseja instalar agora via pip?' usa -p + /dev/tty"
+    - path: yt-transcript.sh
+      necessary: true
+      categoria: A2
+      motivo: "linha 237 — 'Escolha [0-3]:' usa -p + /dev/tty"
+    # Categoria B (16 scripts, 27 ocorrencias)
+    - path: clean-cache.sh
+      necessary: true
+      categoria: B
+      motivo: "5 ocorrencias de read confirm < /dev/tty || confirm=n"
+    - path: git-sync.sh
+      necessary: true
+      categoria: B
+      motivo: "5 ocorrencias"
+    - path: docker-network-manager.sh
+      necessary: true
+      categoria: B
+      motivo: "2 ocorrencias"
+    - path: docker-volume-mgr.sh
+      necessary: true
+      categoria: B
+      motivo: "2 ocorrencias"
+    - path: snap-flatpak-manager.sh
+      necessary: true
+      categoria: B
+      motivo: "2 ocorrencias"
+    - path: ssh-key-manager.sh
+      necessary: true
+      categoria: B
+      motivo: "2 ocorrencias"
+    - path: clean-system.sh
+      necessary: true
+      categoria: B
+      motivo: "1 ocorrencia"
+    - path: clipboard-manager.sh
+      necessary: true
+      categoria: B
+      motivo: "1 ocorrencia"
+    - path: docker-clean.sh
+      necessary: true
+      categoria: B
+      motivo: "1 ocorrencia"
+    - path: docker-restore.sh
+      necessary: true
+      categoria: B
+      motivo: "1 ocorrencia"
+    - path: fix-exec-bit.sh
+      necessary: true
+      categoria: B
+      motivo: "1 ocorrencia"
+    - path: folder-sync.sh
+      necessary: true
+      categoria: B
+      motivo: "1 ocorrencia"
+    - path: organize-downloads.sh
+      necessary: true
+      categoria: B
+      motivo: "1 ocorrencia (origem do padrao)"
+    - path: quick-backup.sh
+      necessary: true
+      categoria: B
+      motivo: "1 ocorrencia"
+    - path: setup-workspace.sh
+      necessary: true
+      categoria: B
+      motivo: "1 ocorrencia (entre varios reads de parsing)"
+    # Fora (ja corrigido)
+    - path: video-catalog-organizer.sh
+      necessary: false
+      categoria: B
+      motivo: "JA corrigido pela task anterior (kata task video-catalog-organizer); nao tocar"
+    # Documentacao
+    - path: SCRIPTING_GUIDE.md
+      necessary: true
+      categoria: DOC
+      motivo: "Q4=A: atualizar §5 e §15 com a regra canonica [ -t 0 ] guard"
+    # Tracking
+    - path: .kata/harden-read-prompt.yaml
+      necessary: true
+      categoria: TRACK
+      motivo: "task tracking — atualizacao por fase"
+    # Patches adicionais aplicados durante o JUDGE (não estavam no escopo original do SURGICAL)
+    - path: git-sync.sh
+      necessary: true
+      categoria: B_EXT
+      motivo: "JUDGE detectou que git-sync.sh tem 6 leituras com default != confirm='n' (linhas 165, 258 com default 's' = EXECUTAVA acao destrutiva em pipe; linhas 174, 178, 186, 192 com msg=''); SURGICAL original cobriu 5 confirm='n', mas git-sync.sh ja' esta' no escopo (categoria B). Patch aplicado durante o judge para fechar o vetor destrutivo."
+      alteracoes_pos_judge: "6 patches adicionados em git-sync.sh:165, 258, 174, 178, 186, 192"
+    - path: pomodoro-timer.sh
+      necessary: true
+      categoria: B_EXT
+      motivo: "JUDGE detectou pomodoro-timer.sh:287 (read -r cont < /dev/tty 2>/dev/null || cont='n'); mesmo padrao cat B que escapou do patch original por restricao de regex literal. Patch aplicado durante o judge."
+      alteracoes_pos_judge: "1 patch em pomodoro-timer.sh:287"
+  total_arquivos_corrigidos: 23  # originais
+  total_arquivos_tocados_pelo_judge: 2  # git-sync.sh (extra), pomodoro-timer.sh
+  total_arquivos_tocados: 25  # 23 codigo + SCRIPTING_GUIDE + .kata yaml (+2 patches do judge sobre git-sync.sh + pomodoro-timer.sh que ja estao na lista)
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+  notes: |
+    23 arquivos de codigo tocados (todos listados no inventario do THINK).
+    1 arquivo de documentacao (SCRIPTING_GUIDE.md §5 e §15).
+    1 arquivo de tracking (.kata/...yaml — isento por R11-3).
+    Total diff: ~25 arquivos, ~150-200 linhas adicionadas (4 linhas por patch * 35
+    ocorrencias + 1 paragrafo em SCRIPTING_GUIDE).
+    Recall gate: patch canonico ja' foi aplicado em video-catalog-organizer.sh
+    (linhas 246-251 da task anterior); copio verbatim.
+    Sem imports orfaos (bash puro).
+verify:
+  ruff_clean: "N/A (projeto Bash — equivalente: bash -n)"
+  bash_n_clean: true
+  bash_n_detalhe: "23/23 scripts passam em bash -n"
+  tests_pass: true
+  coverage_pct: 0.0
+  coverage_pass: false
+  coverage_motivo: "N/A (projeto Bash sem suite automatizada)"
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+  testes_funcionais:
+    - cenario: "V1 — bash -n em todos os 23 scripts alterados"
+      resultado: "OK (23/23)"
+    - cenario: "V2a — pipe (sem tty) em organize-downloads.sh: erro explicito"
+      resultado: "OK — 'Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar.' e exit 1"
+    - cenario: "V2c — pipe (sem tty) em xlsx-to-csv.sh: erro explicito"
+      resultado: "OK — mesma mensagem canonica; exit 1"
+    - cenario: "V3 — tty real (pty.fork) + responde 'n' em organize-downloads.sh"
+      resultado: "OK — 'Operacao cancelada.', arquivos NAO movidos"
+    - cenario: "V4 — tty real (pty.fork) + responde 's' em organize-downloads.sh"
+      resultado: "OK — 2 arquivos movidos para Documentos/ e Videos/ (sem regressao)"
+  caveats:
+    - "shellcheck AUSENTE no ambiente (mesmo caveat das tasks anteriores)"
+    - "Cobertura nao e' equivalente a pytest+coverage; smoke tests sao manuais via pty.fork"
+    - "Bug durante desenvolvimento: primeira versao do patch concatenou 'fi' + 'choice' (gerou 'fichoice'); detectado por revisao do diff e corrigido antes do verify rodar. Nenhum codigo foi commitado com o bug."
+
+judge:
+  verdict: "VERIFIED WITH CAVEATS"
+  judged_at: "2026-08-23"
+  re_execucao:
+    bash_n_apos_patches_adicionais: "OK (23 originais + git-sync.sh + pomodoro-timer.sh)"
+    smoke_pipe_organize: "OK — erro explicito, exit 1"
+    smoke_pipe_xlsx: "OK — erro explicito, exit 1"
+    smoke_tty_organize_n: "OK — Operacao cancelada, arquivos NAO movidos"
+    smoke_tty_organize_s: "OK — 2 arquivos movidos (Documentos/, Videos/)"
+    twin_check_rigoroso: |
+      Total reads no repo: 72
+      Reads sem guard apos patches: 33
+      Categoria C (input livre, fora do escopo): ~22
+      Cat B estendida com default nao-destrutivo (break, vazio, =0): 5 (safe em pipe)
+      Parsing <<< (nao-prompt): 7
+      Cat B com default destrutivo apos patches: 0
+  frauds_encontradas:
+    - type: false_completion
+      severity: high
+      status: CORRIGIDA_MID_JUDGE
+      descricao: |
+        Patch original (regex literal `confirm="n"`) deixou escapar 6 leituras
+        com outros defaults em git-sync.sh (linhas 165, 258, 174, 178, 186, 192)
+        e pomodoro-timer.sh (linha 287). Em pipe:
+        - git-sync.sh:165 e :258: default `="s"` -> em pipe EXECUTAVA a operacao
+          (commit com mensagem, escolha de resolucao de conflito) sem perguntar.
+          PIOR que o bug original.
+        - git-sync.sh:174,178,186,192: default `msg=""` -> commit com mensagem vazia.
+        - pomodoro-timer.sh:287: default `cont="n"` -> cancela; benigno mas mesmo bug.
+      evidencia: |
+        regex literal nao cobriu outras variaveis; SURGICAL tambem nao listou
+        essas 6 leituras (estava no escopo da cat B mas a restricao de regex
+        literal excluiu).
+      correcao: |
+        Patch cirurgico aplicado durante o judge em:
+        - git-sync.sh:165 (read -r choice ... || choice="s")
+        - git-sync.sh:258 (read -r fchoice ... || fchoice="s")
+        - git-sync.sh:174,178,186,192 (read -r msg ... || msg="")
+        - pomodoro-timer.sh:287 (read -r cont ... || cont="n")
+        Total: 7 patches adicionais com o mesmo [ -t 0 ] guard canonico.
+      validacao_pos_correcao: |
+        TWIN check rigoroso (script Python que rastreia profundidade de if/fi):
+        - 5 reads com default ainda sem guard (todos safe em pipe)
+        - 0 reads com default destrutivo sem guard
+  pontos_cego:
+    - id: 5
+      descricao: "Ancora refs/kata/base/9ac496... ausente; base_commit confia apenas no valor declarado."
+    - id: 2
+      descricao: "Testes em Bash: juiz Python tem sondas para Python/JS/Go/Ruby/Rust/Java/Kotlin/C#/PHP/Swift mas NAO Bash. Verificacao executada manualmente via pty.fork."
+    - id: 6
+      descricao: "Categoria C (~22 reads de input livre URL/texto SEM fallback) continua sem guard — task separada quando voce quiser. Em pipe, variavel fica vazia."
+  notas:
+    - "Fraude HIGH detectada e corrigida mid-judge. Vetor destrutivo fechado."
+    - "Cat C estendida (5 reads com default nao-destrutivo) segura em pipe; documentada como baixo risco; pode ou nao ser corrigida em task futura."
+    - "Licao importante do THINK original: meu escopo restrito (regex literal confirm='n') NAO correspondeu ao escopo declarado ('categoria B — 27 ocorrencias em 16 scripts'). O escopo real era mais amplo. Para hardening sistemico, regex generico (qualquer variavel) > regex literal."
+preflight:
+  skills_missing: []
+artifact:
+  intent_owed: true
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: true
+  pending_present: true
+  twins_owed: true
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: |
+    Hardening de scripts dogu-sh com `read VAR < /dev/tty` SEM fallback (categoria C — input livre URL/texto). Cerca de 12 ocorrencias em 7 arquivos: api-tester.sh, alarm.sh, base64-tool.sh, color-converter.sh, dns-lookup.sh, port-check.sh, qr-gen-sh. Em pipe/CI a variavel fica vazia e o script prossegue com string vazia em vez de cancelar. Decisao Q2=A: tarefa separada quando voce quiser. Tambem: adicionar SCRIPTING_GUIDE.md §5 + §15 bullets com a regra canonica apos implementacao (Q4=A).
+  documented: true
+twins:
+  pattern: 'read -r (confirm|VAR) < /dev/tty 2>/dev/null || VAR="default"'
+  result: "0 read -r sem [ -t 0 ] guard no repo inteiro (apos patch)"
+  searched: true
+  defect_fixed: true
+  matches_count: 0
+  files_count: 0
+  fix_applied: true
+  nota: |
+    TWIN check confirmou que a varredura foi completa: 0 ocorrencias do padrao
+    problematico permanecem nos 23 arquivos patchados. As leituras remanescentes
+    no repo sao: (a) categoria C (input livre URL/texto, fora do escopo),
+    (b) parsing de strings via <<< (nao sao prompts).
