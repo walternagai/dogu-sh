@@ -44,6 +44,7 @@ Uma coleção de **86 ferramentas Bash precisas** para artesãos do terminal. N�
 - `partitions-list.sh`: Lista todas as partições (montadas ou não) com identificação de tipo de disco.
 - `hunt-duplicates.sh`: Busca de arquivos duplicados via SHA-256 (v2 com 18 melhorias).
 - `organize-downloads.sh`: Organização automática de arquivos por extensão.
+- `video-catalog-organizer.sh`: Reorganiza catálogo de vídeos por estratégia — `--by content` (filmes/séries/cursos/clipes), `--by year` (pastas `YYYY/`) ou `--by quality` (`2160p/1080p/720p/480p`); dry-run por padrão, `--apply` efetiva; `--probe-quality` ativa `ffprobe` (opcional) para resolução real.
 - `dir-summary.sh`: Resumo de diretório com distribuição visual, top arquivos, subdiretórios e idade.
 - `fix-exec-bit.sh`: Remove o bit de execução de arquivos de dados/documentos (útil após copiar de NTFS/exFAT, onde arquivos regulares ganham `+x` indevidamente).
 - `update-all.sh`: Atualiza pacotes do sistema + linguagens (npm, pip, cargo, brew) em um comando.
@@ -213,6 +214,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `ris-to-csv.sh` | `awk` (`gawk`) |
 | `yt-transcript.sh` | `yt-dlp`, `jq` (opcional, para pretty-print) |
 | `video-to-audio.sh` | `ffmpeg` |
+| `video-catalog-organizer.sh` | `ffprobe` (opcional, só com `--probe-quality`) |
 | `api-tester.sh` | `curl`, `jq` |
 | `url-shortener.sh` | `curl` |
 | `jpg-to-text.sh` | `tesseract-ocr` |
