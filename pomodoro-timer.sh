@@ -284,7 +284,11 @@ case "$ACTION" in
 
             if ! $CLEAN_ALL; then
                 printf "  Continuar? [s/N]: "
-                read -r cont < /dev/tty 2>/dev/null || cont="n"
+                if [ -t 0 ]; then
+                    read -r cont < /dev/tty 2>/dev/null || cont="n"
+                else
+                    error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+                fi
                 case "$cont" in
                     [sS]) ;;
         --) shift; break ;;
