@@ -148,7 +148,11 @@ clean_dir() {
     if ! $CLEAN_ALL; then
         printf "  Limpar ${CYAN}%s${RESET} (${RED}%s${RESET})? [s/N]: " "$label" "$size_str"
         local confirm
-        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        if [ -t 0 ]; then
+            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        else
+            error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+        fi
         case "$confirm" in
             [sS]) ;;
             *) return ;;
@@ -201,7 +205,11 @@ clean_files_pattern() {
     if ! $CLEAN_ALL; then
         printf "  Limpar ${CYAN}%s${RESET} (${RED}%s${RESET})? [s/N]: " "$label" "$size_str"
         local confirm
-        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        if [ -t 0 ]; then
+            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        else
+            error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+        fi
         case "$confirm" in
             [sS]) ;;
             *) return ;;
@@ -294,7 +302,11 @@ if [ "$tmp_user_files" -gt 0 ] && [ "$tmp_user_size" -gt 0 ]; then
     else
         if ! $CLEAN_ALL; then
             printf "  Limpar ${CYAN}Arquivos soltos em /tmp${RESET} (${RED}%s${RESET})? [s/N]: " "$tmp_size_str"
-            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+            if [ -t 0 ]; then
+                read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+            else
+                error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+            fi
             case "$confirm" in
                 [sS]) ;;
                 *) tmp_user_size=0 ;;
@@ -361,7 +373,11 @@ if command -v apt-get &>/dev/null; then
                     echo -e "  ${DIM}Sem permissao para limpar APT cache${RESET}"
             else
                 printf "  Limpar ${CYAN}APT cache${RESET} (${RED}%s${RESET})? [s/N]: " "$size_str"
-                read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+                if [ -t 0 ]; then
+                    read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+                else
+                    error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+                fi
                 case "$confirm" in
                     [sS])
                         sudo apt-get clean -y 2>/dev/null && \
@@ -431,7 +447,11 @@ if command -v journalctl &>/dev/null; then
                     echo -e "  ${DIM}Sem permissao para limpar journal${RESET}"
             else
                 printf "  Limpar ${CYAN}journal logs${RESET} (manter 7 dias)? [s/N]: "
-                read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+                if [ -t 0 ]; then
+                    read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+                else
+                    error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+                fi
                 case "$confirm" in
                     [sS])
                         sudo journalctl --vacuum-time=7d 2>/dev/null || \

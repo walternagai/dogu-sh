@@ -638,7 +638,11 @@ save_profile() {
     if [ -t 0 ] || [ -e /dev/tty ]; then
         printf "  Salvar perfil ${CYAN}\"$profile_name\"${RESET}? [s/N]: "
         local confirm
-        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        if [ -t 0 ]; then
+            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        else
+            error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+        fi
         case "$confirm" in
             [sS]) ;;
             *) echo -e "  ${DIM}Cancelado.${RESET}"; echo ""; return 0 ;;

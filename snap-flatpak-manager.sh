@@ -182,7 +182,11 @@ if $SNAP_ONLY; then
                     do_clean=true
                     if [[ "$DRY_RUN" == false ]]; then
                         printf "  Remover snap(s) desabilitado(s)? [s/N]: "
-                        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+                        if [ -t 0 ]; then
+                            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+                        else
+                            error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+                        fi
                         case "$confirm" in
                             [sS]) ;;
                             *) echo -e "  ${DIM}Operacao cancelada.${RESET}"; do_clean=false ;;
@@ -271,7 +275,11 @@ if $FLATPAK_ONLY; then
                     do_clean=true
                     if [[ "$DRY_RUN" == false ]]; then
                         printf "  Remover flatpak(s) nao utilizado(s)? [s/N]: "
-                        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+                        if [ -t 0 ]; then
+                            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+                        else
+                            error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+                        fi
                         case "$confirm" in
                             [sS]) ;;
                             *) echo -e "  ${DIM}Operacao cancelada.${RESET}"; do_clean=false ;;

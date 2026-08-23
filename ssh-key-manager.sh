@@ -265,7 +265,11 @@ case "$ACTION" in
 
     rotate)
         printf "  Confirmar rotacao da chave ${CYAN}${KEY_PATH}${RESET}? [s/N]: "
-        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        if [ -t 0 ]; then
+            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        else
+            error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+        fi
         case "$confirm" in
             [sS])
                 ;;
@@ -358,7 +362,11 @@ case "$ACTION" in
         echo ""
 
         printf "  Confirmar deploy da chave para ${CYAN}${DEPLOY_HOST}${RESET}? [s/N]: "
-        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        if [ -t 0 ]; then
+            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        else
+            error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+        fi
         case "$confirm" in
             [sS])
                 ;;

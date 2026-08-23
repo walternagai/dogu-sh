@@ -105,7 +105,11 @@ echo -e "${YELLOW}Processos selecionados:${RESET}"
 echo "$SELECTED" | awk '{printf "  PID %-8s USER %-10s CPU %5s%%  MEM %5s%%  %s\n", $1, $2, $3, $4, $11}'
 
 echo ""
-read -r -p "Confirmar termino (sinal $SIGNAL)? [s/N] " CONFIRM
+if [ -t 0 ]; then
+    read -r -p "Confirmar termino (sinal $SIGNAL)? [s/N] " CONFIRM
+else
+    error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+fi
 if [[ ! "$CONFIRM" =~ ^[Ss]$ ]]; then
     echo -e "${DIM}Operacao cancelada.${RESET}"
     exit 0

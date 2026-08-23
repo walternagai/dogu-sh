@@ -234,7 +234,11 @@ ensure_yt_dlp() {
     echo -e "  ${CYAN}3${RESET}) Baixar binario do GitHub"
     echo -e "  ${CYAN}0${RESET}) Cancelar"
     echo ""
-    read -r -p "  Escolha [0-3]: " method < /dev/tty
+    if [ -t 0 ]; then
+        read -r -p "  Escolha [0-3]: " method < /dev/tty
+    else
+        error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+    fi
 
     case "$method" in
         1)

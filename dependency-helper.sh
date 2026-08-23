@@ -18,7 +18,11 @@ check_and_install() {
     fi
 
     echo -e "${yellow}[WARN] Dependência '$pkg_name' não encontrada.${reset}"
-    read -r -p "Deseja instalar '$pkg_name' agora? [s/N]: " choice
+    if [ -t 0 ]; then
+        read -r -p "Deseja instalar '$pkg_name' agora? [s/N]: " choice
+    else
+        error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+    fi
     if [[ "$choice" =~ ^[Ss]$ ]]; then
         echo -e "${cyan}Instalando $pkg_name...${reset}"
         if eval "$install_cmd $pkg"; then

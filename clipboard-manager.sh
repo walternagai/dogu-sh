@@ -325,7 +325,11 @@ case "$ACTION" in
     clear)
         if [ -f "$HISTORY_FILE" ]; then
             printf "  Confirmar limpeza do historico? [s/N]: "
-            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+            if [ -t 0 ]; then
+                read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+            else
+                error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+            fi
             case "$confirm" in
                 [sS])
                     echo "" > "$HISTORY_FILE"

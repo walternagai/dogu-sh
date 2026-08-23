@@ -116,7 +116,11 @@ fi
 
 if $FIX_MODE; then
     echo -e "  ${YELLOW}Deseja instalar as ${#missing[@]} dependencias faltantes?${RESET}"
-    read -r -p "  Confirmar? [s/N] " CONFIRM
+    if [ -t 0 ]; then
+        read -r -p "  Confirmar? [s/N] " CONFIRM
+    else
+        error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+    fi
     echo ""
     if [[ "$CONFIRM" =~ ^[Ss]$ ]]; then
         for entry in "${missing[@]}"; do

@@ -171,7 +171,11 @@ require_python_pkg() {
     local pkg="$2"
     if ! python3 -c "import $import_name" >/dev/null 2>&1; then
         warn "Dependencia Python '$pkg' nao encontrada."
-        read -r -p "Deseja instalar '$pkg' com pip agora? [s/N] " choice
+        if [ -t 0 ]; then
+            read -r -p "Deseja instalar '$pkg' com pip agora? [s/N] " choice
+        else
+            error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+        fi
         if [[ "$choice" =~ ^[Ss]$ ]]; then
             log "Instalando $pkg..."
             if ! python3 -m pip install "$pkg"; then

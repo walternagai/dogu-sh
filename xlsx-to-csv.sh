@@ -82,7 +82,11 @@ fi
 # --- verificacao de openpyxl ---
 if ! python3 -c "import openpyxl" 2>/dev/null; then
     echo -e "${YELLOW}[WARN]${RESET} Modulo Python 'openpyxl' nao encontrado."
-    read -r -p "  Deseja instalar agora via pip? [s/N] " _choice < /dev/tty
+    if [ -t 0 ]; then
+        read -r -p "  Deseja instalar agora via pip? [s/N] " _choice < /dev/tty
+    else
+        error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+    fi
     if [[ "$_choice" =~ ^[Ss]$ ]]; then
         echo -e "${CYAN}[INFO]${RESET} Instalando openpyxl..."
         if python3 -m pip install --quiet openpyxl; then

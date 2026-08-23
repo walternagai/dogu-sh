@@ -253,7 +253,11 @@ case "$ACTION" in
         echo -e "  Removendo volume ${CYAN}${VOLUME_NAME}${RESET}"
 
         printf "  Confirmar remocao do volume ${CYAN}${VOLUME_NAME}${RESET}? [s/N]: "
-        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        if [ -t 0 ]; then
+            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+        else
+            error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+        fi
         case "$confirm" in
             [sS])
                 ;;
@@ -292,7 +296,11 @@ case "$ACTION" in
             echo -e "  ${YELLOW}$orphan_count${RESET} volume(s) orfao(s) serao removidos:"
 
             printf "  Confirmar remocao de ${orphan_count} volume(s) orfao(s)? [s/N]: "
-            read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+            if [ -t 0 ]; then
+                read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+            else
+                error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+            fi
             case "$confirm" in
                 [sS])
                     ;;

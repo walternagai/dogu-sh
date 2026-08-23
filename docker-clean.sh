@@ -134,7 +134,11 @@ confirm_action() {
         return 0
     fi
     printf "  %s? [s/N]: " "$label"
-    read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+    if [ -t 0 ]; then
+        read -r confirm < /dev/tty 2>/dev/null || confirm="n"
+    else
+        error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+    fi
     case "$confirm" in
         [sS]) return 0 ;;
         *) return 1 ;;

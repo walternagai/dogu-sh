@@ -131,7 +131,11 @@ if [[ -f "$OUTPUT_FILE" ]]; then
     if $DRY_RUN; then
         echo -e "  ${DIM}[Dry-run] Arquivo de saida ja existe; seria solicitada confirmacao${RESET}"
     else
-        read -r -p "Arquivo de saida ja existe. Sobrescrever? [s/N] " CONFIRM
+        if [ -t 0 ]; then
+            read -r -p "Arquivo de saida ja existe. Sobrescrever? [s/N] " CONFIRM
+        else
+            error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+        fi
         if [[ ! "$CONFIRM" =~ ^[Ss]$ ]]; then
             echo -e "${DIM}Operacao cancelada.${RESET}"
             exit 0

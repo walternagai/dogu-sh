@@ -222,7 +222,11 @@ fi
 
 if $USE_DELETE && ! $FORCE; then
     echo -e "${RED}ATENCAO: --delete ira deletar permanentemente os arquivos!${RESET}" >&2
-    read -r -p "Confirmar exclusao permanente de duplicatas? [s/N]: " confirm
+    if [ -t 0 ]; then
+        read -r -p "Confirmar exclusao permanente de duplicatas? [s/N]: " confirm
+    else
+        error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+    fi
     if [[ ! "$confirm" =~ ^[Ss]$ ]]; then
         echo "Operacao cancelada." >&2
         exit 0
