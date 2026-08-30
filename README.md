@@ -44,6 +44,7 @@ Uma coleção de **86 ferramentas Bash precisas** para artesãos do terminal. N�
 - `partitions-list.sh`: Lista todas as partições (montadas ou não) com identificação de tipo de disco.
 - `hunt-duplicates.sh`: Busca de arquivos duplicados via SHA-256 (v2 com 18 melhorias).
 - `organize-downloads.sh`: Organização automática de arquivos por extensão.
+- `batch-rename.sh`: Renomeação em lote por padrão — busca/substituição (literal ou regex), prefixo, sufixo, troca de extensão, maiúsculas/minúsculas e numeração sequencial; `--dry-run` para preview.
 - `video-catalog-organizer.sh`: Reorganiza catálogo de vídeos por estratégia — `--by content` (filmes/séries/cursos/clipes), `--by year` (pastas `YYYY/`) ou `--by quality` (`2160p/1080p/720p/480p`); dry-run por padrão, `--apply` efetiva; `--probe-quality` ativa `ffprobe` (opcional) para resolução real.
 - `dir-summary.sh`: Resumo de diretório com distribuição visual, top arquivos, subdiretórios e idade.
 - `fix-exec-bit.sh`: Remove o bit de execução de arquivos de dados/documentos (útil após copiar de NTFS/exFAT, onde arquivos regulares ganham `+x` indevidamente).
@@ -233,6 +234,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `weather.sh` | `curl` |
 | `audio-to-text.sh` | `ffmpeg`, `python3`, `faster-whisper` (pip) |
 | `fix-exec-bit.sh` | nenhum (coreutils: `find`, `chmod`, `stat`, `xargs`) |
+| `batch-rename.sh` | nenhum (coreutils: `sed`, `mv`) |
 | `fzf` (opcional) | habilita menus interativos no `menu-launcher.sh` e em scripts com seletor |
 
 ## 📝 Notas
