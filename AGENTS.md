@@ -4,7 +4,7 @@ Guia para agentes de IA trabalhando neste repositório.
 
 ## Visão Geral
 
-dōgu-sh (道具 — "ferramentas") é uma coleção de **78 ferramentas Bash precisas** para artesãos do terminal. Docker, sistema, rede, produtividade, criptografia, conversão e muito mais para Linux/macOS.
+dōgu-sh (道具 — "ferramentas") é uma coleção de **87 ferramentas Bash precisas** para artesãos do terminal. Docker, sistema, rede, produtividade, criptografia, conversão e muito mais para Linux/macOS.
 
 ## Stack
 
@@ -34,7 +34,7 @@ dōgu-sh (道具 — "ferramentas") é uma coleção de **78 ferramentas Bash pr
 
 ```
 dogu-sh/
-├── *.sh              # 78 scripts (cada um auto-contido)
+├── *.sh              # 87 scripts (cada um auto-contido)
 ├── install-scripts.sh    # Instalador
 ├── menu-launcher.sh      # Menu interativo
 ├── dependency-helper.sh  # Lib compartilhada de dependências
