@@ -2,7 +2,7 @@
 
 > **dōgu** (道具) — *substantivo japonês*: ferramenta, instrumento, utensílio.
 
-Uma coleção de **86 ferramentas Bash precisas** para artesãos do terminal. Não é um sistema, não é uma plataforma — é o seu kit de instrumentos para Docker, sistema, rede, produtividade, criptografia, conversão e muito mais em Linux/macOS.
+Uma coleção de **87 ferramentas Bash precisas** para artesãos do terminal. Não é um sistema, não é uma plataforma — é o seu kit de instrumentos para Docker, sistema, rede, produtividade, criptografia, conversão e muito mais em Linux/macOS.
 
 ## 🚀 Funcionalidades
 
@@ -43,10 +43,12 @@ Uma coleção de **86 ferramentas Bash precisas** para artesãos do terminal. N�
 - `disk-space.sh`: Espaço disponível nos discos com identificação de tipo (SSD/NVMe/HDD).
 - `partitions-list.sh`: Lista todas as partições (montadas ou não) com identificação de tipo de disco.
 - `hunt-duplicates.sh`: Busca de arquivos duplicados via SHA-256 (v2 com 18 melhorias).
+- `dedup-files.sh`: Remoção de duplicados com algoritmo em estágios (inode → tamanho → hash parcial → SHA-256 → byte-a-byte, sem O(N²)); estratégias `--keep` (oldest/newest/largestpath) e `--dry-run` por padrão.
 - `organize-downloads.sh`: Organização automática de arquivos por extensão.
 - `batch-rename.sh`: Renomeação em lote por padrão — busca/substituição (literal ou regex), prefixo, sufixo, troca de extensão, maiúsculas/minúsculas e numeração sequencial; `--dry-run` para preview.
 - `video-catalog-organizer.sh`: Reorganiza catálogo de vídeos por estratégia — `--by content` (filmes/séries/cursos/clipes), `--by year` (pastas `YYYY/`) ou `--by quality` (`2160p/1080p/720p/480p`); dry-run por padrão, `--apply` efetiva; `--probe-quality` ativa `ffprobe` (opcional) para resolução real.
 - `dir-summary.sh`: Resumo de diretório com distribuição visual, top arquivos, subdiretórios e idade.
+- `unarchive.sh`: Descompacta arquivos compactados (zip, cbz, jar, rar, cbr, 7z, tar, tar.gz, tgz, tar.bz2, tar.xz, tar.zst, gz, bz2, xz, zst) sozinhos ou em lote, com opção de diretório de saída e varredura recursiva de subpastas.
 - `fix-exec-bit.sh`: Remove o bit de execução de arquivos de dados/documentos (útil após copiar de NTFS/exFAT, onde arquivos regulares ganham `+x` indevidamente).
 - `update-all.sh`: Atualiza pacotes do sistema + linguagens (npm, pip, cargo, brew) em um comando.
 - `package-list-backup.sh`: Exporta/importa lista de pacotes instalados para replicar máquina.
@@ -183,6 +185,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 |--------|-------------|
 | `docker-*.sh` | `docker` (e `docker-compose` para compose-manager) |
 | `disk-health.sh` | `smartmontools` (smartctl) |
+| `dedup-files.sh` | `findutils`, `coreutils` (sha256sum), `diffutils` (cmp) |
 | `disk-space.sh` | `lsblk` (util-linux, presente por padrão) |
 | `partitions-list.sh` | `lsblk` (util-linux, presente por padrão) |
 | `folder-sync.sh`, `quick-backup.sh` | `rsync` |
@@ -235,6 +238,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `audio-to-text.sh` | `ffmpeg`, `python3`, `faster-whisper` (pip) |
 | `fix-exec-bit.sh` | nenhum (coreutils: `find`, `chmod`, `stat`, `xargs`) |
 | `batch-rename.sh` | nenhum (coreutils: `sed`, `mv`) |
+| `unarchive.sh` | `unzip`, `p7zip`, `unrar`/`7z` (rar), `tar`, `zstd` — instalados sob demanda |
 | `fzf` (opcional) | habilita menus interativos no `menu-launcher.sh` e em scripts com seletor |
 
 ## 📝 Notas

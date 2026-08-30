@@ -49,6 +49,7 @@ SCRIPT_DESC=(
     [docker-stats-history.sh]="Registra historico de CPU/RAM dos containers em CSV"
     [docker-status.sh]="Painel resumido do estado do Docker"
     [docker-volume-mgr.sh]="Lista, identifica orfaos, faz backup e restaura volumes"
+    [dedup-files.sh]="Remove arquivos duplicados com hash em estagios (dry-run padrao)"
     [env-manager.sh]="Orquestra dependencias de projetos multiplataforma"
     [folder-sync.sh]="Sincroniza diretorios com rsync"
     [git-sync.sh]="Sincroniza multiplos repositorios Git"
@@ -116,6 +117,7 @@ SCRIPT_DESC=(
     [url-shortener.sh]="Encurta URLs usando is.gd"
     [download-icons.sh]="Baixa e converte icones Material Design (MDI) para PNG"
     [lab-manager.sh]="Gerenciador de ambiente de desenvolvimento (toolchains)"
+    [unarchive.sh]="Descompacta zip, rar, cbz, cbr, 7z, tar e mais (lote ou individual)"
 )
 
 declare -A SCRIPT_CATEGORY
@@ -144,6 +146,7 @@ SCRIPT_CATEGORY=(
     [docker-stats-history.sh]="Docker"
     [docker-status.sh]="Docker"
     [docker-volume-mgr.sh]="Docker"
+    [dedup-files.sh]="Sistema e Manutencao"
     [env-manager.sh]="Instalacao e Execucao"
     [folder-sync.sh]="Sincronizacao e Backup"
     [git-sync.sh]="Sincronizacao e Backup"
@@ -211,6 +214,7 @@ SCRIPT_CATEGORY=(
     [url-shortener.sh]="Produtividade e Notas"
     [download-icons.sh]="Sistema e Manutencao"
     [lab-manager.sh]="Instalacao e Execucao"
+    [unarchive.sh]="Sistema e Manutencao"
 )
 
 CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup" "Seguranca e Criptografia")
