@@ -47,7 +47,7 @@ pack_dirs() {
     # Iterar apenas sobre diretórios (excluindo o próprio target_dir)
     find "$target_dir" -maxdepth 1 -mindepth 1 -type d | while read -r dir; do
         local dir_name=$(basename "$dir")
-        local zip_name="${dir_name}.zip"
+        local zip_name="${target_dir%/}/${dir_name}.zip"
         
         if [[ "$dry_run" == true ]]; then
             echo -e "  ${DIM}[Dry-run]${RESET} zip -r \"$zip_name\" \"$dir\""
@@ -80,6 +80,7 @@ unpack_files() {
         if [[ "$filename" == *.tar.gz ]]; then
             folder_name="${filename%.tar.gz}"
         fi
+        folder_name="${target_dir%/}/${folder_name}"
 
         if [[ "$dry_run" == true ]]; then
             echo -e "  ${DIM}[Dry-run] mkdir -p \"$folder_name\" && unzip/tar \"$file\" -d \"$folder_name\""
@@ -161,7 +162,7 @@ fi
 # Confirmação Interativa
 if [[ "$DRY_RUN" == false ]]; then
     if [ -t 0 ]; then
-        read -r -p "Confirmar operacao em $TARGET_DIR? [s/N] " CONFIRM < /dev/tty 2>/dev/null || CONFIRM="n"
+        read -r -p "Confirmar operacao em $TARGET_DIR? [s/N] " CONFIRM || CONFIRM="n"
         if [[ ! "$CONFIRM" =~ ^[Ss]$ ]]; then
             echo -e "${DIM}Operacao cancelada.${RESET}"
             exit 0
