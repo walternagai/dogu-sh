@@ -259,6 +259,13 @@ if $FLATPAK_ONLY; then
             update)
                 echo -e "  ${BOLD}── Atualizando Flatpaks ──${RESET}"
                 echo ""
+                export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+                for d in /var/lib/flatpak/exports/share "$HOME/.local/share/flatpak/exports/share"; do
+                    case ":$XDG_DATA_DIRS:" in
+                        *":$d:"*) ;;
+                        *) XDG_DATA_DIRS="${XDG_DATA_DIRS:+$XDG_DATA_DIRS:}$d" ;;
+                    esac
+                done
                 run_or_dry "flatpak update (todos)" flatpak update -y
                 echo ""
                 ;;
