@@ -10,11 +10,21 @@
 #   --dry-run        Preview sem executar
 #   --help           Mostra esta ajuda
 #   --version        Mostra versao
+#
+# Seguranca:
+#   - Nunca remove diretorios diretamente (sem rm/find -delete).
+#   - Antes de qualquer update/clean, valida a saude do repo flatpak
+#     (~/.local/share/flatpak/repo com objects/refs/state e flatpak list ok).
+#     Se corrompido, aborta e orienta a rodar 'flatpak repair --user'.
+#   - flatpak uninstall usa --keep-ref para que o GC nunca apague objetos
+#     do repo local (protege apps instalados de serem "esquecidos").
+#   - snap remove --revision usa a coluna correta (Rev) e valida que a
+#     revisao e numerica e nao a ativa.
 
 set -euo pipefail
 
 
-readonly VERSION="1.0.0"
+readonly VERSION="1.1.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 readonly GREEN='\033[1;32m'
@@ -102,6 +112,24 @@ run_or_dry() {
     return $rc
 }
 
+check_flatpak_healthy() {
+    local repo="$HOME/.local/share/flatpak/repo"
+    if ! flatpak list >/dev/null 2>&1; then
+        error "Repositorio flatpak corrompido (flatpak list falhou). Abortando para nao danificar apps instalados. Execute: flatpak repair --user"
+    fi
+    for d in objects refs state config; do
+        if [ ! -e "$repo/$d" ]; then
+            error "Repositorio flatpak corrompido: falta $repo/$d. Abortando. Execute: flatpak repair --user"
+        fi
+    done
+}
+
+check_snap_healthy() {
+    if ! snap list >/dev/null 2>&1; then
+        error "Snapd indisponivel (snap list falhou). Abortando para nao danificar snaps instalados."
+    fi
+}
+
 echo ""
 echo -e "  ${BOLD}Snap/Flatpak Manager${RESET}  ${DIM}v$VERSION${RESET}"
 
@@ -161,6 +189,7 @@ if $SNAP_ONLY; then
                 ;;
 
             update)
+                check_snap_healthy
                 echo -e "  ${BOLD}── Atualizando Snaps ──${RESET}"
                 echo ""
                 run_or_dry "snap refresh (todos)" sudo snap refresh
@@ -168,6 +197,7 @@ if $SNAP_ONLY; then
                 ;;
 
             clean)
+                check_snap_healthy
                 echo -e "  ${BOLD}── Limpando Snaps ──${RESET}"
                 echo ""
 
@@ -176,7 +206,7 @@ if $SNAP_ONLY; then
 
                 if [ "$disabled_snaps" -gt 0 ]; then
                     echo -e "  ${YELLOW}$disabled_snaps${RESET} snap(s) desabilitado(s):"
-                    snap list --all 2>/dev/null | grep 'disabled' | awk '{print "    " $1 " " $2 " (disabled)"}'
+                    snap list --all 2>/dev/null | grep 'disabled' | awk '{print "    " $1 " (rev " $3 ")"}'
                     echo ""
 
                     do_clean=true
@@ -195,8 +225,12 @@ if $SNAP_ONLY; then
 
                     if $do_clean; then
                         if ! $DRY_RUN; then
-                            snap list --all 2>/dev/null | grep 'disabled' | awk '{print $1, $2}' | while read -r name rev; do
-                                run_or_dry "snap remove $name $rev" sudo snap remove "$name" --revision="$rev"
+                            snap list --all 2>/dev/null | grep 'disabled' | awk '{print $1, $3}' | while read -r name rev; do
+                                if [[ ! "$rev" =~ ^[0-9]+$ ]]; then
+                                    warn "Revisao invalida para $name: '$rev' — pulando (nunca remove a revisao ativa)"
+                                    continue
+                                fi
+                                run_or_dry "snap remove $name (rev $rev)" sudo snap remove "$name" --revision="$rev"
                             done
                         else
                             echo -e "  ${DIM}[dry-run] Removeria $disabled_snaps snap(s) desabilitado(s)${RESET}"
@@ -257,6 +291,7 @@ if $FLATPAK_ONLY; then
                 ;;
 
             update)
+                check_flatpak_healthy
                 echo -e "  ${BOLD}── Atualizando Flatpaks ──${RESET}"
                 echo ""
                 export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
@@ -271,10 +306,11 @@ if $FLATPAK_ONLY; then
                 ;;
 
             clean)
+                check_flatpak_healthy
                 echo -e "  ${BOLD}── Limpando Flatpaks ──${RESET}"
                 echo ""
 
-                unused_count=$(flatpak uninstall --unused 2>/dev/null | grep -c '.' || echo 0)
+                unused_count=$(flatpak uninstall --unused --keep-ref 2>/dev/null | grep -c '.' || echo 0)
                 [[ "$unused_count" =~ ^[0-9]+$ ]] || unused_count=0
 
                 if [ "$unused_count" -gt 0 ]; then
@@ -293,7 +329,7 @@ if $FLATPAK_ONLY; then
                         esac
                     fi
                     if $do_clean; then
-                        run_or_dry "flatpak uninstall --unused -y" flatpak uninstall --unused -y
+                        run_or_dry "flatpak uninstall --unused --keep-ref -y" flatpak uninstall --unused --keep-ref -y
                     fi
                 else
                     echo -e "  ${GREEN}✓${RESET} Nenhum flatpak nao utilizado para limpar"
