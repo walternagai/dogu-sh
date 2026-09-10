@@ -422,7 +422,7 @@ clean_dir "Codium cache (~/.cache/codium)" "$HOME/.cache/codium" "Cache do VSCod
 clean_dir "Steam cache (~/.cache/steam)" "$HOME/.cache/steam" "Cache de assets e HTML"
 clean_dir "Steam compatdata (~/.steam/steam/steamapps/compatdata)" "$HOME/.steam/steam/steamapps/compatdata" "Dados de Proton — cuidado, pode afetar jogos"
 clean_dir "Lutris cache (~/.cache/lutris)" "$HOME/.cache/lutris" "Cache de assets de jogos"
-clean_dir "Flatpak cache (~/.local/share/flatpak/repo)" "$HOME/.local/share/flatpak/repo" "Cache de downloads Flatpak"
+clean_dir "Flatpak cache (~/.cache/flatpak)" "$HOME/.cache/flatpak" "Cache de downloads Flatpak — nao limpar ~/.local/share/flatpak/repo (object store)"
 clean_dir "Snap cache (~/.snap)" "$HOME/.snap" "Cache de pacotes Snap"
 clean_dir "Docker build cache (~/.cache/docker)" "$HOME/.cache/docker" "Cache de builds Docker — requer docker system prune"
 clean_dir "Electron apps cache (~/.config/Electron)" "$HOME/.config/Electron" "Cache de apps Electron"
