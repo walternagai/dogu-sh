@@ -19,7 +19,7 @@ if [[ -n "${NO_COLOR:-}" ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
-readonly VERSION="1.3.0"
+readonly VERSION="1.4.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN_DIR="$HOME/.local/bin"
 DRY_RUN=false

@@ -9,6 +9,7 @@
 #   --no-merged     Mostra apenas branches nao merged
 #   --delete        Deleta branches stale (requer confirmacao)
 #   --force         Deleta sem confirmacao
+#   --dry-run       Modo preview sem deletar branches (padrao)
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
 
@@ -51,6 +52,7 @@ STALE_DAYS=30
 SHOW_MERGED=""
 DO_DELETE=false
 FORCE_DELETE=false
+DRY_RUN=false
 
 # --- Parse de argumentos ---
 while [[ $# -gt 0 ]]; do
@@ -66,6 +68,7 @@ while [[ $# -gt 0 ]]; do
         --no-merged) SHOW_MERGED="unmerged"; shift ;;
         --delete) DO_DELETE=true; shift ;;
         --force) FORCE_DELETE=true; shift ;;
+        --dry-run) DRY_RUN=true; DO_DELETE=false; shift ;;
         --help|-h)
             echo ""
             echo "  git-stale.sh — Lista branches antigas sem merge que podem ser limpas"
@@ -80,6 +83,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --no-merged         Mostra apenas branches nao merged"
             echo "    --delete            Deleta branches stale (requer confirmacao)"
             echo "    --force             Deleta sem confirmacao"
+            echo "    --dry-run           Modo preview sem deletar branches (padrao)"
             echo "    --help|-h           Mostra esta ajuda"
             echo "    --version|-V        Mostra versao"
             echo ""
@@ -288,7 +292,9 @@ done
 echo ""
 
 # --- Delecao ---
-if [ "$DO_DELETE" = true ] && [ "${#STALE_BRANCHES[@]}" -gt 0 ]; then
+if [ "$DRY_RUN" = true ] && [ "${#STALE_BRANCHES[@]}" -gt 0 ]; then
+    echo -e "  ${DIM}[dry-run] Modo preview — nenhuma branch foi deletada.${RESET}"
+elif [ "$DO_DELETE" = true ] && [ "${#STALE_BRANCHES[@]}" -gt 0 ]; then
     if [ "$FORCE_DELETE" = false ]; then
         echo -e "  ${YELLOW}ATENCAO: Ira deletar ${#STALE_BRANCHES[@]} branch(es) stale(s)${RESET}"
         if [ -t 0 ]; then

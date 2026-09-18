@@ -79,7 +79,7 @@ description: >
 | `env-validator.sh` | read-only | Valida variaveis de ambiente obrigatorias para o projeto | ✅ |
 | `folder-sync.sh` | destructive | Sincroniza diretorios com rsync | ❌ |
 | `git-pr-checklist.sh` | read-only | Checklist automatico de qualidade e conformidade antes de abrir Pull Request | ✅ |
-| `git-stale.sh` | read-only | Lista branches antigas sem merge que podem ser limpas | ✅ |
+| `git-stale.sh` | destructive | Lista branches antigas sem merge que podem ser limpas | ✅ |
 | `git-sync.sh` | destructive | Sincroniza multiplos repositorios git | ❌ |
 | `install-scripts.sh` | dry-run-ok | Instala scripts no ~/.local/bin e configura o PATH | ❌ |
 | `lab-manager.sh` | dry-run-ok | Gerenciador unificado de ambiente de desenvolvimento | ✅ |
@@ -205,6 +205,7 @@ Estes scripts produzem JSON válido quando chamados com `--json`:
 | `dedup-files.sh` | system | Compara varios arquivos e remove duplicados |
 | `docker-restore.sh` | docker | Restaura volumes e configuracoes de containers |
 | `folder-sync.sh` | devops | Sincroniza diretorios com rsync |
+| `git-stale.sh` | devops | Lista branches antigas sem merge que podem ser limpas |
 | `git-sync.sh` | devops | Sincroniza multiplos repositorios git |
 | `hunt-duplicates.sh` | system | Encontra arquivos duplicados por hash SHA-256 |
 | `process-killer.sh` | system | Seletor interativo de processos para termino |

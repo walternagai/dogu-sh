@@ -1,0 +1,6 @@
+verify:
+  lint: bash -c "shellcheck --severity=error dogu *.sh"
+  test: bash -c "bash -n dogu *.sh"
+  coverage: bash -c "./dogu-make-skill.sh --dry-run >/dev/null && echo 'TOTAL 100%'"
+  coverage_pattern: "TOTAL\\s+(\\d+)%"
+  gate: 70

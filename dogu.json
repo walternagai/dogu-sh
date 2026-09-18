@@ -16,9 +16,9 @@
     "code-analysis": 6
   },
   "risk_levels": {
-    "read-only": 64,
+    "read-only": 63,
     "dry-run-ok": 33,
-    "destructive": 7
+    "destructive": 8
   },
   "features": {
     "has_json": 25,
@@ -5505,7 +5505,7 @@
     "git-stale.sh": {
       "description": "Lista branches antigas sem merge que podem ser limpas",
       "category": "devops",
-      "risk": "read-only",
+      "risk": "destructive",
       "has_json": true,
       "has_dry_run": true,
       "interactive": true,
@@ -5550,6 +5550,11 @@
           "flag": "--force",
           "type": "bool",
           "desc": "Deleta sem confirmacao"
+        },
+        {
+          "flag": "--dry-run",
+          "type": "bool",
+          "desc": "Modo preview sem deletar branches (padrao)"
         },
         {
           "flag": "--help",

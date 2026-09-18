@@ -52,6 +52,7 @@ Uma coleção de **104 ferramentas Bash precisas** para artesãos do terminal. N
 - `batch-rename.sh`: Renomeação em lote por padrão — busca/substituição (literal ou regex), prefixo, sufixo, troca de extensão, maiúsculas/minúsculas e numeração sequencial; `--dry-run` para preview.
 - `video-catalog-organizer.sh`: Reorganiza catálogo de vídeos por estratégia — `--by content` (filmes/séries/cursos/clipes), `--by year` (pastas `YYYY/`) ou `--by quality` (`2160p/1080p/720p/480p`); dry-run por padrão, `--apply` efetiva; `--probe-quality` ativa `ffprobe` (opcional) para resolução real.
 - `dir-summary.sh`: Resumo de diretório com distribuição visual, top arquivos, subdiretórios e idade.
+- `archive-manager.sh`: Compacta pastas individualmente em arquivos .tar.gz ou .zip e descompacta arquivos em massa em um diretório alvo.
 - `unarchive.sh`: Descompacta arquivos compactados (zip, cbz, jar, rar, cbr, 7z, tar, tar.gz, tgz, tar.bz2, tar.xz, tar.zst, gz, bz2, xz, zst) sozinhos ou em lote, com opção de diretório de saída e varredura recursiva de subpastas.
 - `fix-exec-bit.sh`: Remove o bit de execução de arquivos de dados/documentos (útil após copiar de NTFS/exFAT, onde arquivos regulares ganham `+x` indevidamente).
 - `update-all.sh`: Atualiza pacotes do sistema + linguagens (npm, pip, cargo, brew) em um comando.
@@ -276,6 +277,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `audio-to-text.sh` | `ffmpeg`, `python3`, `faster-whisper` (pip) |
 | `fix-exec-bit.sh` | nenhum (coreutils: `find`, `chmod`, `stat`, `xargs`) |
 | `batch-rename.sh` | nenhum (coreutils: `sed`, `mv`) |
+| `archive-manager.sh` | `tar`, `gzip`, `zip`, `unzip` |
 | `unarchive.sh` | `unzip`, `p7zip`, `unrar`/`7z` (rar), `tar`, `zstd` — instalados sob demanda |
 | `fzf` (opcional) | habilita menus interativos no `menu-launcher.sh` e em scripts com seletor |
 

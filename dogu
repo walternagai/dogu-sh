@@ -507,39 +507,50 @@ else:
     error "Arquivo '${canonical}' não encontrado em ${SCRIPT_DIR}"
   }
 
+  # Verifica argumentos de controle e consulta
+  local has_yes=false
+  local filtered_args=()
+  local is_info_query=false
+  for arg in "${extra_args[@]}"; do
+    if [[ "$arg" == "--yes" ]]; then
+      has_yes=true
+    else
+      filtered_args+=("$arg")
+      case "$arg" in
+        --help|-h|--version|-V) is_info_query=true ;;
+      esac
+    fi
+  done
+
   # Verifica risco
   local risk
   risk=$("$PYTHON" -c "import json,sys; print(json.load(sys.stdin).get('risk','read-only'))" <<< "$meta_json")
 
-  if [[ "$risk" == "destructive" ]]; then
-    # Verifica se --yes já foi passado
-    local has_yes=false
-    for arg in "${extra_args[@]}"; do
-      [[ "$arg" == "--yes" ]] && has_yes=true
-    done
+  if [[ "$risk" == "destructive" ]] && ! $has_yes && ! $is_info_query; then
+    local desc
+    desc=$("$PYTHON" -c "import json,sys; print(json.load(sys.stdin).get('description',''))" <<< "$meta_json")
 
-    if ! $has_yes; then
-      local desc
-      desc=$("$PYTHON" -c "import json,sys; print(json.load(sys.stdin).get('description',''))" <<< "$meta_json")
+    warn "⚠  ${BOLD}${RED}ATENÇÃO${RESET}: ${BOLD}${canonical}${RESET} é um script ${RED}DESTRUTIVO${RESET}"
+    echo "    $desc"
+    echo ""
+    echo "    Isto pode modificar seu sistema de forma irreversível."
+    echo "    Use --dry-run primeiro quando disponível."
+    echo ""
 
-      warn "⚠  ${BOLD}${RED}ATEÇÃO${RESET}: ${BOLD}${canonical}${RESET} é um script ${RED}DESTRUTIVO${RESET}"
-      echo "    $desc"
-      echo ""
-      echo "    Isto pode modificar seu sistema de forma irreversível."
-      echo "    Use --dry-run primeiro quando disponível."
-      echo ""
-
-      local confirm=""
-      read -rp "    Continuar? [y/N] " confirm
-      case "$confirm" in
-        [yY]|[sS]|[sS][iI][mM]) ;;
-        *) echo "    Abortado."; exit 0 ;;
-      esac
+    if ! [ -t 0 ]; then
+      error "Execucao nao interativa detectada para script destrutivo '${canonical}'. Use --yes para confirmar automaticamente."
     fi
+
+    local confirm=""
+    read -rp "    Continuar? [y/N] " confirm
+    case "$confirm" in
+      [yY]|[sS]|[sS][iI][mM]) ;;
+      *) echo "    Abortado."; exit 0 ;;
+    esac
   fi
 
   # Executa
-  exec "$script_path" "${extra_args[@]}"
+  exec "$script_path" "${filtered_args[@]}"
 }
 
 # ─── Main ────────────────────────────────────────────────────────────

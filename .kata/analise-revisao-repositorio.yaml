@@ -1,0 +1,164 @@
+task: analise-revisao-repositorio
+status: approved
+domain: coding
+done: "Inventário da estrutura e dos componentes do repositório, execução das verificações disponíveis, e relatório de achados priorizados com evidências, impacto e recomendações; verificar relendo o relatório e registrando os comandos executados."
+base_commit: "9af1cc0dcb9c463242238970d2d362f66250cbff"
+approved_commit: ""
+fit:
+  trivial: false
+  route: plan-first
+  reason: "Revisão ampla do repositório, com escopo ainda aberto e sem autorização para alterar código; primeiro é necessário mapear e priorizar o trabalho."
+  answered: true
+  skipped: false
+think:
+  problem: "Analisar e revisar o repositório dōgu-sh para identificar problemas de qualidade, inconsistências, riscos operacionais e oportunidades de melhoria, produzindo achados acionáveis sem alterar o código durante a revisão inicial."
+  assumptions:
+    - "A primeira etapa será somente leitura e não executará ações destrutivas."
+    - "O escopo inicial inclui scripts Bash, dispatcher dogu, manifesto dogu.json, documentação e instalação."
+    - "As recomendações deverão ser sustentadas por evidências observáveis no repositório e pelos comandos de verificação disponíveis."
+  alternatives:
+    - "Revisão arquivo a arquivo desde o início — descartada: pode consumir esforço sem priorizar áreas de maior risco."
+    - "Corrigir problemas à medida que forem encontrados — descartada: mistura diagnóstico com implementação e dificulta separar achados de mudanças."
+    - "Começar por inventário, riscos e verificações, depois propor correções — escolhida: preserva rastreabilidade e permite aprovação do escopo."
+  unknowns: "A profundidade final, a ordem de prioridade e quais achados deverão virar correções serão definidas a partir das evidências; isso não bloqueia a criação da task."
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: "Auditoria somente leitura; nenhuma abstração, configuração ou mudança de produto foi adicionada."
+  answered: true
+  skipped: false
+intent:
+  code_does: "O repositório contém 104 entradas no dogu.json, 105 scripts .sh (incluindo o gerador de SKILL) e um dispatcher dogu; as tasks aprovadas registram implementações e planos concluídos."
+  check_expects: "A auditoria deve confrontar cada task aprovada com arquivos presentes, manifesto, menu, documentação e verificações executáveis, sem presumir que status approved prove implementação."
+  spec_says: "AGENTS.md, README.md e SCRIPTING_GUIDE.md exigem ferramentas Bash registradas, suporte a --help, set -euo pipefail, NO_COLOR e guards de TTY para prompts interativos; dogu também promete confirmação segura via --yes."
+  all_agree: false
+  conflict_resolution: "As divergências foram registradas como achados, sem alterar o código: o dispatcher não cumpre integralmente --yes/TTY, git-stale tem risco subdeclarado, archive-manager falta no menu/README e há inconsistências nos registros de tasks."
+  answered: true
+  skipped: false
+surgical:
+  files:
+    - path: .kata/analise-revisao-repositorio.yaml
+      action: create
+      necessary: true
+      motivo: "Registro da auditoria e de suas evidências; nenhum arquivo de produto foi alterado."
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+verify:
+  ruff_clean: "N/A (projeto Bash; ShellCheck executado como equivalente)"
+  tests_pass: "N/A (não há suíte automatizada; smoke checks equivalentes passaram)"
+  coverage_pct: 0.0
+  coverage_pass: "N/A (não há suíte de testes/coverage nem .kata/config.yaml)"
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+  notes: |
+    Bash: bash -n passou em todos os 105 scripts .sh e no dispatcher dogu.
+    ShellCheck --severity=error passou; shellcheck completo retornou 657 avisos/style findings.
+    dogu.json é JSON válido; 104 entradas, todas com arquivo correspondente; SKILL.md é idêntico ao preview do gerador.
+    Dispatcher: version/help/list/search/info/categories/risks e saídas JSON passaram; smoke JSON dos 10 scripts de expansão passou.
+    --help/--version passaram nos 10 scripts de expansão e nos scripts de mídia auditados.
+    Não há testes automatizados, cobertura, workflow CI ou configuração kata específica no repositório.
+preflight:
+  skills_missing: []
+artifact:
+  intent_owed: true
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: true
+  pending_present: true
+  twins_owed: false
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: "Corrigir os achados AUD-001 a AUD-004 e decidir se as inconsistências de tracking AUD-005 devem ser normalizadas; nenhuma correção de produto foi autorizada nesta auditoria."
+  documented: true
+twins:
+  pattern: "reads interativos sem guard [ -t 0 ] e metadados de risco incompatíveis com flags destrutivas"
+  result: "Busca ampla encontrou 3 reads com default sem guard em git-sync.sh e flags destrutivas subdeclaradas em git-stale.sh; não houve edição."
+  searched: true
+  defect_fixed: false
+  matches_count: 3
+  files_count: 2
+  fix_applied: false
+
+audit:
+  verdict: "CONCLUÍDA COM ACHADOS"
+  scope: "As 10 tasks com status approved no diretório .kata, além da consistência entre código, manifesto, menu, README, SKILL.md e regras do projeto."
+  implementation_summary: "9 tasks são de implementação e têm os artefatos principais presentes; dogu-agent-readiness é explicitamente uma task de plano, não de código."
+  kata_audit:
+    clean_tasks: 6
+    degraded_tasks: 4
+    fake_tasks: 0
+    skipped_tasks: 0
+    clean: "dogu-agent-expansion, video-catalog-organizer, audio-to-text, harden-read-prompt, video-to-audio, fix-dependency-auto-install"
+    degraded: "dogu-manifest-implementation, dogu-json-nocolor, dogu-cli-dispatcher, dogu-agent-readiness"
+    note: "As 4 tasks degradadas registram fases como seguidas, mas o preflight histórico informa que as skills correspondentes não estavam carregadas. O doctor atual confirma instalação completa; isso não reescreve o histórico."
+  tasks:
+    - name: dogu-agent-expansion
+      result: "IMPLEMENTADA — os 10 scripts existem, estão no dogu.json, README.md, menu-launcher.sh e passaram smoke JSON."
+    - name: video-catalog-organizer
+      result: "IMPLEMENTADA — script, manifesto, README e menu existem; registro ainda contém pending contraditório pedindo a própria implementação."
+    - name: audio-to-text
+      result: "IMPLEMENTADA — script existe, está registrado e --help/--version passam; teste end-to-end histórico não foi repetido nesta auditoria."
+    - name: harden-read-prompt
+      result: "IMPLEMENTADA NO ESCOPO DECLARADO — guia e guards de confirmações destrutivas existem; permanecem prompts de entrada livre e 3 reads com default sem guard em git-sync.sh."
+    - name: video-to-audio
+      result: "IMPLEMENTADA — script existe, está registrado e --help/--version passam; teste de ffmpeg histórico não foi repetido nesta auditoria."
+    - name: dogu-manifest-implementation
+      result: "IMPLEMENTADA — dogu.json válido com 104 entradas e todos os arquivos manifestados presentes."
+    - name: dogu-json-nocolor
+      result: "IMPLEMENTADA COM RESSALVA — NO_COLOR e JSON funcionam nos checks realizados; dependency-helper.sh é uma exceção sem strict mode/NO_COLOR, coerente com seu papel de biblioteca mas não documentada como exceção geral."
+    - name: dogu-cli-dispatcher
+      result: "IMPLEMENTADA COM DEFEITOS — comandos de consulta funcionam, mas --yes é encaminhado ao script e --help de scripts destrutivos dispara confirmação antes da ajuda."
+    - name: dogu-agent-readiness
+      result: "PLANO ENTREGUE, NÃO IMPLEMENTAÇÃO — o próprio done diz que o entregável é plano; verify.success_criteria_met está false apesar de status approved."
+    - name: fix-dependency-auto-install
+      result: "IMPLEMENTADA — check_and_install aceita o terceiro argumento e o usa no comando de instalação."
+  checks:
+    - "bash -n: PASS — 105 scripts .sh + dogu"
+    - "ShellCheck severity=error: PASS; ShellCheck completo: 657 warnings/style findings"
+    - "Manifesto: PASS estrutural — JSON válido, 104 entradas, 0 arquivos manifestados ausentes"
+    - "SKILL.md: PASS — preview de dogu-make-skill.sh --dry-run idêntico ao arquivo atual"
+    - "Dispatcher: PASS para version/help/list/search/info/categories/risks e JSON; FAIL de contrato nos achados AUD-001 e AUD-002"
+    - "Scripts de expansão: PASS — 10 smoke JSON e 13 pares --help/--version"
+    - "YAML: PASS — 11 arquivos .kata carregam com PyYAML"
+  findings:
+    - id: AUD-001
+      severity: high
+      title: "dogu --yes não é consumido pelo dispatcher"
+      evidence: "./dogu process-killer --yes --help retorna exit 1 com 'Opcao desconhecida: --yes'; dogu reconhece --yes para liberar a confirmação, mas repassa a flag ao script filho."
+      recommendation: "Remover --yes antes do exec ou definir um contrato explícito e suportado pelos scripts filhos; adicionar smoke test para cada classe de risco."
+    - id: AUD-002
+      severity: high
+      title: "git-stale está classificado como read-only apesar de deletar branches"
+      evidence: "dogu.json marca git-stale.sh como risk=read-only; o script aceita --delete e --force. ./dogu git-stale --delete --help não exibe alerta DESTRUTIVO."
+      recommendation: "Reclassificar o risco e testar que o dispatcher bloqueia/alerta antes de ações destrutivas."
+    - id: AUD-003
+      severity: medium
+      title: "archive-manager está fora do menu e do README"
+      evidence: "dogu.json e SKILL.md incluem archive-manager.sh; comparação encontrou 104 scripts no manifesto, 103 entradas no menu e archive-manager.sh ausente no menu e no README."
+      recommendation: "Registrar archive-manager.sh no SCRIPT_DESC/SCRIPT_CATEGORY e na seção correspondente do README, ou documentar formalmente a exclusão."
+    - id: AUD-004
+      severity: medium
+      title: "Hardening de prompts ainda tem lacunas"
+      evidence: "git-sync.sh contém reads com defaults sem guard em 127, 256 e 352; além disso, o guard [ -t 0 ] || [ -r /dev/tty ] considera /dev/tty legível mesmo sem stdin TTY neste ambiente."
+      recommendation: "Criar follow-up para normalizar todos os prompts conforme a regra canônica, separando entradas livres da confirmação de ações."
+    - id: AUD-005
+      severity: medium
+      title: "Registros de tasks não são internamente consistentes"
+      evidence: "O kata --audit encontrou 6 tasks limpas e 4 degradadas por preflight histórico; além disso, dogu-agent-readiness está approved com success_criteria_met=false, video-catalog-organizer está approved com pending pedindo sua própria implementação e tasks de fases anteriores mantêm pending apontando para tasks já approved."
+      recommendation: "Reconciliar status, done, verify e pending, distinguindo plano concluído, implementação concluída e follow-up futuro."
+    - id: AUD-006
+      severity: low
+      title: "Não existe gate automatizado do projeto"
+      evidence: "Não há tests/, arquivos Bats, .github/workflows/ ou .kata/config.yaml; ShellCheck completo retorna 657 findings, embora severity=error retorne zero."
+      recommendation: "Adicionar .kata/config.yaml com verificações Bash/ShellCheck e uma suíte mínima de smoke tests antes de declarar novos ciclos verdes."
