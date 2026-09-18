@@ -36,14 +36,19 @@ if [ -f "$DEP_HELPER" ]; then
     check_and_install "cmp" "$INSTALLER" "diffutils"
 fi
 
-readonly GREEN='\033[1;32m'
-readonly YELLOW='\033[1;33m'
-readonly RED='\033[1;31m'
-readonly CYAN='\033[1;36m'
-readonly BLUE='\033[1;34m'
-readonly BOLD='\033[1m'
-readonly DIM='\033[0;90m'
-readonly RESET='\033[0m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+RED='\033[1;31m'
+CYAN='\033[1;36m'
+BLUE='\033[1;34m'
+BOLD='\033[1m'
+DIM='\033[0;90m'
+RESET='\033[0m'
+
+# NO_COLOR support (https://no-color.org/)
+if [[ -n "${NO_COLOR:-}" ]]; then
+  GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
+fi
 
 readonly HASH_PROBE_BYTES=4096
 readonly PROGRESS_EVERY=2000

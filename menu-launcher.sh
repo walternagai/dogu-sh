@@ -6,14 +6,19 @@
 
 set -euo pipefail
 
-readonly GREEN='\033[1;32m'
-readonly YELLOW='\033[1;33m'
-readonly RED='\033[1;31m'
-readonly CYAN='\033[1;36m'
-readonly BLUE='\033[1;34m'
-readonly BOLD='\033[1m'
-readonly DIM='\033[0;90m'
-readonly RESET='\033[0m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+RED='\033[1;31m'
+CYAN='\033[1;36m'
+BLUE='\033[1;34m'
+BOLD='\033[1m'
+DIM='\033[0;90m'
+RESET='\033[0m'
+
+# NO_COLOR support (https://no-color.org/)
+if [[ -n "${NO_COLOR:-}" ]]; then
+  GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
+fi
 
 log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
@@ -118,6 +123,16 @@ SCRIPT_DESC=(
     [download-icons.sh]="Baixa e converte icones Material Design (MDI) para PNG"
     [lab-manager.sh]="Gerenciador de ambiente de desenvolvimento (toolchains)"
     [unarchive.sh]="Descompacta zip, rar, cbz, cbr, 7z, tar e mais (lote ou individual)"
+    [codebase-summary.sh]="Resumo completo do projeto para agentes de IA"
+    [context-gather.sh]="Coleta contexto do projeto para agentes de IA"
+    [stack-detector.sh]="Detecta automaticamente a stack tecnologica"
+    [impact-analyzer.sh]="Analisa impacto de alteracoes em arquivos"
+    [env-validator.sh]="Valida variaveis de ambiente obrigatorias"
+    [dependency-tree.sh]="Mostra arvore de dependencias internas"
+    [test-coverage.sh]="Analise de cobertura de testes por modulo"
+    [git-stale.sh]="Lista branches antigas sem merge que podem ser limpas"
+    [git-pr-checklist.sh]="Checklist automatico antes de abrir Pull Request"
+    [secret-scanner.sh]="Busca segredos expostos em codigo e configuracao"
 )
 
 declare -A SCRIPT_CATEGORY
@@ -215,9 +230,19 @@ SCRIPT_CATEGORY=(
     [download-icons.sh]="Sistema e Manutencao"
     [lab-manager.sh]="Instalacao e Execucao"
     [unarchive.sh]="Sistema e Manutencao"
+    [codebase-summary.sh]="Analise de Codigo"
+    [context-gather.sh]="Analise de Codigo"
+    [stack-detector.sh]="Analise de Codigo"
+    [impact-analyzer.sh]="Analise de Codigo"
+    [env-validator.sh]="Infraestrutura"
+    [dependency-tree.sh]="Analise de Codigo"
+    [test-coverage.sh]="Analise de Codigo"
+    [git-stale.sh]="Sincronizacao e Backup"
+    [git-pr-checklist.sh]="Analise de Codigo"
+    [secret-scanner.sh]="Seguranca e Criptografia"
 )
 
-CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup" "Seguranca e Criptografia")
+CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup" "Seguranca e Criptografia" "Analise de Codigo")
 
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -267,6 +292,7 @@ get_cat_icon() {
         "Sistema e Monitoramento") echo "🖥" ;;
         "Rede e Lookup") echo "🌐" ;;
         "Seguranca e Criptografia") echo "🔐" ;;
+        "Analise de Codigo") echo "🔍" ;;
         *) echo "📁" ;;
     esac
 }

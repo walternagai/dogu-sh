@@ -2,11 +2,14 @@
 
 > **dōgu** (道具) — *substantivo japonês*: ferramenta, instrumento, utensílio.
 
-Uma coleção de **87 ferramentas Bash precisas** para artesãos do terminal. Não é um sistema, não é uma plataforma — é o seu kit de instrumentos para Docker, sistema, rede, produtividade, criptografia, conversão e muito mais em Linux/macOS.
+Uma coleção de **104 ferramentas Bash precisas** para artesãos do terminal. Não é um sistema, não é uma plataforma — é o seu kit de instrumentos para Docker, sistema, rede, produtividade, criptografia, conversão e muito mais em Linux/macOS.
 
 ## 🚀 Funcionalidades
 
 ### 📦 Instalação e Execução
+- `dogu`: Dispatcher unificado — ponto de entrada único para todas as ferramentas com listagem, busca e metadados.
+- `dogu.json`: Manifesto estruturado com metadados de todos os scripts para autodescoberta por agentes de IA.
+- `dogu-make-skill.sh`: Gerador automático de `SKILL.md` a partir de `dogu.json` para integração com Claude Code/OpenCode.
 - `install-scripts.sh`: Instala todos os scripts em `~/.local/bin` e configura o PATH automaticamente.
 - `menu-launcher.sh`: Menu interativo (com suporte a `fzf`) para executar qualquer ferramenta do kit.
 - `env-manager.sh`: Orquestrador de ambientes que detecta e instala dependências de projetos (npm, pip, cargo, maven, gradle, composer, bundler, brew, apt).
@@ -34,6 +37,7 @@ Uma coleção de **87 ferramentas Bash precisas** para artesãos do terminal. N�
 - `ssh-key-manager.sh`: Geração, listagem, rotação e distribuição de chaves SSH entre hosts.
 - `ssh-tunnel-mgr.sh`: Gerenciador de túneis SSH (local e remoto).
 - `env-keygen.sh`: Gera chaves secretas seguras para arquivos `.env` (hex, base64, uuid, django, fernet, rails, alnum, ascii, numeric, password).
+- `secret-scanner.sh`: Busca segredos expostos em código e arquivos de configuração (API keys, tokens, senhas, chaves privadas).
 
 ### 🛠️ Sistema e Manutenção
 - `clean-cache.sh`: Limpeza de arquivos temporários e caches de apps.
@@ -58,6 +62,7 @@ Uma coleção de **87 ferramentas Bash precisas** para artesãos do terminal. N�
 - `quick-backup.sh`: Backup incremental via rsync.
 - `folder-sync.sh`: Sincronização de diretórios.
 - `git-sync.sh`: Sincronização em massa de múltiplos repositórios Git, com commit via Ollama e resolução interativa de conflitos.
+- `git-stale.sh`: Lista e limpa branches antigas sem merge ou sem atividade no Git.
 
 ### ⚙️ Infraestrutura
 - `dependency-helper.sh`: Biblioteca compartilhada de verificação e auto-instalação de dependências.
@@ -127,6 +132,16 @@ Uma coleção de **87 ferramentas Bash precisas** para artesãos do terminal. N�
 - `dependency-checker.sh`: Verifica dependências externas do projeto dōgu-sh.
 - `lab-manager.sh`: Gerenciador unificado de ambiente de desenvolvimento (toolchains Ubuntu/Derivados).
 
+### 🔍 Análise de Código
+- `codebase-summary.sh`: Resumo completo do projeto (linguagens, arquivos, testes, docs) para agentes de IA.
+- `context-gather.sh`: Coleta contexto de arquivos específicos (imports, funções, classes, arquivos relacionados).
+- `stack-detector.sh`: Detecta automaticamente a stack tecnológica (frameworks, linters, CI/CD, containers).
+- `impact-analyzer.sh`: Analisa impacto de alterações em arquivos (dependentes, testes, nível de risco).
+- `dependency-tree.sh`: Mostra árvore de dependências internas com detecção de circulares e órfãos.
+- `test-coverage.sh`: Análise de cobertura de testes por módulo com mapeamento arquivo→teste.
+- `env-validator.sh`: Valida variáveis de ambiente obrigatórias contra `.env` e template.
+- `git-pr-checklist.sh`: Checklist automático de qualidade, testes, lint e convenções antes de abrir Pull Request.
+
 ## 🛠️ Instalação e Uso
 
 ### Instalação rápida (recomendado)
@@ -151,6 +166,29 @@ Isso copia todos os scripts para `~/.local/bin`, configura o PATH no seu shell (
 ```bash
 chmod +x *.sh
 ./nome-do-script.sh --help
+```
+
+### Dispatcher unificado (dogu)
+
+```bash
+# Listar todas as ferramentas
+./dogu list
+
+# Buscar por categoria
+./dogu list --category docker
+
+# Buscar por descrição
+./dogu search limpeza
+
+# Ver metadados de um script
+./dogu info docker-status.sh
+
+# Executar diretamente
+./dogu docker-status
+
+# Saída em JSON (para agentes de IA)
+./dogu docker-status --json
+./dogu list --json
 ```
 
 ### Menu interativo
@@ -244,11 +282,22 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 ## 📝 Notas
 - A maioria dos scripts suporta a flag `--dry-run` para visualização das alterações antes de aplicá-las.
 - Execute qualquer script com `--help` para ver todas as opções disponíveis.
+- Scripts com `--json` produzem saída estruturada para integração com agentes de IA e automação.
+- Todos os scripts respeitam a variável de ambiente `NO_COLOR` (padrão [no-color.org](https://no-color.org/)) — defina `export NO_COLOR=1` para desabilitar cores.
 - Para **desinstalar** todos os scripts, execute `./install-scripts.sh --uninstall` — remove os links em `~/.local/bin` e limpa a entrada do PATH.
 - Para ver o número de dependências suportadas, execute `./dependency-helper.sh --help`.
 
 ## 🛠️ Guia do Desenvolvedor
 Consulte [SCRIPTING_GUIDE.md](./SCRIPTING_GUIDE.md) para o guia completo de boas práticas: boilerplate obrigatório, paleta de cores, padrões de `--help`/`--version`, integração com `dependency-helper.sh`, tratamento de sinais, exit codes, portabilidade e checklist para novos scripts.
+
+### Integração com Agentes de IA
+
+O `dogu-sh` é projetado para uso por agentes de IA (Claude Code, OpenCode, etc.):
+
+- **`dogu.json`**: Manifesto estruturado com metadados de todos os scripts (categoria, risco, argumentos, dependências).
+- **`dogu`**: Dispatcher que normaliza acesso e fornece listagem, busca e info.
+- **`--json`**: Saída estruturada em JSON para 15 scripts (diagnóstico, Docker, sistema).
+- **`NO_COLOR`**: Suporte ao padrão [no-color.org](https://no-color.org/) em todos os scripts.
 
 ## 📖 git-sync.sh — Detalhes
 

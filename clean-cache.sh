@@ -4,6 +4,7 @@
 # Opcoes:
 #   --dry-run       Preview sem apagar nada
 #   --all           Limpa todos os caches sem confirmacao
+#   --json          Saida em formato JSON (requer --dry-run)
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
 
@@ -13,14 +14,19 @@ set -euo pipefail
 readonly VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-readonly GREEN='\033[1;32m'
-readonly YELLOW='\033[1;33m'
-readonly RED='\033[1;31m'
-readonly CYAN='\033[1;36m'
-readonly BLUE='\033[1;34m'
-readonly BOLD='\033[1m'
-readonly DIM='\033[0;90m'
-readonly RESET='\033[0m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+RED='\033[1;31m'
+CYAN='\033[1;36m'
+BLUE='\033[1;34m'
+BOLD='\033[1m'
+DIM='\033[0;90m'
+RESET='\033[0m'
+
+# NO_COLOR support (https://no-color.org/)
+if [[ -n "${NO_COLOR:-}" ]]; then
+  GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
+fi
 
 log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
@@ -35,6 +41,7 @@ if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" 
 
 DRY_RUN=false
 CLEAN_ALL=false
+JSON_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -46,6 +53,11 @@ while [[ $# -gt 0 ]]; do
             CLEAN_ALL=true
             shift
             ;;
+        --json|-j)
+            JSON_MODE=true
+            DRY_RUN=true  # JSON mode requires dry-run
+            shift
+            ;;
         --help|-h)
             echo ""
             echo "  clean-cache.sh — Apaga arquivos temporarios e cache de aplicativos"
@@ -55,6 +67,7 @@ while [[ $# -gt 0 ]]; do
             echo "  Opcoes:"
             echo "    --dry-run     Preview sem apagar nada"
             echo "    --all         Limpa tudo sem pedir confirmacao"
+            echo "    --json        Saida em formato JSON (requer --dry-run)"
             echo "    --help        Mostra esta ajuda"
             echo "    --version     Mostra versao"
             echo ""
@@ -83,6 +96,11 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# In JSON mode: save stdout to fd 3, redirect stdout to stderr for human-readable output
+if $JSON_MODE; then
+    exec 3>&1 1>&2
+fi
 
 TMPWORK=$(mktemp -d)
 trap 'rm -rf "$TMPWORK"' EXIT
@@ -467,21 +485,34 @@ fi
 # Resumo
 # =============================================
 
-echo ""
-echo "  ─────────────────────────────────"
-echo -e "  ${BOLD}Resumo:${RESET}"
-
 total_str=$(human_size "$total_freed")
 
-if $DRY_RUN; then
-    echo -e "  Espaco que seria liberado:  ${RED}${BOLD}$total_str${RESET}"
-    echo -e "  ${DIM}Execute sem --dry-run para limpar.${RESET}"
+if $JSON_MODE; then
+    # Restore stdout from fd 3 for JSON output
+    exec 1>&3 3>&-
+    cat <<EOF
+{
+  "status": "ok",
+  "dry_run": true,
+  "freed_mb": $(echo "scale=1; $total_freed / 1048576" | bc 2>/dev/null || echo "0"),
+  "freed_human": "$total_str"
+}
+EOF
 else
-    echo -e "  Espaco liberado:            ${GREEN}${BOLD}$total_str${RESET}"
-fi
+    echo ""
+    echo "  ─────────────────────────────────"
+    echo -e "  ${BOLD}Resumo:${RESET}"
 
-echo "  ─────────────────────────────────"
-echo ""
-echo -e "  ${DIM}Dica: caches sao recriados automaticamente conforme os apps forem usados.${RESET}"
-echo -e "  ${DIM}Alguns apps podem ficar mais lentos temporariamente apos a limpeza.${RESET}"
-echo ""
+    if $DRY_RUN; then
+        echo -e "  Espaco que seria liberado:  ${RED}${BOLD}$total_str${RESET}"
+        echo -e "  ${DIM}Execute sem --dry-run para limpar.${RESET}"
+    else
+        echo -e "  Espaco liberado:            ${GREEN}${BOLD}$total_str${RESET}"
+    fi
+
+    echo "  ─────────────────────────────────"
+    echo ""
+    echo -e "  ${DIM}Dica: caches sao recriados automaticamente conforme os apps forem usados.${RESET}"
+    echo -e "  ${DIM}Alguns apps podem ficar mais lentos temporariamente apos a limpeza.${RESET}"
+    echo ""
+fi

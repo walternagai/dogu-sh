@@ -92,6 +92,19 @@ readonly DIM='\033[0;90m'
 readonly RESET='\033[0m'
 ```
 
+### Suporte a NO_COLOR
+
+Todos os scripts devem respeitar a variável de ambiente `NO_COLOR` (padrão [no-color.org](https://no-color.org/)). Adicionar **imediatamente após** a definição das cores:
+
+```bash
+# Suporte a NO_COLOR (https://no-color.org/)
+if [[ -n "${NO_COLOR:-}" ]]; then
+  GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
+fi
+```
+
+Isso garante que `export NO_COLOR=1` desabilite todas as cores na saída.
+
 ### Uso semântico
 
 | Cor | Uso |
@@ -371,6 +384,135 @@ fi
 
 ---
 
+## 15. --json (Saída Estruturada)
+
+Scripts de diagnóstico e status **devem** suportar `--json` para integração com agentes de IA e automação.
+
+### Padronização
+
+```bash
+# Variável no topo do script
+JSON_MODE=false
+
+# No parsing de argumentos:
+--json) JSON_MODE=true; shift ;;
+
+# Na saída, usar condicional:
+if [[ "$JSON_MODE" == true ]]; then
+    # Saída JSON válida para stdout
+    cat <<EOF
+{
+  "status": "ok",
+  "field": "$VALUE"
+}
+EOF
+else
+    # Saída formatada para humano (cores, tabelas, etc.)
+    echo -e "  ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    ...
+fi
+```
+
+### Regras
+
+- JSON deve ser válido e parseável por `python3 -m json.tool` ou `jq`.
+- Usar `cat <<EOF` ou `printf` para montar JSON (evitar `echo -e` com cores).
+- Campo `status` deve ser `"ok"` ou `"error"` sempre.
+- Para listas, usar array JSON (`[{...}, {...}]`).
+- Mensagens de erro/dev/fallback devem ir para `stderr` (`>&2`), não para `stdout`.
+- **Nunca** misturar texto formatado (cores, tabelas) com JSON no stdout.
+
+### Exemplo completo
+
+```bash
+#!/bin/bash
+# script-example.sh — Exemplo de script com --json
+
+set -euo pipefail
+
+readonly GREEN='\033[1;32m'
+readonly CYAN='\033[1;36m'
+readonly DIM='\033[0;90m'
+readonly RESET='\033[0m'
+
+if [[ -n "${NO_COLOR:-}" ]]; then
+  GREEN='' CYAN='' DIM='' RESET=''
+fi
+
+JSON_MODE=false
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --json) JSON_MODE=true; shift ;;
+        --help|-h) echo "Uso: script-example.sh [--json]"; exit 0 ;;
+        *) shift ;;
+    esac
+done
+
+# Coleta de dados
+VALUE="42"
+ITEMS=("a" "b" "c")
+
+if [[ "$JSON_MODE" == true ]]; then
+    cat <<EOF
+{
+  "status": "ok",
+  "value": $VALUE,
+  "items": ["${ITEMS[0]}", "${ITEMS[1]}", "${ITEMS[2]}"]
+}
+EOF
+else
+    echo -e "  ${CYAN}Resultado:${RESET} $VALUE"
+    echo -e "  ${DIM}Itens: ${RESET}${ITEMS[*]}"
+fi
+```
+
+---
+
+## 16. dogu.json (Manifesto)
+
+Todo script novo deve ser registrado no `dogu.json` na raiz do projeto. O manifesto é o single source of truth para o dispatcher `dogu` e para agentes de IA.
+
+### Estrutura por script
+
+```json
+{
+  "nome-do-script.sh": {
+    "description": "Descrição curta em português",
+    "category": "docker|system|network|security|conversion|productivity|media|devops|other",
+    "risk": "read-only|dry-run-ok|destructive",
+    "has_json": false,
+    "has_dry_run": false,
+    "interactive": false,
+    "deps": ["dep1", "dep2"],
+    "args": [
+      {"flag": "--flag", "short": "-f", "type": "bool|int|string", "desc": "Descrição"}
+    ],
+    "example": "nome-do-script.sh --flag"
+  }
+}
+```
+
+### Classificação de risco
+
+| Nível | Descrição | Exemplo |
+|-------|-----------|---------|
+| `read-only` | Apenas consulta/exibe dados | `docker-status.sh`, `disk-space.sh` |
+| `dry-run-ok` | Modifica mas suporta `--dry-run` | `clean-cache.sh`, `docker-clean.sh` |
+| `destructive` | Modifica/deleta sem garantia de undo | `clean-system.sh`, `docker-restore.sh` |
+
+### Atualização
+
+Após criar um novo script, adicionar sua entrada no `dogu.json` manualmente ou executar o gerador automático:
+
+```bash
+# Regenerar SKILL.md após alterações no dogu.json
+./dogu-make-skill.sh
+```
+
+O `SKILL.md` gerado é consumido por agentes de IA (Claude Code, OpenCode) para descoberta de ferramentas.
+
+---
+
 ## 15. Checklist para Novos Scripts
 
 Antes de considerar um script pronto, verificar:
@@ -381,9 +523,11 @@ Antes de considerar um script pronto, verificar:
 - [ ] `SCRIPT_DIR` definido
 - [ ] `dependency-helper.sh` importado quando necessário
 - [ ] Paleta de cores padronizada com `readonly`
+- [ ] Suporte a `NO_COLOR` (após definição das cores)
 - [ ] Funções `log`, `warn`, `error`, `success` definidas (`warn`/`error` escrevem em stderr)
 - [ ] `--help` e `--version` implementados (`-V` para version)
 - [ ] Argumentos via `while/case` com validação de valor obrigatório e tratamento de `--`
+- [ ] `--json` implementado (para scripts de diagnóstico/status)
 - [ ] Confirmações no formato `[s/N]` com `read -r`, **wrap em `if [ -t 0 ]; then ... else error ...; fi`** (ver §5)
 - [ ] `trap` + `mktemp` para arquivos temporários
 - [ ] SIGTERM antes de SIGKILL
@@ -392,5 +536,6 @@ Antes de considerar um script pronto, verificar:
 - [ ] Backup de config antes de edição
 - [ ] Mensagens em português
 - [ ] Registrado no `menu-launcher.sh` (SCRIPT_DESC e SCRIPT_CATEGORY)
+- [ ] Registrado no `dogu.json` (metadados: category, risk, args, deps)
 - [ ] Permissão de execução (`chmod +x`)
 - [ ] Listado na tabela de dependências do `README.md`

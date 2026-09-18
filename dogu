@@ -1,0 +1,563 @@
+#!/usr/bin/env bash
+# dogu — Dispatcher unificado para dogu-sh
+# Normaliza acesso a todas as ferramentas usando dogu.json como manifesto.
+
+set -euo pipefail
+
+# ─── Cores ───────────────────────────────────────────────────────────
+if [[ -n "${NO_COLOR:-}" ]]; then
+  GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
+else
+  GREEN='\033[1;32m' YELLOW='\033[1;33m' RED='\033[1;31m'
+  CYAN='\033[1;36m' BLUE='\033[1;34m' BOLD='\033[1m'
+  DIM='\033[0;90m'   RESET='\033[0m'
+fi
+
+# ─── Helpers ──────────────────────────────────────────────────────────
+log()     { echo -e "${CYAN}::${RESET} $1"; }
+success() { echo -e "${GREEN}✓${RESET} $1"; }
+warn()    { echo -e "${YELLOW}⚠${RESET} $1" >&2; }
+error()   { echo -e "${RED}✗${RESET} $1" >&2; exit 1; }
+
+# ─── Resolve manifesto e Python ──────────────────────────────────────
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+MANIFEST="${SCRIPT_DIR}/dogu.json"
+
+if [[ ! -f "$MANIFEST" ]]; then
+  error "Manifesto dogu.json não encontrado em ${SCRIPT_DIR}"
+fi
+
+# Python com fallback
+PYTHON=""
+for candidate in python3 python; do
+  if command -v "$candidate" &>/dev/null; then
+    PYTHON="$candidate"
+    break
+  fi
+done
+[[ -z "$PYTHON" ]] && error "Python não encontrado. Necessário para parsear dogu.json"
+
+# Verifica módulo json
+if ! "$PYTHON" -c "import json" 2>/dev/null; then
+  error "Módulo json do Python não disponível"
+fi
+
+# ─── Funções de query ao manifesto ───────────────────────────────────
+mf_version() {
+  "$PYTHON" -c "import json,sys; print(json.load(open('$MANIFEST'))['version'])"
+}
+
+mf_scripts() {
+  "$PYTHON" -c "
+import json,sys
+data = json.load(open('$MANIFEST'))
+scripts = data['scripts']
+print(json.dumps(scripts, ensure_ascii=False, indent=2))
+"
+}
+
+mf_list() {
+  "$PYTHON" -c "
+import json,sys
+data = json.load(open('$MANIFEST'))
+scripts = data['scripts']
+entries = []
+for name, meta in scripts.items():
+    entries.append({
+        'name': name,
+        'description': meta.get('description',''),
+        'category': meta.get('category',''),
+        'risk': meta.get('risk',''),
+        'has_json': meta.get('has_json', False),
+        'has_dry_run': meta.get('has_dry_run', False),
+        'interactive': meta.get('interactive', False),
+        'deps': meta.get('deps', []),
+        'args': meta.get('args', []),
+        'example': meta.get('example', '')
+    })
+# Sort by name
+entries.sort(key=lambda e: e['name'])
+print(json.dumps(entries, ensure_ascii=False))
+"
+}
+
+mf_list_formatted() {
+  "$PYTHON" -c "
+import json,sys
+data = json.load(open('$MANIFEST'))
+scripts = data['scripts']
+entries = []
+for name, meta in scripts.items():
+    entries.append((name, meta.get('category',''), meta.get('risk',''), meta.get('description','')))
+entries.sort(key=lambda e: e[0])
+
+# Column widths
+nw = max(len(e[0]) for e in entries)
+cw = max(len(e[1]) for e in entries)
+rw = max(len(e[2]) for e in entries)
+
+# Header
+print(f'  {\"NAME\":<{nw}}   {\"CATEGORY\":<{cw}}   {\"RISK\":<{rw}}   DESCRIPTION')
+for name, cat, risk, desc in entries:
+    print(f'  {name:<{nw}}   {cat:<{cw}}   {risk:<{rw}}   {desc}')
+print(f'\n  {len(entries)} script(s)')
+"
+}
+
+mf_search() {
+  local query="$1"
+  "$PYTHON" -c "
+import json,sys
+data = json.load(open('$MANIFEST'))
+query = sys.argv[1].lower()
+results = []
+for name, meta in data['scripts'].items():
+    desc = meta.get('description','').lower()
+    cat  = meta.get('category','').lower()
+    if query in desc or query in cat or query in name.lower():
+        results.append({
+            'name': name,
+            'description': meta.get('description',''),
+            'category': meta.get('category',''),
+            'risk': meta.get('risk','')
+        })
+results.sort(key=lambda r: r['name'])
+print(json.dumps(results, ensure_ascii=False))
+" "$query"
+}
+
+mf_search_formatted() {
+  local query="$1"
+  local json_out
+  json_out=$(mf_search "$query")
+  local count
+  count=$(echo "$json_out" | "$PYTHON" -c "import json,sys; print(len(json.load(sys.stdin)))")
+
+  if [[ "$count" -eq 0 ]]; then
+    warn "Nenhum script encontrado para '$query'"
+    return
+  fi
+
+  echo "$json_out" | "$PYTHON" -c "
+import json,sys
+results = json.load(sys.stdin)
+nw = max(len(r['name']) for r in results)
+cw = max(len(r['category']) for r in results)
+rw = max(len(r['risk']) for r in results)
+print(f'  {\"NAME\":<{nw}}   {\"CATEGORY\":<{cw}}   {\"RISK\":<{rw}}   DESCRIPTION')
+for r in results:
+    print(f\"  {r['name']:<{nw}}   {r['category']:<{cw}}   {r['risk']:<{rw}}   {r['description']}\")
+print(f\"\n  {len(results)} resultado(s) para '{sys.argv[1]}'\")
+" "$query"
+}
+
+mf_info() {
+  local script="$1"
+  "$PYTHON" -c "
+import json,sys
+data = json.load(open('$MANIFEST'))
+name = sys.argv[1]
+if name not in data['scripts']:
+    print(json.dumps(None))
+    sys.exit(1)
+meta = data['scripts'][name]
+info = {'name': name}
+info.update(meta)
+print(json.dumps(info, ensure_ascii=False, indent=2))
+" "$script"
+}
+
+mf_info_formatted() {
+  local script="$1"
+  local json_out
+  json_out=$(mf_info "$script") || {
+    error "Script '$script' não encontrado no manifesto"
+  }
+  # Check if it's null
+  if echo "$json_out" | "$PYTHON" -c "import json,sys; d=json.load(sys.stdin); exit(0 if d is not None else 1)" 2>/dev/null; then
+    : # ok
+  else
+    error "Script '$script' não encontrado no manifesto"
+  fi
+
+  echo "$json_out" | "$PYTHON" -c "
+import json,sys
+info = json.load(sys.stdin)
+print(f\"  {info['name']}\")
+print(f\"    Descrição:    {info.get('description','')}\")
+print(f\"    Categoria:    {info.get('category','')}\")
+print(f\"    Risco:        {info.get('risk','')}\")
+deps = info.get('deps', [])
+print(f\"    Dependências: {', '.join(deps) if deps else 'nenhuma'}\")
+args = info.get('args', [])
+if args:
+    print(f\"    Argumentos:\")
+    for a in args:
+        short = a.get('short','')
+        short_str = f', {short}' if short else ''
+        print(f\"      {a['flag']}{short_str:<8} {a.get('desc','')} ({a.get('type','')})\")
+example = info.get('example','')
+if example:
+    print(f\"    Exemplo:      {example}\")
+json_out = info.get('has_json', False)
+dry_run = info.get('has_dry_run', False)
+interactive = info.get('interactive', False)
+flags = []
+if json_out: flags.append('--json')
+if dry_run:  flags.append('--dry-run')
+if interactive: flags.append('interativo')
+if flags:
+    print(f\"    Flags:        {', '.join(flags)}\")
+"
+}
+
+mf_categories() {
+  "$PYTHON" -c "
+import json
+data = json.load(open('$MANIFEST'))
+cats = data.get('categories', {})
+if not cats:
+    # Fallback: compute from scripts
+    cats = {}
+    for meta in data['scripts'].values():
+        c = meta.get('category','')
+        cats[c] = cats.get(c, 0) + 1
+print(json.dumps(cats, ensure_ascii=False))
+"
+}
+
+mf_categories_formatted() {
+  "$PYTHON" -c "
+import json
+data = json.load(open('$MANIFEST'))
+cats = data.get('categories', {})
+if not cats:
+    cats = {}
+    for meta in data['scripts'].values():
+        c = meta.get('category','')
+        cats[c] = cats.get(c, 0) + 1
+cw = max(len(c) for c in cats)
+print(f'  {\"CATEGORY\":<{cw}}   COUNT')
+for cat, count in sorted(cats.items(), key=lambda x: -x[1]):
+    print(f'  {cat:<{cw}}   {count}')
+print(f'\n  {len(cats)} categorias')
+"
+}
+
+mf_risks() {
+  "$PYTHON" -c "
+import json
+data = json.load(open('$MANIFEST'))
+risks = data.get('risk_levels', {})
+if not risks:
+    risks = {}
+    for meta in data['scripts'].values():
+        r = meta.get('risk','')
+        risks[r] = risks.get(r, 0) + 1
+print(json.dumps(risks, ensure_ascii=False))
+"
+}
+
+mf_risks_formatted() {
+  "$PYTHON" -c "
+import json
+data = json.load(open('$MANIFEST'))
+risks = data.get('risk_levels', {})
+if not risks:
+    risks = {}
+    for meta in data['scripts'].values():
+        r = meta.get('risk','')
+        risks[r] = risks.get(r, 0) + 1
+rw = max(len(r) for r in risks)
+print(f'  {\"RISK\":<{rw}}   COUNT')
+for risk, count in sorted(risks.items(), key=lambda x: -x[1]):
+    print(f'  {risk:<{rw}}   {count}')
+print(f'\n  {len(risks)} níveis de risco')
+"
+}
+
+# Resolve script path: aceita "docker-status.sh" ou "docker-status"
+resolve_script() {
+  local name="$1"
+  local path=""
+
+  # Tenta com .sh
+  if [[ -f "${SCRIPT_DIR}/${name}.sh" ]]; then
+    path="${SCRIPT_DIR}/${name}.sh"
+  elif [[ -f "${SCRIPT_DIR}/${name}" ]]; then
+    path="${SCRIPT_DIR}/${name}"
+  elif [[ -f "${SCRIPT_DIR}/${name}.sh" ]]; then
+    path="${SCRIPT_DIR}/${name}.sh"
+  fi
+
+  if [[ -n "$path" ]]; then
+    echo "$path"
+    return 0
+  fi
+  return 1
+}
+
+# ─── Comandos ────────────────────────────────────────────────────────
+cmd_version() {
+  echo "dogu-sh $(mf_version)"
+}
+
+cmd_help() {
+  local ver
+  ver=$(mf_version)
+  cat <<EOF
+${BOLD}dogu${RESET} ${ver} — Dispatcher unificado para dogu-sh
+
+${BOLD}Uso:${RESET}
+  dogu ${GREEN}<comando>${RESET} [args...]              Executa um script
+  dogu list [--category CAT] [--json]           Lista scripts disponíveis
+  dogu search ${GREEN}<query>${RESET} [--json]              Busca scripts por descrição
+  dogu info ${GREEN}<script>${RESET} [--json]                Metadados de um script
+  dogu categories [--json]                      Categorias com contagem
+  dogu risks [--json]                           Níveis de risco com contagem
+  dogu help                                     Esta ajuda
+  dogu version                                  Versão
+
+${BOLD}Exemplos:${RESET}
+  dogu docker-status                           Executa docker-status.sh
+  dogu docker-status --json                    Passa --json ao script
+  dogu list --category docker                  Só scripts docker
+  dogu search "limpeza"                        Busca por descrição
+  dogu info docker-clean.sh                    Ver metadados
+
+${BOLD}Segurança:${RESET}
+  Scripts ${RED}destructive${RESET} pedem confirmação antes de executar.
+  Use ${BOLD}--yes${RESET} para confirmar automaticamente.
+EOF
+}
+
+cmd_list() {
+  local category=""
+  local json_out=false
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --category) category="$2"; shift 2 ;;
+      --json)     json_out=true; shift ;;
+      *)          warn "Opção desconhecida: $1"; shift ;;
+    esac
+  done
+
+  if $json_out; then
+    if [[ -n "$category" ]]; then
+      "$PYTHON" -c "
+import json,sys
+data = json.load(open('$MANIFEST'))
+cat = sys.argv[1]
+results = []
+for name, meta in data['scripts'].items():
+    if meta.get('category','') == cat:
+        results.append({'name': name, **meta})
+results.sort(key=lambda r: r['name'])
+print(json.dumps(results, ensure_ascii=False, indent=2))
+" "$category"
+    else
+      mf_list
+    fi
+  else
+    if [[ -n "$category" ]]; then
+      "$PYTHON" -c "
+import json,sys
+data = json.load(open('$MANIFEST'))
+cat = sys.argv[1]
+entries = []
+for name, meta in data['scripts'].items():
+    if meta.get('category','') == cat:
+        entries.append((name, meta.get('category',''), meta.get('risk',''), meta.get('description','')))
+entries.sort(key=lambda e: e[0])
+nw = max(len(e[0]) for e in entries) if entries else 4
+cw = max(len(e[1]) for e in entries) if entries else 8
+rw = max(len(e[2]) for e in entries) if entries else 4
+print(f'  {\"NAME\":<{nw}}   {\"CATEGORY\":<{cw}}   {\"RISK\":<{rw}}   DESCRIPTION')
+for name, cat, risk, desc in entries:
+    print(f'  {name:<{nw}}   {cat:<{cw}}   {risk:<{rw}}   {desc}')
+print(f'\n  {len(entries)} script(s) na categoria \"{cat}\"')
+" "$category"
+    else
+      mf_list_formatted
+    fi
+  fi
+}
+
+cmd_search() {
+  local query=""
+  local json_out=false
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --json) json_out=true; shift ;;
+      -*)     warn "Opção desconhecida: $1"; shift ;;
+      *)      query="$1"; shift ;;
+    esac
+  done
+
+  [[ -z "$query" ]] && error "Uso: dogu search <query> [--json]"
+
+  if $json_out; then
+    mf_search "$query"
+  else
+    mf_search_formatted "$query"
+  fi
+}
+
+cmd_info() {
+  local script=""
+  local json_out=false
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --json) json_out=true; shift ;;
+      -*)     warn "Opção desconhecida: $1"; shift ;;
+      *)      script="$1"; shift ;;
+    esac
+  done
+
+  [[ -z "$script" ]] && error "Uso: dogu info <script> [--json]"
+
+  # Normaliza: aceita com ou sem .sh
+  local canonical="$script"
+  if [[ "$script" != *.sh ]]; then
+    canonical="${script}.sh"
+  fi
+
+  if $json_out; then
+    mf_info "$canonical" || error "Script '$script' não encontrado no manifesto"
+  else
+    mf_info_formatted "$canonical"
+  fi
+}
+
+cmd_categories() {
+  local json_out=false
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --json) json_out=true; shift ;;
+      *)      shift ;;
+    esac
+  done
+
+  if $json_out; then
+    mf_categories
+  else
+    mf_categories_formatted
+  fi
+}
+
+cmd_risks() {
+  local json_out=false
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --json) json_out=true; shift ;;
+      *)      shift ;;
+    esac
+  done
+
+  if $json_out; then
+    mf_risks
+  else
+    mf_risks_formatted
+  fi
+}
+
+# ─── Execução de script ─────────────────────────────────────────────
+cmd_run() {
+  local script_name="$1"; shift || true
+  local extra_args=("$@")
+
+  # Normaliza nome: aceita com ou sem .sh
+  local canonical="$script_name"
+  if [[ "$script_name" != *.sh ]]; then
+    canonical="${script_name}.sh"
+  fi
+
+  # Verifica no manifesto
+  local meta_json
+  meta_json=$("$PYTHON" -c "
+import json,sys
+data = json.load(open('$MANIFEST'))
+name = sys.argv[1]
+if name in data['scripts']:
+    print(json.dumps(data['scripts'][name], ensure_ascii=False))
+else:
+    sys.exit(1)
+" "$canonical" 2>/dev/null) || {
+    # Tenta sem .sh no manifesto
+    meta_json=$("$PYTHON" -c "
+import json,sys
+data = json.load(open('$MANIFEST'))
+name = sys.argv[1]
+if name in data['scripts']:
+    print(json.dumps(data['scripts'][name], ensure_ascii=False))
+else:
+    sys.exit(1)
+" "$script_name" 2>/dev/null) || {
+      error "Script '${script_name}' não encontrado no manifesto.\n\nDica: use 'dogu list' para ver scripts disponíveis ou 'dogu search <termo>' para buscar."
+    }
+    canonical="$script_name"
+  }
+
+  # Resolve caminho do script
+  local script_path
+  script_path=$(resolve_script "$canonical") || {
+    error "Arquivo '${canonical}' não encontrado em ${SCRIPT_DIR}"
+  }
+
+  # Verifica risco
+  local risk
+  risk=$("$PYTHON" -c "import json,sys; print(json.load(sys.stdin).get('risk','read-only'))" <<< "$meta_json")
+
+  if [[ "$risk" == "destructive" ]]; then
+    # Verifica se --yes já foi passado
+    local has_yes=false
+    for arg in "${extra_args[@]}"; do
+      [[ "$arg" == "--yes" ]] && has_yes=true
+    done
+
+    if ! $has_yes; then
+      local desc
+      desc=$("$PYTHON" -c "import json,sys; print(json.load(sys.stdin).get('description',''))" <<< "$meta_json")
+
+      warn "⚠  ${BOLD}${RED}ATEÇÃO${RESET}: ${BOLD}${canonical}${RESET} é um script ${RED}DESTRUTIVO${RESET}"
+      echo "    $desc"
+      echo ""
+      echo "    Isto pode modificar seu sistema de forma irreversível."
+      echo "    Use --dry-run primeiro quando disponível."
+      echo ""
+
+      local confirm=""
+      read -rp "    Continuar? [y/N] " confirm
+      case "$confirm" in
+        [yY]|[sS]|[sS][iI][mM]) ;;
+        *) echo "    Abortado."; exit 0 ;;
+      esac
+    fi
+  fi
+
+  # Executa
+  exec "$script_path" "${extra_args[@]}"
+}
+
+# ─── Main ────────────────────────────────────────────────────────────
+main() {
+  [[ $# -eq 0 ]] && { cmd_help; exit 0; }
+
+  local cmd="$1"; shift
+
+  case "$cmd" in
+    version)    cmd_version ;;
+    help|-h|--help) cmd_help ;;
+    list)       cmd_list "$@" ;;
+    search)     cmd_search "$@" ;;
+    info)       cmd_info "$@" ;;
+    categories) cmd_categories "$@" ;;
+    risks)      cmd_risks "$@" ;;
+    *)          cmd_run "$cmd" "$@" ;;
+  esac
+}
+
+main "$@"

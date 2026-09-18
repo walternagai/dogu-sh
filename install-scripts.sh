@@ -5,14 +5,19 @@
 set -euo pipefail
 
 # Cores
-readonly GREEN='\033[1;32m'
-readonly YELLOW='\033[1;33m'
-readonly RED='\033[1;31m'
-readonly CYAN='\033[1;36m'
-readonly BLUE='\033[1;34m'
-readonly BOLD='\033[1m'
-readonly DIM='\033[0;90m'
-readonly RESET='\033[0m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+RED='\033[1;31m'
+CYAN='\033[1;36m'
+BLUE='\033[1;34m'
+BOLD='\033[1m'
+DIM='\033[0;90m'
+RESET='\033[0m'
+
+# NO_COLOR support (https://no-color.org/)
+if [[ -n "${NO_COLOR:-}" ]]; then
+  GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
+fi
 
 readonly VERSION="1.3.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -61,10 +66,23 @@ if [ "$UNINSTALL" = true ]; then
     for script_path in "${scripts[@]}"; do
         script="$(basename "$script_path")"
         target="$BIN_DIR/$script"
-        if [ -f "$target" ]; then
+        if [ -f "$target" ] || [ -L "$target" ]; then
             if [ "$DRY_RUN" = false ]; then
-                rm "$target"
+                rm -f "$target"
                 log "  ✓ Removido: $script"
+            else
+                echo "  [Dry-run] rm $target"
+            fi
+        fi
+    done
+
+    # Remover dispatcher 'dogu' e manifesto
+    for extra in dogu dogu.json; do
+        target="$BIN_DIR/$extra"
+        if [ -f "$target" ] || [ -L "$target" ]; then
+            if [ "$DRY_RUN" = false ]; then
+                rm -f "$target"
+                log "  ✓ Removido: $extra"
             else
                 echo "  [Dry-run] rm $target"
             fi
@@ -124,7 +142,33 @@ for script_path in "${scripts[@]}"; do
     fi
 done
 
-# 3. Configurar PATH
+# 3. Instalar dispatcher 'dogu' (sem extensão .sh)
+DOGU_DISPATCHER="$SCRIPT_DIR/dogu"
+if [ -f "$DOGU_DISPATCHER" ]; then
+    log "Instalando dispatcher 'dogu'..."
+    if [ "$DRY_RUN" = false ]; then
+        chmod +x "$DOGU_DISPATCHER"
+        rm -f "$BIN_DIR/dogu"
+        ln -s "$DOGU_DISPATCHER" "$BIN_DIR/dogu"
+        log "  ✓ dogu"
+    else
+        echo "  [Dry-run] ln -s $DOGU_DISPATCHER -> $BIN_DIR/dogu"
+    fi
+fi
+
+# 4. Copiar dogu.json para ~/.local/bin (manifesto)
+DOGU_MANIFEST="$SCRIPT_DIR/dogu.json"
+if [ -f "$DOGU_MANIFEST" ]; then
+    log "Copiando manifesto dogu.json..."
+    if [ "$DRY_RUN" = false ]; then
+        cp "$DOGU_MANIFEST" "$BIN_DIR/dogu.json"
+        log "  ✓ dogu.json"
+    else
+        echo "  [Dry-run] cp $DOGU_MANIFEST -> $BIN_DIR/dogu.json"
+    fi
+fi
+
+# 5. Configurar PATH
 log "Verificando configuração do PATH..."
 SHELL_RC=""
 case "$SHELL" in

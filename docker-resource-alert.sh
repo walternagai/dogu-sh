@@ -8,6 +8,7 @@
 #   --watch N       Verifica a cada N segundos (padrao: 10)
 #   --notify        Notificacoes desktop
 #   --kill          Mata container que ultrapassar CPU por 3 vezes seguidas
+#   --json          Saida em formato JSON (modo unico)
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
 
@@ -17,14 +18,19 @@ set -euo pipefail
 readonly VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-readonly GREEN='\033[1;32m'
-readonly YELLOW='\033[1;33m'
-readonly RED='\033[1;31m'
-readonly CYAN='\033[1;36m'
-readonly BLUE='\033[1;34m'
-readonly BOLD='\033[1m'
-readonly DIM='\033[0;90m'
-readonly RESET='\033[0m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+RED='\033[1;31m'
+CYAN='\033[1;36m'
+BLUE='\033[1;34m'
+BOLD='\033[1m'
+DIM='\033[0;90m'
+RESET='\033[0m'
+
+# NO_COLOR support (https://no-color.org/)
+if [[ -n "${NO_COLOR:-}" ]]; then
+  GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
+fi
 
 log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
@@ -43,6 +49,7 @@ DISK_LIMIT=0
 WATCH_INTERVAL=10
 USE_NOTIFY=false
 AUTO_KILL=false
+JSON_MODE=false
 
 declare -A CPU_VIOLATIONS
 
@@ -62,6 +69,7 @@ while [[ $# -gt 0 ]]; do
             WATCH_INTERVAL="${2:-10}"; shift 2 ;;
         --notify|-n) USE_NOTIFY=true; shift ;;
         --kill|-k) AUTO_KILL=true; shift ;;
+        --json|-j) JSON_MODE=true; shift ;;
         --help|-h)
             echo ""
             echo "  docker-resource-alert.sh — Alerta de recursos Docker"
@@ -75,6 +83,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --watch N       Intervalo em segundos (padrao: 10)"
             echo "    --notify        Notificacoes desktop"
             echo "    --kill          Mata container com CPU alta por 3 vezes"
+            echo "    --json          Saida em formato JSON (modo unico)"
             echo "    --help          Mostra esta ajuda"
             echo "    --version       Mostra versao"
             echo ""
@@ -93,6 +102,11 @@ done
 if ! command -v docker &>/dev/null || ! docker info &>/dev/null; then
     echo -e "  ${RED}Erro: Docker nao disponivel ou daemon parado.${RESET}" >&2
     exit 1
+fi
+
+# In JSON mode: save stdout to fd 3, redirect stdout to stderr for human-readable output
+if $JSON_MODE; then
+    exec 3>&1 1>&2
 fi
 
 send_notify() {
@@ -114,6 +128,7 @@ get_total_memory_kb() {
 
 TOTAL_MEM_KB=$(get_total_memory_kb)
 
+if ! $JSON_MODE; then
 echo ""
 echo -e "  ${BOLD}Docker Resource Alert${RESET}"
 echo ""
@@ -126,11 +141,26 @@ fi
 
 echo -e "  ${DIM}Ctrl+C para sair${RESET}"
 echo ""
+fi
 
 while true; do
     containers=$(docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null)
 
-    [ -z "$containers" ] && sleep "$WATCH_INTERVAL" && continue
+    if [ -z "$containers" ]; then
+        if $JSON_MODE; then
+            cat <<EOF
+{
+  "status": "ok",
+  "alerts": [],
+  "containers": []
+}
+EOF
+        fi
+        sleep "$WATCH_INTERVAL" && continue
+    fi
+
+    JSON_CONTAINERS=""
+    JSON_ALERTS=""
 
     while IFS='|' read -r cid cname; do
         stats=$(docker stats --no-stream --format "{{.CPUPerc}}|{{.MemUsage}}|{{.MemPerc}}" "$cid" 2>/dev/null | head -1)
@@ -149,14 +179,44 @@ while true; do
         [[ "$cpu_int" =~ ^[0-9]+$ ]] || cpu_int=0
         [[ "$mem_int" =~ ^[0-9]+$ ]] || mem_int=0
 
+        # Parse memory usage
+        mem_mb=0
+        mem_limit_mb=0
+        if [[ "$mem_usage" =~ ([0-9.]+)([A-Za-z]+)\/([0-9.]+)([A-Za-z]+) ]]; then
+            mem_val="${BASH_REMATCH[1]}"
+            mem_unit="${BASH_REMATCH[2]}"
+            mem_lim_val="${BASH_REMATCH[3]}"
+            mem_lim_unit="${BASH_REMATCH[4]}"
+            
+            case "$mem_unit" in
+                GiB) mem_mb=$(echo "$mem_val * 1024" | bc 2>/dev/null || echo "0") ;;
+                MiB) mem_mb="$mem_val" ;;
+                KiB) mem_mb=$(echo "scale=1; $mem_val / 1024" | bc 2>/dev/null || echo "0") ;;
+                B) mem_mb=$(echo "scale=1; $mem_val / 1048576" | bc 2>/dev/null || echo "0") ;;
+            esac
+            
+            case "$mem_lim_unit" in
+                GiB) mem_limit_mb=$(echo "$mem_lim_val * 1024" | bc 2>/dev/null || echo "0") ;;
+                MiB) mem_limit_mb="$mem_lim_val" ;;
+                KiB) mem_limit_mb=$(echo "scale=1; $mem_lim_val / 1024" | bc 2>/dev/null || echo "0") ;;
+                B) mem_limit_mb=$(echo "scale=1; $mem_lim_val / 1048576" | bc 2>/dev/null || echo "0") ;;
+            esac
+        fi
+
         alerts=""
 
         if [ "$cpu_int" -gt "$CPU_LIMIT" ]; then
-            alerts="${alerts}CPU ${RED}${cpu_pct}${RESET} "
+            if ! $JSON_MODE; then
+                alerts="${alerts}CPU ${RED}${cpu_pct}${RESET} "
+            else
+                alerts="CPU ${cpu_pct}"
+            fi
             CPU_VIOLATIONS[$cname]=$((${CPU_VIOLATIONS[$cname]:-0} + 1))
 
             if $AUTO_KILL && [ "${CPU_VIOLATIONS[$cname]}" -ge 3 ]; then
-                echo -e "  ${RED}✗${RESET} $cname — CPU alta por 3 ciclos — ${RED}MATANDO${RESET}"
+                if ! $JSON_MODE; then
+                    echo -e "  ${RED}✗${RESET} $cname — CPU alta por 3 ciclos — ${RED}MATANDO${RESET}"
+                fi
                 docker stop "$cid" &>/dev/null || true
                 send_notify "Docker: $cname eliminado" "CPU acima de $CPU_LIMIT% por 3 ciclos"
                 unset CPU_VIOLATIONS[$cname]
@@ -167,7 +227,11 @@ while true; do
         fi
 
         if [ "$mem_int" -gt "$MEM_LIMIT" ]; then
-            alerts="${alerts}RAM ${RED}${mem_pct}${RESET} "
+            if ! $JSON_MODE; then
+                alerts="${alerts}RAM ${RED}${mem_pct}${RESET} "
+            else
+                alerts="${alerts}RAM ${mem_pct} "
+            fi
         fi
 
         if [ "$DISK_LIMIT" -gt 0 ]; then
@@ -175,19 +239,71 @@ while true; do
             disk_size=$(echo "$disk_size" | tr -d '[:space:]')
             [[ "$disk_size" =~ ^[0-9]+$ ]] || disk_size=0
             if [ "$disk_size" -gt "$DISK_LIMIT" ]; then
-                alerts="${alerts}DISCO ${RED}$( [ "$disk_size" -ge 1048576 ] && echo "$((disk_size / 1048576))MB" || echo "$((disk_size / 1024))KB" )${RESET} "
+                if ! $JSON_MODE; then
+                    alerts="${alerts}DISCO ${RED}$( [ "$disk_size" -ge 1048576 ] && echo "$((disk_size / 1048576))MB" || echo "$((disk_size / 1024))KB" )${RESET} "
+                else
+                    alerts="${alerts}DISCO $( [ "$disk_size" -ge 1048576 ] && echo "$((disk_size / 1048576))MB" || echo "$((disk_size / 1024))KB" ) "
+                fi
             fi
         fi
 
         if [ -n "$alerts" ]; then
             timestamp=$(date '+%H:%M:%S')
-            echo -e "  ${YELLOW}⚠${RESET} [${DIM}$timestamp${RESET}] ${CYAN}$cname${RESET} — $alerts"
+            if ! $JSON_MODE; then
+                echo -e "  ${YELLOW}⚠${RESET} [${DIM}$timestamp${RESET}] ${CYAN}$cname${RESET} — $alerts"
+            fi
 
             if $USE_NOTIFY; then
                 send_notify "Docker Alert: $cname" "$alerts" "critical"
             fi
+
+            if $JSON_MODE; then
+                if [ -n "$JSON_ALERTS" ]; then
+                    JSON_ALERTS="${JSON_ALERTS},"
+                fi
+                JSON_ALERTS="${JSON_ALERTS}
+    {
+      \"container\": \"$cname\",
+      \"alerts\": \"$alerts\",
+      \"timestamp\": \"$timestamp\"
+    }"
+            fi
+        fi
+
+        if $JSON_MODE; then
+            if [ -n "$JSON_CONTAINERS" ]; then
+                JSON_CONTAINERS="${JSON_CONTAINERS},"
+            fi
+            JSON_CONTAINERS="${JSON_CONTAINERS}
+    {
+      \"name\": \"$cname\",
+      \"cpu_percent\": $cpu_num,
+      \"memory_mb\": $mem_mb,
+      \"memory_limit_mb\": $mem_limit_mb,
+      \"memory_percent\": $mem_num
+    }"
         fi
     done <<< "$containers"
+
+    if $JSON_MODE; then
+        # Restore stdout from fd 3 for JSON output
+        exec 1>&3 3>&-
+        status_str="ok"
+        if [ -n "$JSON_ALERTS" ]; then
+            status_str="warning"
+        fi
+
+        cat <<EOF
+{
+  "status": "$status_str",
+  "alerts": [$JSON_ALERTS
+  ],
+  "containers": [$JSON_CONTAINERS
+  ]
+}
+EOF
+        break  # Exit loop after one check in JSON mode
+    fi
 
     sleep "$WATCH_INTERVAL"
 done

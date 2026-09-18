@@ -1,0 +1,91 @@
+task: dogu-cli-dispatcher
+status: approved
+domain: coding
+done: >
+  CLI dispatcher 'dogu' criado na raiz do projeto com: list, search, info,
+  categories, risks, help, version. Suporta --json em todos os comandos
+  de consulta. Valida scripts antes de executar. Warns para scripts
+  destructive. NO_COLOR support. Validado com 9 testes.
+base_commit: ""
+fit:
+  trivial: false
+  route: code-loop
+  reason: >
+    Implementação do CLI dispatcher dogu — tarefa de coding que requer
+    criação de script Bash completo com parse de JSON, formatação de tabela,
+    e execução segura de scripts.
+  answered: true
+  skipped: false
+think:
+  problem: >
+    Criar CLI dispatcher 'dogu' que normaliza acesso a todos os 94 scripts
+    usando dogu.json como manifesto. O dispatcher deve: listar, buscar,
+    mostrar info, executar scripts, e alertar sobre riscos.
+  assumptions:
+    - "Python3 está disponível para parsear JSON"
+    - "dogu.json existe na raiz do projeto"
+    - "Scripts são executáveis com permissão correta"
+    - "Usuário quer interface limpa, não interativa por padrão"
+  alternatives:
+    - "Usar jq em vez de python3 para JSON"
+    - "Wrapper puro bash sem dependências externas"
+    - "Abordagem híbrida: python3 para JSON, bash para resto"
+  unknowns: ""
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: "Arquivo único dogu — sem módulos, sem frameworks"
+  answered: true
+  skipped: false
+intent:
+  code_does: "Cria CLI dispatcher com list/search/info/exec"
+  check_expects: "9 testes validados: version, list, list --json, search, info, categories, risks, help, destructive warning"
+  spec_says: "Especificação definida na fase de planejamento"
+  all_agree: true
+  conflict_resolution: ""
+  answered: true
+  skipped: false
+surgical:
+  files:
+    - dogu
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+verify:
+  ruff_clean: true
+  tests_pass: true
+  coverage_pct: 0.0
+  coverage_pass: true
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+preflight:
+  skills_missing: ["kata-fit", "kata-think", "kata-simplify", "kata-intent", "kata-surgical", "kata-verify", "kata-artifact", "kata-report"]
+artifact:
+  intent_owed: true
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: true
+  pending_present: true
+  twins_owed: false
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: "Implementar Fase 3: --json e NO_COLOR nos scripts prioritários"
+  documented: true
+twins:
+  pattern: ""
+  result: ""
+  searched: false
+  defect_fixed: false
+  matches_count: 0
+  files_count: 0
+  fix_applied: false

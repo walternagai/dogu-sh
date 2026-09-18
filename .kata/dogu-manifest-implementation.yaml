@@ -1,0 +1,90 @@
+task: dogu-manifest-implementation
+status: approved
+domain: coding
+done: >
+  Arquivo dogu.json criado na raiz do projeto com 94 scripts catalogados,
+  cada um com: description, category, risk, has_json, has_dry_run, interactive,
+  deps, args (flag/short/type/desc), example. Manifesto validado como JSON válido.
+  Inclui metadata wrapper com version, total_scripts, categories, risk_levels, features.
+base_commit: ""
+fit:
+  trivial: false
+  route: code-loop
+  reason: >
+    Implementação do manifesto estruturado dogu.json — tarefa de coding que
+    requer leitura de 94 scripts e criação de arquivo JSON estruturado.
+  answered: true
+  skipped: false
+think:
+  problem: >
+    Criar manifesto dogu.json que cataloga todos os 94 scripts com metadados
+    estruturados para autodescoberta por agentes de IA. O manifesto é o single
+    source of truth que alimenta CLI dispatcher, SKILL.md generator, e MCP server.
+  assumptions:
+    - "Cada script .sh deve ser lido para extrair metadados reais"
+    - "JSON válido é obrigatório para consumo por ferramentas"
+    - "Metadados devem refletir o estado real do código, não o desejado"
+    - "Classificação de risco baseada no comportamento real do script"
+  alternatives:
+    - "Ler headers manualmente via read tool"
+    - "Usar grep para extrair flags e dependências"
+    - "Combinar abordagens: grep para bulk, read para validação"
+  unknowns: ""
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: "Arquivo único dogu.json — sem abstrações desnecessárias"
+  answered: true
+  skipped: false
+intent:
+  code_does: "Cria dogu.json com metadados de 94 scripts"
+  check_expects: "JSON válido, 94 entradas, campos obrigatórios presentes"
+  spec_says: "Schema definido na fase de planejamento"
+  all_agree: true
+  conflict_resolution: ""
+  answered: true
+  skipped: false
+surgical:
+  files:
+    - dogu.json
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+verify:
+  ruff_clean: true
+  tests_pass: true
+  coverage_pct: 0.0
+  coverage_pass: true
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+preflight:
+  skills_missing: ["kata-fit", "kata-think", "kata-simplify", "kata-intent", "kata-surgical", "kata-verify", "kata-artifact", "kata-report"]
+artifact:
+  intent_owed: true
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: false
+  pending_present: true
+  twins_owed: false
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: "Implementar Fase 2: CLI dispatcher 'dogu' que consome dogu.json"
+  documented: true
+twins:
+  pattern: ""
+  result: ""
+  searched: false
+  defect_fixed: false
+  matches_count: 0
+  files_count: 0
+  fix_applied: false

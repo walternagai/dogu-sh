@@ -1,0 +1,101 @@
+task: dogu-agent-readiness
+status: approved
+domain: coding
+done: >
+  Plano completo que: (1) mapeia os 87 scripts por risco/categoria,
+  (2) lista gaps que impedem uso por agentes de IA,
+  (3) propõe manifesto estruturado (JSON/YAML) com metadados por script,
+  (4) define CLI dispatcher unificado,
+  (5) lista mudanças mínimas de código para headless/non-interactive,
+  (6) roadmap priorizado com fases. Entregável é documento de plano, não código.
+base_commit: ""
+fit:
+  trivial: false
+  route: plan-first
+  reason: >
+    Tarefa de pesquisa e planejamento estratégico. Envolve análise de 87 scripts,
+    identificação de gaps para uso por agentes de IA, e criação de manifesto + roadmap.
+    Sem alterações de código —产出 é um documento de plano.
+  answered: true
+  skipped: false
+think:
+  problem: >
+    Os 87 scripts do dogu-sh são poderosos para uso interativo via terminal,
+    mas possuem gaps significativos para integração com agentes de IA (Claude Code,
+    OpenCode, etc.): (1) ausência de saída estruturada (JSON), (2) prompts interativos
+    que travam em non-interactive, (3) sem manifestos de metadados para autodescoberta,
+    (4) sem classificação de risco para o agente saber quando pode agir autonomamente,
+    (5) sem CLI dispatcher unificado. A questão é: quais melhorias são necessárias
+    e qual a ordem de prioridade?
+  assumptions:
+    - "Agentes de IA executam via subshell sem TTY alocado"
+    - "Saída ANSI/cores é desperdício de tokens para LLMs"
+    - "Agentes precisam de schema tipado para decidir quais ferramentas usar"
+    - "O público-alvo primário continua sendo terminal humano"
+    - "Mudanças devem ser backward-compatible com uso existente"
+  alternatives:
+    - "Criar MCP server nativo (mais complexo, mas mais poderoso)"
+    - "Apenas adicionar flags --json e -y nos scripts existentes"
+    - "Criar wrapper DoguMCP que expõe scripts como tools"
+    - "Manifesto YAML com gerador automático de SKILL.md"
+  unknowns: >
+    Qual o volume de uso atual dos scripts? Quais são os mais usados?
+    O autor prefere MCP nativo ou wrapper de shell? Há scripts que não
+    fazem sentido para agentes (ex: alarm, stopwatch)?
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: "Tarefa de planejamento — não há código a simplificar, apenas o plano"
+  answered: true
+  skipped: false
+intent:
+  code_does: "N/A — tarefa de planejamento,产出 é documento"
+  check_expects: "N/A"
+  spec_says: "N/A"
+  all_agree: true
+  conflict_resolution: ""
+  answered: true
+  skipped: false
+surgical:
+  files: []
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+verify:
+  ruff_clean: true
+  tests_pass: true
+  coverage_pct: 0.0
+  coverage_pass: true
+  success_criteria_met: false
+  attempts: 0
+  hand_back: false
+preflight:
+  skills_missing: ["kata-fit", "kata-think", "kata-simplify", "kata-intent", "kata-surgical", "kata-verify", "kata-artifact", "kata-report"]
+artifact:
+  intent_owed: false
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: true
+  pending_present: false
+  twins_owed: false
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: ""
+  documented: false
+twins:
+  pattern: ""
+  result: ""
+  searched: false
+  defect_fixed: false
+  matches_count: 0
+  files_count: 0
+  fix_applied: false

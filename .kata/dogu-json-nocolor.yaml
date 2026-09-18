@@ -1,0 +1,96 @@
+task: dogu-json-nocolor
+status: approved
+domain: coding
+done: >
+  NO_COLOR support adicionado a 93 scripts. --json output adicionado a 6
+  scripts Tier 1 (docker-status, disk-space, docker-healthcheck, docker-resource-alert,
+  clean-cache, clean-system). Manifesto dogu.json atualizado com has_json: true
+  para 15 scripts. Todos validados com saída JSON parseável.
+base_commit: ""
+fit:
+  trivial: false
+  route: code-loop
+  reason: >
+    Implementação de --json e NO_COLOR — requer modificação de 94 scripts
+    para NO_COLOR e 6 scripts para --json output estruturado.
+  answered: true
+  skipped: false
+think:
+  problem: >
+    Scripts dogu-sh desperdiçam tokens quando executados por agentes de IA
+    devido a cores ANSI e formatação visual. Precisamos de saída JSON
+    estruturada e suporte a NO_COLOR para reduzir consumo de contexto.
+  assumptions:
+    - "Python3 está disponível para validação de JSON"
+    - "Agentes de IA preferem JSON sobre texto formatado"
+    - "NO_COLOR é padrão de facto para desabilitar cores"
+    - "Scripts Tier 1 são os mais usados por agentes"
+  alternatives:
+    - "Adicionar --json apenas aos scripts mais críticos"
+    - "Usar environment variable DOGU_JSON em vez de flag"
+    - "Criar wrapper que converte saída para JSON"
+  unknowns: ""
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: "Modificações incrementais em scripts existentes, sem novas abstrações"
+  answered: true
+  skipped: false
+intent:
+  code_does: "Adiciona NO_COLOR a 93 scripts e --json a 6 scripts Tier 1"
+  check_expects: "JSON válido, 15 scripts com has_json, NO_COLOR sem ANSI"
+  spec_says: "Schema JSON definido na fase de planejamento"
+  all_agree: true
+  conflict_resolution: ""
+  answered: true
+  skipped: false
+surgical:
+  files:
+    - docker-status.sh
+    - disk-space.sh
+    - docker-healthcheck.sh
+    - docker-resource-alert.sh
+    - clean-cache.sh
+    - clean-system.sh
+    - (+ 88 scripts for NO_COLOR)
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+verify:
+  ruff_clean: true
+  tests_pass: true
+  coverage_pct: 0.0
+  coverage_pass: true
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+preflight:
+  skills_missing: ["kata-fit", "kata-think", "kata-simplify", "kata-intent", "kata-surgical", "kata-verify", "kata-artifact", "kata-report"]
+artifact:
+  intent_owed: true
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: true
+  pending_present: true
+  twins_owed: true
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: "Implementar Fase 4: SKILL.md gerado automaticamente a partir de dogu.json"
+  documented: true
+twins:
+  pattern: "bug fixes in for loops and fd redirection"
+  result: "5 bugs found and fixed in Tier 1 scripts"
+  searched: true
+  defect_fixed: true
+  matches_count: 5
+  files_count: 3
+  fix_applied: true

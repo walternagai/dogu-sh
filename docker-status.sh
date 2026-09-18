@@ -6,6 +6,7 @@
 #   --containers    Mostra apenas containers
 #   --images        Mostra apenas imagens
 #   --volumes       Mostra apenas volumes
+#   --json          Saida em formato JSON
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
 
@@ -15,14 +16,19 @@ set -euo pipefail
 readonly VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-readonly GREEN='\033[1;32m'
-readonly YELLOW='\033[1;33m'
-readonly RED='\033[1;31m'
-readonly CYAN='\033[1;36m'
-readonly BLUE='\033[1;34m'
-readonly BOLD='\033[1m'
-readonly DIM='\033[0;90m'
-readonly RESET='\033[0m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+RED='\033[1;31m'
+CYAN='\033[1;36m'
+BLUE='\033[1;34m'
+BOLD='\033[1m'
+DIM='\033[0;90m'
+RESET='\033[0m'
+
+# NO_COLOR support (https://no-color.org/)
+if [[ -n "${NO_COLOR:-}" ]]; then
+  GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
+fi
 
 log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
@@ -39,6 +45,7 @@ WATCH_INTERVAL=0
 SHOW_CONTAINERS=false
 SHOW_IMAGES=false
 SHOW_VOLUMES=false
+JSON_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -48,6 +55,7 @@ while [[ $# -gt 0 ]]; do
         --containers|-c) SHOW_CONTAINERS=true; shift ;;
         --images|-i) SHOW_IMAGES=true; shift ;;
         --volumes|-v) SHOW_VOLUMES=true; shift ;;
+        --json|-j) JSON_MODE=true; shift ;;
         --help|-h)
             echo ""
             echo "  docker-status.sh — Painel resumido do Docker"
@@ -59,6 +67,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --containers    Mostra apenas containers"
             echo "    --images        Mostra apenas imagens"
             echo "    --volumes       Mostra apenas volumes"
+            echo "    --json          Saida em formato JSON"
             echo "    --help          Mostra esta ajuda"
             echo "    --version       Mostra versao"
             echo ""
@@ -93,11 +102,9 @@ format_bytes() {
 }
 
 show_status() {
-    clear 2>/dev/null || true
-
-    echo ""
-    echo -e "  ${BOLD}Docker Status${RESET}  ${DIM}$(date '+%Y-%m-%d %H:%M:%S')${RESET}"
-    echo ""
+    if ! $JSON_MODE; then
+        clear 2>/dev/null || true
+    fi
 
     # -- Resumo geral --
     total_containers=$(docker ps -aq 2>/dev/null | wc -l | tr -d ' ')
@@ -106,6 +113,45 @@ show_status() {
     total_images=$(docker images -q 2>/dev/null | sort -u | wc -l | tr -d ' ')
     total_volumes=$(docker volume ls -q 2>/dev/null | wc -l | tr -d ' ')
     total_networks=$(docker network ls -q 2>/dev/null | wc -l | tr -d ' ')
+
+    # -- JSON output --
+    if $JSON_MODE; then
+        # Get disk usage
+        disk_images=$(docker system df 2>/dev/null | grep -i "Images" | awk '{print $4}' || echo "0B")
+        disk_containers=$(docker system df 2>/dev/null | grep -i "Containers" | awk '{print $4}' || echo "0B")
+        disk_volumes=$(docker system df 2>/dev/null | grep -i "Local Volumes" | awk '{print $4}' || echo "0B")
+        disk_build=$(docker system df 2>/dev/null | grep -i "Build Cache" | awk '{print $4}' || echo "0B")
+
+        cat <<EOF
+{
+  "status": "ok",
+  "containers": {
+    "running": $running_containers,
+    "stopped": $stopped_containers,
+    "total": $total_containers
+  },
+  "images": {
+    "count": $total_images,
+    "disk_usage": "$disk_images"
+  },
+  "volumes": {
+    "count": $total_volumes,
+    "disk_usage": "$disk_volumes"
+  },
+  "networks": {
+    "count": $total_networks
+  },
+  "build_cache": {
+    "disk_usage": "$disk_build"
+  }
+}
+EOF
+        return
+    fi
+
+    echo ""
+    echo -e "  ${BOLD}Docker Status${RESET}  ${DIM}$(date '+%Y-%m-%d %H:%M:%S')${RESET}"
+    echo ""
 
     echo -e "  Containers:  ${GREEN}${BOLD}$running_containers${RESET} rodando  ${DIM}/  ${total_containers} total${RESET}"
     if [ "$stopped_containers" -gt 0 ]; then

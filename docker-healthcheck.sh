@@ -6,6 +6,7 @@
 #   --notify        Notificacoes desktop em problemas
 #   --watch N       Verifica a cada N segundos (modo continuo)
 #   --dry-run       Preview sem reiniciar
+#   --json          Saida em formato JSON
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
 
@@ -15,14 +16,19 @@ set -euo pipefail
 readonly VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-readonly GREEN='\033[1;32m'
-readonly YELLOW='\033[1;33m'
-readonly RED='\033[1;31m'
-readonly CYAN='\033[1;36m'
-readonly BLUE='\033[1;34m'
-readonly BOLD='\033[1m'
-readonly DIM='\033[0;90m'
-readonly RESET='\033[0m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+RED='\033[1;31m'
+CYAN='\033[1;36m'
+BLUE='\033[1;34m'
+BOLD='\033[1m'
+DIM='\033[0;90m'
+RESET='\033[0m'
+
+# NO_COLOR support (https://no-color.org/)
+if [[ -n "${NO_COLOR:-}" ]]; then
+  GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
+fi
 
 log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
@@ -39,6 +45,7 @@ AUTO_RESTART=false
 USE_NOTIFY=false
 WATCH_INTERVAL=0
 DRY_RUN=false
+JSON_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -48,6 +55,7 @@ while [[ $# -gt 0 ]]; do
             [[ -z "${2-}" ]] && { echo "Flag --watch requer um valor" >&2; exit 1; }
             WATCH_INTERVAL="${2:-30}"; shift 2 ;;
         --dry-run) DRY_RUN=true; shift ;;
+        --json|-j) JSON_MODE=true; shift ;;
         --help|-h)
             echo ""
             echo "  docker-healthcheck.sh — Verifica saude dos containers"
@@ -59,6 +67,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --notify        Notificacoes desktop em problemas"
             echo "    --watch N       Verifica a cada N segundos (modo continuo)"
             echo "    --dry-run       Preview sem reiniciar"
+            echo "    --json          Saida em formato JSON"
             echo "    --help          Mostra esta ajuda"
             echo "    --version       Mostra versao"
             echo ""
@@ -96,24 +105,40 @@ run_check() {
     local total_starting=0
     local total_no_health=0
     local restarted=0
-
-    echo ""
-    echo -e "  ${BOLD}Docker Healthcheck${RESET}  ${DIM}$(date '+%Y-%m-%d %H:%M:%S')${RESET}"
-    echo ""
+    local JSON_CONTAINERS=""
 
     containers=$(docker ps --format '{{.ID}}|{{.Names}}|{{.Status}}' 2>/dev/null)
     total_running=$(echo "$containers" | grep -c '|' || echo 0)
 
     if [ "$total_running" -eq 0 ]; then
-        echo -e "  ${DIM}Nenhum container rodando.${RESET}"
-        echo ""
+        if $JSON_MODE; then
+            cat <<EOF
+{
+  "status": "ok",
+  "containers": [],
+  "summary": {
+    "running": 0,
+    "healthy": 0,
+    "unhealthy": 0,
+    "starting": 0,
+    "no_health": 0
+  }
+}
+EOF
+        else
+            echo -e "  ${DIM}Nenhum container rodando.${RESET}"
+            echo ""
+        fi
         return
     fi
 
-    for container_line in $containers; do
-        IFS='|' read -r cid cname cstatus <<< "$container_line"
+    while IFS='|' read -r cid cname cstatus; do
+        [ -z "$cid" ] && continue
 
         health=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$cid" 2>/dev/null)
+        restart_count=$(docker inspect --format '{{.RestartCount}}' "$cid" 2>/dev/null || echo "0")
+        restart_count=$(echo "$restart_count" | tr -d '[:space:]')
+        [[ "$restart_count" =~ ^[0-9]+$ ]] || restart_count=0
 
         case "$health" in
             healthy)
@@ -125,66 +150,116 @@ run_check() {
                 failing=$(docker inspect --format '{{range .State.Health.Log}}{{if eq .ExitCode 1}}{{.Output}}{{end}}{{end}}' "$cid" 2>/dev/null | head -1)
                 failing=$(echo "$failing" | cut -c1-80)
 
-                echo -e "  ${RED}✗${RESET} ${BOLD}$cname${RESET}  ${RED}UNHEALTHY${RESET}"
-                if [ -n "$failing" ]; then
-                    echo -e "    ${DIM}$failing${RESET}"
+                if ! $JSON_MODE; then
+                    echo -e "  ${RED}✗${RESET} ${BOLD}$cname${RESET}  ${RED}UNHEALTHY${RESET}"
+                    if [ -n "$failing" ]; then
+                        echo -e "    ${DIM}$failing${RESET}"
+                    fi
                 fi
 
                 if $AUTO_RESTART && ! $DRY_RUN; then
-                    echo -e "    ${YELLOW}→ Reiniciando $cname...${RESET}"
+                    if ! $JSON_MODE; then
+                        echo -e "    ${YELLOW}→ Reiniciando $cname...${RESET}"
+                    fi
                     docker restart "$cname" &>/dev/null
                     if [ $? -eq 0 ]; then
-                        echo -e "    ${GREEN}  ✓ Reiniciado${RESET}"
+                        if ! $JSON_MODE; then
+                            echo -e "    ${GREEN}  ✓ Reiniciado${RESET}"
+                        fi
                         restarted=$((restarted + 1))
                         send_notify "Docker: $cname reiniciado" "Container unhealthy foi reiniciado" "normal"
                     else
-                        echo -e "    ${RED}  ✗ Falha ao reiniciar${RESET}"
+                        if ! $JSON_MODE; then
+                            echo -e "    ${RED}  ✗ Falha ao reiniciar${RESET}"
+                        fi
                     fi
                 elif $AUTO_RESTART && $DRY_RUN; then
-                    echo -e "    ${DIM}[dry-run] Seria reiniciado${RESET}"
+                    if ! $JSON_MODE; then
+                        echo -e "    ${DIM}[dry-run] Seria reiniciado${RESET}"
+                    fi
                 fi
 
                 send_notify "Docker: $cname UNHEALTHY" "Container com problema de saude" "critical"
                 ;;
             starting)
                 total_starting=$((total_starting + 1))
-                echo -e "  ${YELLOW}◐${RESET} $cname  ${YELLOW}STARTING${RESET}"
+                if ! $JSON_MODE; then
+                    echo -e "  ${YELLOW}◐${RESET} $cname  ${YELLOW}STARTING${RESET}"
+                fi
                 ;;
             none)
                 total_no_health=$((total_no_health + 1))
                 ;;
-        --) shift; break ;;
             *)
                 total_no_health=$((total_no_health + 1))
                 ;;
         esac
-    done
 
-    echo ""
-    echo "  ─────────────────────────────────"
-    echo -e "  ${BOLD}Resumo:${RESET}"
-    echo -e "  Rodando:       ${BOLD}$total_running${RESET}"
-    echo -e "  Saudaveis:     ${GREEN}${BOLD}$total_healthy${RESET}"
-    echo -e "  Iniciando:     ${YELLOW}${BOLD}$total_starting${RESET}"
-    echo -e "  Problema:      ${RED}${BOLD}$total_unhealthy${RESET}"
-    echo -e "  Sem health:    ${DIM}${BOLD}$total_no_health${RESET}"
+        if $JSON_MODE; then
+            if [ -n "$JSON_CONTAINERS" ]; then
+                JSON_CONTAINERS="${JSON_CONTAINERS},"
+            fi
+            JSON_CONTAINERS="${JSON_CONTAINERS}
+    {
+      \"name\": \"$cname\",
+      \"status\": \"$health\",
+      \"health\": \"$health\",
+      \"restart_count\": $restart_count
+    }"
+        fi
+    done <<< "$containers"
 
-    if [ "$restarted" -gt 0 ]; then
-        echo -e "  Reiniciados:   ${CYAN}${BOLD}$restarted${RESET}"
+    if $JSON_MODE; then
+        local status_str="ok"
+        if [ "$total_unhealthy" -gt 0 ]; then
+            status_str="warning"
+        fi
+
+        cat <<EOF
+{
+  "status": "$status_str",
+  "containers": [$JSON_CONTAINERS
+  ],
+  "summary": {
+    "running": $total_running,
+    "healthy": $total_healthy,
+    "unhealthy": $total_unhealthy,
+    "starting": $total_starting,
+    "no_health": $total_no_health,
+    "restarted": $restarted
+  }
+}
+EOF
+    else
+        echo ""
+        echo "  ─────────────────────────────────"
+        echo -e "  ${BOLD}Resumo:${RESET}"
+        echo -e "  Rodando:       ${BOLD}$total_running${RESET}"
+        echo -e "  Saudaveis:     ${GREEN}${BOLD}$total_healthy${RESET}"
+        echo -e "  Iniciando:     ${YELLOW}${BOLD}$total_starting${RESET}"
+        echo -e "  Problema:      ${RED}${BOLD}$total_unhealthy${RESET}"
+        echo -e "  Sem health:    ${DIM}${BOLD}$total_no_health${RESET}"
+
+        if [ "$restarted" -gt 0 ]; then
+            echo -e "  Reiniciados:   ${CYAN}${BOLD}$restarted${RESET}"
+        fi
+
+        echo "  ─────────────────────────────────"
     fi
-
-    echo "  ─────────────────────────────────"
 }
 
 if [ "$WATCH_INTERVAL" -gt 0 ]; then
     while true; do
-        clear 2>/dev/null || true
+        if ! $JSON_MODE; then
+            clear 2>/dev/null || true
+        fi
         run_check
-        echo ""
-        echo -e "  ${DIM}Proxima verificacao em ${WATCH_INTERVAL}s — Ctrl+C para sair${RESET}"
+        if ! $JSON_MODE; then
+            echo ""
+            echo -e "  ${DIM}Proxima verificacao em ${WATCH_INTERVAL}s — Ctrl+C para sair${RESET}"
+        fi
         sleep "$WATCH_INTERVAL"
     done
 else
     run_check
-    echo ""
 fi

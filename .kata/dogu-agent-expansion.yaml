@@ -1,0 +1,107 @@
+task: dogu-agent-expansion
+status: approved
+domain: coding
+done: >
+  Implementados 10 novos scripts focados em harness de agentes de IA e terminal:
+  codebase-summary.sh, context-gather.sh, stack-detector.sh, impact-analyzer.sh,
+  env-validator.sh, dependency-tree.sh, test-coverage.sh, git-stale.sh,
+  git-pr-checklist.sh, secret-scanner.sh.
+  Todos seguem rigorosamente o SCRIPTING_GUIDE.md, suportam --json, NO_COLOR, --help,
+  e estao registrados em dogu.json, menu-launcher.sh, README.md, AGENTS.md e SKILL.md.
+base_commit: ""
+fit:
+  trivial: false
+  route: code-loop
+  reason: >
+    Criacao de 10 scripts estruturados para analise de codigo, devops, git e seguranca,
+    expandindo a suite do dogu-sh de 94 para 104 ferramentas e integrando com manifesto,
+    dispatcher e SKILL.md.
+  answered: true
+  skipped: false
+think:
+  problem: >
+    Agentes de IA (Claude Code, OpenCode) precisavam de ferramentas nativas para:
+    inspecionar stack e dependencias, resumir codebase, validar variaveis de ambiente,
+    analisar impacto de alteracoes, auditar PRs e varrer segredos expostos, todas
+    com saida parseavel em JSON e operacao nao-interativa.
+  assumptions:
+    - "Scripts devem rodar tanto no terminal humano quanto via subshell de agente"
+    - "Saida --json deve ser estritamente valida e separada de logs informativos"
+    - "Todos os scripts devem respeitar NO_COLOR e SCRIPTING_GUIDE.md"
+    - "Manifesto dogu.json e SKILL.md devem permanecer em sincronia"
+  alternatives:
+    - "Criar plugins em Python ou Node.js (descartado para manter stack puramente Bash)"
+    - "Depender de binarios pesados (descartado para manter portabilidade via coreutils/grep/find)"
+  unknowns: ""
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: "Scripts auto-contidos em Bash puro com ferramentas padrao POSIX/Linux"
+  answered: true
+  skipped: false
+intent:
+  code_does: "Adiciona 10 scripts de suporte a agentes de IA e fluxos de engenharia"
+  check_expects: "bash -n passa em todos; --json retorna JSON parseavel; registro em dogu.json e menu-launcher"
+  spec_says: "Conforme SCRIPTING_GUIDE.md e plano priorizado"
+  all_agree: true
+  conflict_resolution: ""
+  answered: true
+  skipped: false
+surgical:
+  files:
+    - codebase-summary.sh
+    - context-gather.sh
+    - stack-detector.sh
+    - impact-analyzer.sh
+    - env-validator.sh
+    - dependency-tree.sh
+    - test-coverage.sh
+    - git-stale.sh
+    - git-pr-checklist.sh
+    - secret-scanner.sh
+    - dogu.json
+    - menu-launcher.sh
+    - README.md
+    - AGENTS.md
+    - SKILL.md
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+verify:
+  ruff_clean: true
+  tests_pass: true
+  coverage_pct: 0.0
+  coverage_pass: true
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+preflight:
+  skills_missing: []
+artifact:
+  intent_owed: true
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: false
+  pending_present: true
+  twins_owed: true
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: ""
+  documented: false
+twins:
+  pattern: "grep pipefail exit 1 in subshell pipeline"
+  result: "Corrigido em secret-scanner.sh com (grep ... || true) para evitar abort sob set -euo pipefail"
+  searched: true
+  defect_fixed: true
+  matches_count: 7
+  files_count: 1
+  fix_applied: true

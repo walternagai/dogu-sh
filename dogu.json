@@ -1,0 +1,5676 @@
+{
+  "version": "1.0.0",
+  "project": "dogu-sh",
+  "description": "Manifesto estruturado das ferramentas dogu-sh para autodescoberta por agentes de IA",
+  "total_scripts": 104,
+  "categories": {
+    "productivity": 13,
+    "network": 9,
+    "system": 24,
+    "media": 6,
+    "conversion": 11,
+    "other": 1,
+    "docker": 17,
+    "security": 4,
+    "devops": 13,
+    "code-analysis": 6
+  },
+  "risk_levels": {
+    "read-only": 64,
+    "dry-run-ok": 33,
+    "destructive": 7
+  },
+  "features": {
+    "has_json": 25,
+    "has_dry_run": 38,
+    "interactive": 8
+  },
+  "scripts": {
+    "alarm.sh": {
+      "description": "Alarme e cronometro com notificacoes",
+      "category": "productivity",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--time",
+          "short": "-t",
+          "type": "string",
+          "desc": "Hora do alarme (HH:MM) ou duracao (Nm, Nh, Ns)"
+        },
+        {
+          "flag": "--message",
+          "short": "-m",
+          "type": "string",
+          "desc": "Mensagem do alarme"
+        },
+        {
+          "flag": "--list",
+          "short": "-l",
+          "type": "bool",
+          "desc": "Lista alarmes ativos"
+        },
+        {
+          "flag": "--cancel",
+          "short": null,
+          "type": "int",
+          "desc": "Cancela alarme N"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "alarm.sh -t 14:30 -m 'Reuniao'"
+    },
+    "api-tester.sh": {
+      "description": "Teste rapido de APIs REST com formatacao JSON",
+      "category": "network",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "curl"
+      ],
+      "args": [
+        {
+          "flag": "--url",
+          "short": "-u",
+          "type": "string",
+          "desc": "URL da requisicao"
+        },
+        {
+          "flag": "--method",
+          "short": "-X",
+          "type": "string",
+          "desc": "Metodo HTTP (GET, POST, PUT, DELETE, PATCH, HEAD)"
+        },
+        {
+          "flag": "--data",
+          "short": "-d",
+          "type": "string",
+          "desc": "Corpo da requisicao"
+        },
+        {
+          "flag": "--header",
+          "short": "-H",
+          "type": "string",
+          "desc": "Cabecalho personalizado"
+        },
+        {
+          "flag": "--verbose",
+          "short": "-v",
+          "type": "bool",
+          "desc": "Mostra cabecalhos e metadados"
+        },
+        {
+          "flag": "--status-only",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra apenas o codigo de status"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "api-tester.sh -u https://api.example.com/users -X GET"
+    },
+    "archive-manager.sh": {
+      "description": "Compacta pastas individualmente ou descompacta arquivos em massa",
+      "category": "system",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "zip",
+        "unzip",
+        "tar"
+      ],
+      "args": [
+        {
+          "flag": "--pack",
+          "short": null,
+          "type": "bool",
+          "desc": "Compacta cada subdiretorio em um arquivo .zip individual"
+        },
+        {
+          "flag": "--unpack",
+          "short": null,
+          "type": "bool",
+          "desc": "Descompacta cada arquivo compactado em sua propria pasta"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview das operacoes sem alterar o disco"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "archive-manager.sh --pack ~/projetos"
+    },
+    "audio-to-text.sh": {
+      "description": "Transcreve arquivos de audio locais via Whisper",
+      "category": "media",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "ffmpeg"
+      ],
+      "args": [
+        {
+          "flag": "--model",
+          "short": "-m",
+          "type": "string",
+          "desc": "Modelo Whisper: tiny, base, small, medium, large"
+        },
+        {
+          "flag": "--language",
+          "short": "-l",
+          "type": "string",
+          "desc": "Idioma: auto, en, pt"
+        },
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Arquivo de saida"
+        },
+        {
+          "flag": "--format",
+          "short": "-f",
+          "type": "string",
+          "desc": "Formato: txt, srt, vtt"
+        },
+        {
+          "flag": "--backend",
+          "short": null,
+          "type": "string",
+          "desc": "Backend: auto, faster-whisper, openai-whisper"
+        },
+        {
+          "flag": "--verbose",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra segmentos e progresso"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Simula a transcricao sem executar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "audio-to-text.sh -m base audio.mp3"
+    },
+    "base64-tool.sh": {
+      "description": "Codifica/decodifica Base64, URL encode, hex",
+      "category": "conversion",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "xxd",
+        "python3"
+      ],
+      "args": [
+        {
+          "flag": "--encode",
+          "short": "-e",
+          "type": "string",
+          "desc": "Codifica em Base64"
+        },
+        {
+          "flag": "--decode",
+          "short": "-d",
+          "type": "string",
+          "desc": "Decodifica de Base64"
+        },
+        {
+          "flag": "--url-encode",
+          "short": null,
+          "type": "string",
+          "desc": "Codifica para URL"
+        },
+        {
+          "flag": "--url-decode",
+          "short": null,
+          "type": "string",
+          "desc": "Decodifica de URL"
+        },
+        {
+          "flag": "--hex-encode",
+          "short": null,
+          "type": "string",
+          "desc": "Codifica para hexadecimal"
+        },
+        {
+          "flag": "--hex-decode",
+          "short": null,
+          "type": "string",
+          "desc": "Decodifica de hexadecimal"
+        },
+        {
+          "flag": "--file",
+          "short": null,
+          "type": "string",
+          "desc": "Usa conteudo de arquivo como input"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "base64-tool.sh -e 'Hello World'"
+    },
+    "batch-rename.sh": {
+      "description": "Renomeia arquivos em lote por padrao de busca/substituicao",
+      "category": "system",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "sed",
+        "mv"
+      ],
+      "args": [
+        {
+          "flag": "--find",
+          "short": null,
+          "type": "string",
+          "desc": "Texto a procurar no nome"
+        },
+        {
+          "flag": "--replace",
+          "short": null,
+          "type": "string",
+          "desc": "Substituicao do padrao"
+        },
+        {
+          "flag": "--prefix",
+          "short": null,
+          "type": "string",
+          "desc": "Adiciona texto no inicio do nome"
+        },
+        {
+          "flag": "--suffix",
+          "short": null,
+          "type": "string",
+          "desc": "Adiciona texto antes da extensao"
+        },
+        {
+          "flag": "--ext",
+          "short": null,
+          "type": "string",
+          "desc": "Troca a extensao"
+        },
+        {
+          "flag": "--lower",
+          "short": null,
+          "type": "bool",
+          "desc": "Converte nome para minusculas"
+        },
+        {
+          "flag": "--upper",
+          "short": null,
+          "type": "bool",
+          "desc": "Converte nome para maiusculas"
+        },
+        {
+          "flag": "--seq",
+          "short": null,
+          "type": "bool",
+          "desc": "Adiciona numeracao sequencial"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Apenas mostra as mudancas"
+        },
+        {
+          "flag": "--force",
+          "short": null,
+          "type": "bool",
+          "desc": "Nao pedir confirmacao"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "batch-rename.sh --find=foto --replace=photo *.jpg"
+    },
+    "battery-monitor.sh": {
+      "description": "Status da bateria com alerta de nivel baixo/critico",
+      "category": "system",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--status",
+          "short": "-s",
+          "type": "bool",
+          "desc": "Mostra status atual"
+        },
+        {
+          "flag": "--watch",
+          "short": "-w",
+          "type": "bool",
+          "desc": "Monitora continuamente com alertas"
+        },
+        {
+          "flag": "--low",
+          "short": null,
+          "type": "int",
+          "desc": "Percentual de alerta baixo"
+        },
+        {
+          "flag": "--critical",
+          "short": null,
+          "type": "int",
+          "desc": "Percentual de alerta critico"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "battery-monitor.sh --watch"
+    },
+    "brightness.sh": {
+      "description": "Controle de brilho do monitor",
+      "category": "system",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "light",
+        "brightnessctl",
+        "xrandr"
+      ],
+      "args": [
+        {
+          "flag": "--up",
+          "short": "-u",
+          "type": "int",
+          "desc": "Aumenta brilho em N%"
+        },
+        {
+          "flag": "--down",
+          "short": "-d",
+          "type": "int",
+          "desc": "Diminui brilho em N%"
+        },
+        {
+          "flag": "--set",
+          "short": "-s",
+          "type": "int",
+          "desc": "Define brilho para N%"
+        },
+        {
+          "flag": "--get",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra brilho atual"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "brightness.sh --up 10"
+    },
+    "calculator.sh": {
+      "description": "Calculadora interativa com historico e suporte a expressoes",
+      "category": "productivity",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": true,
+      "deps": [
+        "bc"
+      ],
+      "args": [
+        {
+          "flag": "--eval",
+          "short": "-e",
+          "type": "string",
+          "desc": "Avalia expressao e sai"
+        },
+        {
+          "flag": "--history",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra historico de calculos"
+        },
+        {
+          "flag": "--clear",
+          "short": "-c",
+          "type": "bool",
+          "desc": "Limpa historico"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "calculator.sh -e '2+2'"
+    },
+    "calendar.sh": {
+      "description": "Calendario mensal com marcacao de eventos",
+      "category": "productivity",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--month",
+          "short": "-m",
+          "type": "int",
+          "desc": "Mes (1-12)"
+        },
+        {
+          "flag": "--year",
+          "short": "-y",
+          "type": "int",
+          "desc": "Ano"
+        },
+        {
+          "flag": "--add",
+          "short": "-a",
+          "type": "string",
+          "desc": "Adiciona evento (YYYY-MM-DD MSG)"
+        },
+        {
+          "flag": "--remove",
+          "short": "-r",
+          "type": "int",
+          "desc": "Remove evento por ID"
+        },
+        {
+          "flag": "--events",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista eventos do mes"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "calendar.sh -m 9 -y 2026"
+    },
+    "clean-cache.sh": {
+      "description": "Limpa arquivos temporarios e caches de aplicacoes",
+      "category": "system",
+      "risk": "dry-run-ok",
+      "has_json": true,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "bc"
+      ],
+      "args": [
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem apagar nada"
+        },
+        {
+          "flag": "--all",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Limpa todos os caches sem confirmacao"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON (requer --dry-run)"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "clean-cache.sh --json"
+    },
+    "clean-system.sh": {
+      "description": "Limpeza profunda do sistema (complemento ao clean-cache)",
+      "category": "system",
+      "risk": "destructive",
+      "has_json": true,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "bc"
+      ],
+      "args": [
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem alterar nada"
+        },
+        {
+          "flag": "--all",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Executa tudo sem confirmacao"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON (requer --dry-run)"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "clean-system.sh --json"
+    },
+    "clipboard-manager.sh": {
+      "description": "Historico do clipboard com busca e persistencia",
+      "category": "productivity",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "wl-copy",
+        "xclip"
+      ],
+      "args": [
+        {
+          "flag": "--watch",
+          "short": null,
+          "type": "bool",
+          "desc": "Monitora clipboard e salva historico"
+        },
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista historico salvo"
+        },
+        {
+          "flag": "--search",
+          "short": null,
+          "type": "string",
+          "desc": "Busca no historico por termo"
+        },
+        {
+          "flag": "--restore",
+          "short": null,
+          "type": "int",
+          "desc": "Restaura item N do historico"
+        },
+        {
+          "flag": "--clear",
+          "short": null,
+          "type": "bool",
+          "desc": "Limpa historico salvo"
+        },
+        {
+          "flag": "--count",
+          "short": null,
+          "type": "int",
+          "desc": "Numero de itens a listar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "clipboard-manager.sh --list"
+    },
+    "color-converter.sh": {
+      "description": "Conversao entre HEX, RGB, HSL e nome de cor + preview",
+      "category": "conversion",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "bc"
+      ],
+      "args": [
+        {
+          "flag": "--color",
+          "short": "-c",
+          "type": "string",
+          "desc": "Cor a converter (HEX, RGB, HSL ou nome)"
+        },
+        {
+          "flag": "--preview",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra preview da cor no terminal"
+        },
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista nomes de cores conhecidos"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "color-converter.sh -c '#FF5733' --preview"
+    },
+    "currency-converter.sh": {
+      "description": "Cotacao de moedas em tempo real via API",
+      "category": "conversion",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "curl"
+      ],
+      "args": [
+        {
+          "flag": "--from",
+          "short": "-f",
+          "type": "string",
+          "desc": "Moeda de origem"
+        },
+        {
+          "flag": "--to",
+          "short": "-t",
+          "type": "string",
+          "desc": "Moeda de destino"
+        },
+        {
+          "flag": "--amount",
+          "short": "-a",
+          "type": "string",
+          "desc": "Valor a converter"
+        },
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista moedas populares"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "currency-converter.sh -f USD -t BRL -a 100"
+    },
+    "dark-mode.sh": {
+      "description": "Alterna tema claro/escuro em GTK e terminais",
+      "category": "system",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--dark",
+          "short": "-d",
+          "type": "bool",
+          "desc": "Ativa tema escuro"
+        },
+        {
+          "flag": "--light",
+          "short": "-l",
+          "type": "bool",
+          "desc": "Ativa tema claro"
+        },
+        {
+          "flag": "--toggle",
+          "short": "-t",
+          "type": "bool",
+          "desc": "Alterna entre claro/escuro"
+        },
+        {
+          "flag": "--status",
+          "short": "-s",
+          "type": "bool",
+          "desc": "Mostra tema atual"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "dark-mode.sh --toggle"
+    },
+    "dedup-files.sh": {
+      "description": "Compara varios arquivos e remove duplicados",
+      "category": "system",
+      "risk": "destructive",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "find",
+        "sha256sum",
+        "cmp"
+      ],
+      "args": [
+        {
+          "flag": "--delete",
+          "short": null,
+          "type": "bool",
+          "desc": "Remove duplicados"
+        },
+        {
+          "flag": "--keep",
+          "short": null,
+          "type": "string",
+          "desc": "Estrategia de selecao: first, oldest, newest, largestpath"
+        },
+        {
+          "flag": "--min-size",
+          "short": null,
+          "type": "int",
+          "desc": "Tamanho minimo em bytes"
+        },
+        {
+          "flag": "--exclude-dir",
+          "short": null,
+          "type": "string",
+          "desc": "Diretorios extras a ignorar"
+        },
+        {
+          "flag": "--include-hidden",
+          "short": null,
+          "type": "bool",
+          "desc": "Incluir arquivos ocultos"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "dedup-files.sh --delete ~/Documents"
+    },
+    "dependency-checker.sh": {
+      "description": "Verifica dependencias externas do projeto dogu-sh",
+      "category": "system",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--fix",
+          "short": "-f",
+          "type": "bool",
+          "desc": "Tenta instalar dependencias faltantes"
+        },
+        {
+          "flag": "--all",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Inclui dependencias escaneadas dos scripts"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "dependency-checker.sh"
+    },
+    "dependency-helper.sh": {
+      "description": "Biblioteca interna para verificacao e instalacao de dependencias",
+      "category": "other",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": true,
+      "deps": [],
+      "args": [],
+      "example": "source dependency-helper.sh"
+    },
+    "dir-summary.sh": {
+      "description": "Resumo de diretorio: conta arquivos, tipos e tamanho",
+      "category": "system",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--all",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Inclui arquivos ocultos"
+        },
+        {
+          "flag": "--sort",
+          "short": "-s",
+          "type": "string",
+          "desc": "Ordena por: size, count, name"
+        },
+        {
+          "flag": "--top",
+          "short": "-t",
+          "type": "int",
+          "desc": "Mostra apenas os N maiores tipos"
+        },
+        {
+          "flag": "--deep",
+          "short": "-d",
+          "type": "int",
+          "desc": "Mostra os N maiores arquivos"
+        },
+        {
+          "flag": "--depth",
+          "short": "-D",
+          "type": "int",
+          "desc": "Profundidade de subdiretorios"
+        },
+        {
+          "flag": "--age",
+          "short": "-A",
+          "type": "bool",
+          "desc": "Mostra distribuicao por idade"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "dir-summary.sh ~/Documents --top 5"
+    },
+    "disk-health.sh": {
+      "description": "Verifica saude SMART do disco e alerta problemas",
+      "category": "system",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "smartctl"
+      ],
+      "args": [
+        {
+          "flag": "--all",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Mostra todos os atributos SMART"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--watch",
+          "short": "-w",
+          "type": "int",
+          "desc": "Re-verificar a cada N segundos"
+        },
+        {
+          "flag": "--notify",
+          "short": null,
+          "type": "bool",
+          "desc": "Notificacao desktop em problemas criticos"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "disk-health.sh --json"
+    },
+    "disk-scanner.sh": {
+      "description": "Identifica os maiores arquivos e pastas no disco",
+      "category": "system",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "disk-scanner.sh /var 10"
+    },
+    "disk-space.sh": {
+      "description": "Mostra espaco disponivel nos discos com identificacao de tipo (SSD/NVMe/HDD)",
+      "category": "system",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "lsblk"
+      ],
+      "args": [
+        {
+          "flag": "--all",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Inclui pseudo-filesystems e loop devices"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "disk-space.sh --json"
+    },
+    "docker-audit.sh": {
+      "description": "Auditoria de seguranca de containers Docker",
+      "category": "docker",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--verbose",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra detalhes de cada verificacao"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-audit.sh --json"
+    },
+    "docker-backup.sh": {
+      "description": "Backup de volumes e configuracoes de containers",
+      "category": "docker",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--all",
+          "short": null,
+          "type": "bool",
+          "desc": "Backup de todos os volumes"
+        },
+        {
+          "flag": "--volume",
+          "short": null,
+          "type": "string",
+          "desc": "Backup de volume especifico"
+        },
+        {
+          "flag": "--container",
+          "short": null,
+          "type": "string",
+          "desc": "Backup de config do container"
+        },
+        {
+          "flag": "--output",
+          "short": null,
+          "type": "string",
+          "desc": "Diretorio de saida"
+        },
+        {
+          "flag": "--compress",
+          "short": null,
+          "type": "bool",
+          "desc": "Comprimir com gzip"
+        },
+        {
+          "flag": "--keep",
+          "short": null,
+          "type": "int",
+          "desc": "Manter N ultimos backups"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem criar backup"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-backup.sh --all --compress"
+    },
+    "docker-bottleneck-detect.sh": {
+      "description": "Detecta gargalos comparando limites config vs uso real",
+      "category": "docker",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--all",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Analisa todos os containers rodando"
+        },
+        {
+          "flag": "--container",
+          "short": "-c",
+          "type": "string",
+          "desc": "Analisa container especifico"
+        },
+        {
+          "flag": "--threshold",
+          "short": null,
+          "type": "int",
+          "desc": "Percentual de uso para alerta"
+        },
+        {
+          "flag": "--waste",
+          "short": null,
+          "type": "int",
+          "desc": "Percentual para desperdicio"
+        },
+        {
+          "flag": "--watch",
+          "short": null,
+          "type": "int",
+          "desc": "Atualiza a cada N segundos"
+        },
+        {
+          "flag": "--json",
+          "short": null,
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-bottleneck-detect.sh --json"
+    },
+    "docker-clean.sh": {
+      "description": "Limpa recursos nao utilizados do Docker",
+      "category": "docker",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem remover"
+        },
+        {
+          "flag": "--all",
+          "short": null,
+          "type": "bool",
+          "desc": "Remove tudo"
+        },
+        {
+          "flag": "--deep",
+          "short": null,
+          "type": "bool",
+          "desc": "Limpeza profunda"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-clean.sh --dry-run"
+    },
+    "docker-cis-benchmark.sh": {
+      "description": "Verifica conformidade com CIS Docker Benchmark",
+      "category": "docker",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--all",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Verifica todos os containers"
+        },
+        {
+          "flag": "--container",
+          "short": "-c",
+          "type": "string",
+          "desc": "Verifica container especifico"
+        },
+        {
+          "flag": "--host",
+          "short": null,
+          "type": "bool",
+          "desc": "Verifica apenas configuracoes do host"
+        },
+        {
+          "flag": "--severity",
+          "short": null,
+          "type": "string",
+          "desc": "Filtra por severidade: info, warn, fail"
+        },
+        {
+          "flag": "--json",
+          "short": null,
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-cis-benchmark.sh --json"
+    },
+    "docker-compose-manager.sh": {
+      "description": "Gerencia multiplos docker-compose.yml",
+      "category": "docker",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "docker",
+        "docker-compose"
+      ],
+      "args": [
+        {
+          "flag": "--status",
+          "short": "-s",
+          "type": "bool",
+          "desc": "Lista compose files e seus status"
+        },
+        {
+          "flag": "--up",
+          "short": "-u",
+          "type": "bool",
+          "desc": "Inicia todos os compose encontrados"
+        },
+        {
+          "flag": "--down",
+          "short": "-d",
+          "type": "bool",
+          "desc": "Para todos os compose encontrados"
+        },
+        {
+          "flag": "--restart",
+          "short": null,
+          "type": "bool",
+          "desc": "Restart de todos os compose"
+        },
+        {
+          "flag": "--pull",
+          "short": null,
+          "type": "bool",
+          "desc": "Pull + recreate de todos"
+        },
+        {
+          "flag": "--depth",
+          "short": null,
+          "type": "int",
+          "desc": "Profundidade de busca"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem executar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-compose-manager.sh --status"
+    },
+    "docker-dependency-map.sh": {
+      "description": "Mapeia relacoes de dependencia entre containers",
+      "category": "docker",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--map",
+          "short": "-m",
+          "type": "bool",
+          "desc": "Mapeia todas as dependencias"
+        },
+        {
+          "flag": "--network",
+          "short": "-n",
+          "type": "string",
+          "desc": "Filtra por rede"
+        },
+        {
+          "flag": "--container",
+          "short": "-c",
+          "type": "string",
+          "desc": "Filtra por container"
+        },
+        {
+          "flag": "--tree",
+          "short": null,
+          "type": "bool",
+          "desc": "Exibe dependencias em formato arvore"
+        },
+        {
+          "flag": "--dot",
+          "short": null,
+          "type": "bool",
+          "desc": "Gera saida Graphviz DOT"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-dependency-map.sh --tree"
+    },
+    "docker-healthcheck.sh": {
+      "description": "Verifica saude dos containers e reinicia unhealthy",
+      "category": "docker",
+      "risk": "dry-run-ok",
+      "has_json": true,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--restart",
+          "short": "-r",
+          "type": "bool",
+          "desc": "Reinicia containers unhealthy automaticamente"
+        },
+        {
+          "flag": "--notify",
+          "short": "-n",
+          "type": "bool",
+          "desc": "Notificacoes desktop em problemas"
+        },
+        {
+          "flag": "--watch",
+          "short": "-w",
+          "type": "int",
+          "desc": "Verifica a cada N segundos"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem reiniciar"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-healthcheck.sh --json"
+    },
+    "docker-image-slimmer.sh": {
+      "description": "Analisa camadas de imagens e sugere reducoes",
+      "category": "docker",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--image",
+          "short": "-i",
+          "type": "string",
+          "desc": "Analisa uma imagem especifica"
+        },
+        {
+          "flag": "--all",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Analisa todas as imagens locais"
+        },
+        {
+          "flag": "--history",
+          "short": "-H",
+          "type": "bool",
+          "desc": "Mostra historico detalhado de camadas"
+        },
+        {
+          "flag": "--tips",
+          "short": "-t",
+          "type": "bool",
+          "desc": "Apenas dicas gerais"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-image-slimmer.sh --image nginx"
+    },
+    "docker-logs-watcher.sh": {
+      "description": "Monitora logs de containers com filtros",
+      "category": "docker",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--container",
+          "short": "-c",
+          "type": "string",
+          "desc": "Container para monitorar"
+        },
+        {
+          "flag": "--filter",
+          "short": "-f",
+          "type": "string",
+          "desc": "Filtra linhas contendo TEXTO"
+        },
+        {
+          "flag": "--error",
+          "short": null,
+          "type": "bool",
+          "desc": "Filtra apenas erros"
+        },
+        {
+          "flag": "--since",
+          "short": null,
+          "type": "string",
+          "desc": "Logs a partir de (ex: 5m, 1h)"
+        },
+        {
+          "flag": "--notify",
+          "short": null,
+          "type": "bool",
+          "desc": "Envia notificacao desktop ao detectar erro"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-logs-watcher.sh --error --since 1h"
+    },
+    "docker-network-manager.sh": {
+      "description": "Gerencia redes Docker (criar, remover, conectar, desconectar)",
+      "category": "docker",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista todas as redes"
+        },
+        {
+          "flag": "--create",
+          "short": null,
+          "type": "string",
+          "desc": "Cria uma rede bridge"
+        },
+        {
+          "flag": "--remove",
+          "short": null,
+          "type": "string",
+          "desc": "Remove uma rede"
+        },
+        {
+          "flag": "--connect",
+          "short": null,
+          "type": "string",
+          "desc": "Conecta container a rede"
+        },
+        {
+          "flag": "--disconnect",
+          "short": null,
+          "type": "string",
+          "desc": "Desconecta container de rede"
+        },
+        {
+          "flag": "--inspect",
+          "short": null,
+          "type": "string",
+          "desc": "Inspeciona detalhes de uma rede"
+        },
+        {
+          "flag": "--prune",
+          "short": null,
+          "type": "bool",
+          "desc": "Remove redes nao utilizadas"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem executar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-network-manager.sh --list"
+    },
+    "docker-resource-alert.sh": {
+      "description": "Alerta quando container ultrapassa limites de CPU/RAM",
+      "category": "docker",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--cpu",
+          "short": null,
+          "type": "int",
+          "desc": "Limite de CPU em %"
+        },
+        {
+          "flag": "--mem",
+          "short": null,
+          "type": "int",
+          "desc": "Limite de RAM em %"
+        },
+        {
+          "flag": "--disk",
+          "short": null,
+          "type": "int",
+          "desc": "Limite de disco em bytes"
+        },
+        {
+          "flag": "--watch",
+          "short": null,
+          "type": "int",
+          "desc": "Verifica a cada N segundos"
+        },
+        {
+          "flag": "--notify",
+          "short": null,
+          "type": "bool",
+          "desc": "Notificacoes desktop"
+        },
+        {
+          "flag": "--kill",
+          "short": null,
+          "type": "bool",
+          "desc": "Mata container que ultrapassar CPU"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON (modo unico)"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-resource-alert.sh --json --cpu 80 --notify"
+    },
+    "docker-restore.sh": {
+      "description": "Restaura volumes e configuracoes de containers",
+      "category": "docker",
+      "risk": "destructive",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--input",
+          "short": "-i",
+          "type": "string",
+          "desc": "Diretorio de backup"
+        },
+        {
+          "flag": "--volume",
+          "short": "-V",
+          "type": "string",
+          "desc": "Restaura volume especifico"
+        },
+        {
+          "flag": "--all",
+          "short": null,
+          "type": "bool",
+          "desc": "Restaura todos os volumes do backup"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem restaurar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-restore.sh --input ~/docker-backups/latest --all"
+    },
+    "docker-secret-scanner.sh": {
+      "description": "Escaneia containers em busca de segredos expostos",
+      "category": "docker",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--all",
+          "short": null,
+          "type": "bool",
+          "desc": "Escaneia todos os containers rodando"
+        },
+        {
+          "flag": "--container",
+          "short": null,
+          "type": "string",
+          "desc": "Escaneia container especifico"
+        },
+        {
+          "flag": "--env-only",
+          "short": null,
+          "type": "bool",
+          "desc": "Escaneia apenas variaveis de ambiente"
+        },
+        {
+          "flag": "--labels-only",
+          "short": null,
+          "type": "bool",
+          "desc": "Escaneia apenas labels"
+        },
+        {
+          "flag": "--severity",
+          "short": null,
+          "type": "string",
+          "desc": "Filtra por severidade"
+        },
+        {
+          "flag": "--json",
+          "short": null,
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-secret-scanner.sh --json"
+    },
+    "docker-stats-history.sh": {
+      "description": "Registra historico de CPU/RAM dos containers em CSV",
+      "category": "docker",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Arquivo CSV destino"
+        },
+        {
+          "flag": "--watch",
+          "short": "-w",
+          "type": "int",
+          "desc": "Intervalo em segundos"
+        },
+        {
+          "flag": "--container",
+          "short": "-c",
+          "type": "string",
+          "desc": "Filtrar por nome do container"
+        },
+        {
+          "flag": "--no-header",
+          "short": null,
+          "type": "bool",
+          "desc": "Nao escrever header CSV"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-stats-history.sh --watch 30"
+    },
+    "docker-status.sh": {
+      "description": "Painel resumido do Docker",
+      "category": "docker",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--watch",
+          "short": "-w",
+          "type": "int",
+          "desc": "Atualiza a cada N segundos"
+        },
+        {
+          "flag": "--containers",
+          "short": "-c",
+          "type": "bool",
+          "desc": "Mostra apenas containers"
+        },
+        {
+          "flag": "--images",
+          "short": "-i",
+          "type": "bool",
+          "desc": "Mostra apenas imagens"
+        },
+        {
+          "flag": "--volumes",
+          "short": "-v",
+          "type": "bool",
+          "desc": "Mostra apenas volumes"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-status.sh --json"
+    },
+    "docker-volume-mgr.sh": {
+      "description": "Lista, identifica orfaos, faz backup e restaura volumes Docker",
+      "category": "docker",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "docker"
+      ],
+      "args": [
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista todos os volumes"
+        },
+        {
+          "flag": "--orphans",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra volumes sem container associado"
+        },
+        {
+          "flag": "--size",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra tamanho de cada volume"
+        },
+        {
+          "flag": "--remove",
+          "short": null,
+          "type": "string",
+          "desc": "Remove um volume especifico"
+        },
+        {
+          "flag": "--remove-orphans",
+          "short": null,
+          "type": "bool",
+          "desc": "Remove todos os volumes orfaos"
+        },
+        {
+          "flag": "--backup",
+          "short": null,
+          "type": "string",
+          "desc": "Faz backup de um volume"
+        },
+        {
+          "flag": "--restore",
+          "short": null,
+          "type": "string",
+          "desc": "Restaura volume a partir de tar.gz"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem executar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-volume-mgr.sh --orphans"
+    },
+    "docx-to-md.sh": {
+      "description": "Converte arquivos .docx para Markdown via pandoc",
+      "category": "conversion",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "pandoc"
+      ],
+      "args": [
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Diretorio de saida"
+        },
+        {
+          "flag": "--recursive",
+          "short": "-r",
+          "type": "bool",
+          "desc": "Converte todos os .docx em um diretorio"
+        },
+        {
+          "flag": "--suffix",
+          "short": "-s",
+          "type": "string",
+          "desc": "Sufixo opcional antes de .md"
+        },
+        {
+          "flag": "--overwrite",
+          "short": null,
+          "type": "bool",
+          "desc": "Sobrescreve .md existentes"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Exibe o que seria feito sem converter"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docx-to-md.sh relatorio.docx"
+    },
+    "download-icons.sh": {
+      "description": "Baixa icones Material Design Icons (MDI) e converte para PNG",
+      "category": "productivity",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "rsvg-convert",
+        "npm"
+      ],
+      "args": [
+        {
+          "flag": "--category",
+          "short": "-c",
+          "type": "string",
+          "desc": "Categorias separadas por virgula"
+        },
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Diretorio de saida"
+        },
+        {
+          "flag": "--sizes",
+          "short": "-s",
+          "type": "string",
+          "desc": "Tamanhos PNG separados por virgula"
+        },
+        {
+          "flag": "--dry-run",
+          "short": "-n",
+          "type": "bool",
+          "desc": "Simula execucao sem baixar/converter"
+        },
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista icones disponiveis"
+        },
+        {
+          "flag": "--list-categories",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista categorias disponiveis"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "download-icons.sh -c educacao -s 24,48"
+    },
+    "dns-lookup.sh": {
+      "description": "Lookup DNS (A, AAAA, MX, NS, TXT, CNAME)",
+      "category": "network",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "dig",
+        "nslookup"
+      ],
+      "args": [
+        {
+          "flag": "--domain",
+          "short": "-d",
+          "type": "string",
+          "desc": "Dominio para consultar"
+        },
+        {
+          "flag": "--type",
+          "short": "-t",
+          "type": "string",
+          "desc": "Tipo de registro"
+        },
+        {
+          "flag": "--all",
+          "short": null,
+          "type": "bool",
+          "desc": "Consulta todos os tipos comuns"
+        },
+        {
+          "flag": "--server",
+          "short": null,
+          "type": "string",
+          "desc": "Servidor DNS especifico"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "dns-lookup.sh -d example.com -t MX"
+    },
+    "env-keygen.sh": {
+      "description": "Gera chaves secretas seguras para uso em arquivos .env",
+      "category": "security",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--name",
+          "short": "-n",
+          "type": "string",
+          "desc": "Nome da variavel"
+        },
+        {
+          "flag": "--length",
+          "short": "-l",
+          "type": "int",
+          "desc": "Tamanho em bytes ou caracteres"
+        },
+        {
+          "flag": "--format",
+          "short": "-f",
+          "type": "string",
+          "desc": "Formato: hex, base64, uuid, alnum, etc."
+        },
+        {
+          "flag": "--count",
+          "short": "-c",
+          "type": "int",
+          "desc": "Gerar N chaves de uma vez"
+        },
+        {
+          "flag": "--upper",
+          "short": null,
+          "type": "bool",
+          "desc": "Gerar em maiusculas"
+        },
+        {
+          "flag": "--copy",
+          "short": null,
+          "type": "bool",
+          "desc": "Copia a chave para a area de transferencia"
+        },
+        {
+          "flag": "--append",
+          "short": null,
+          "type": "string",
+          "desc": "Acrescenta a chave ao arquivo .env"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Exibe o que seria gerado sem salvar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "env-keygen.sh -n SECRET_KEY -f hex -l 64"
+    },
+    "env-manager.sh": {
+      "description": "Orquestrador de ambientes e dependencias multiplataforma",
+      "category": "devops",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "env-manager.sh ~/meu-projeto"
+    },
+    "fix-exec-bit.sh": {
+      "description": "Remove bit de execucao de arquivos de dados (util apos copiar de NTFS/exFAT)",
+      "category": "system",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Apenas lista arquivos, sem modificar"
+        },
+        {
+          "flag": "--ext",
+          "short": null,
+          "type": "string",
+          "desc": "Substitui a lista de extensoes seguras"
+        },
+        {
+          "flag": "--add-ext",
+          "short": null,
+          "type": "string",
+          "desc": "Adiciona extensoes a lista padrao"
+        },
+        {
+          "flag": "--list-ext",
+          "short": null,
+          "type": "bool",
+          "desc": "Imprime a lista padrao e sai"
+        },
+        {
+          "flag": "--include-hidden",
+          "short": null,
+          "type": "bool",
+          "desc": "Inclui arquivos ocultos"
+        },
+        {
+          "flag": "--exclude-dir",
+          "short": null,
+          "type": "string",
+          "desc": "Diretorios extras para ignorar"
+        },
+        {
+          "flag": "--max-depth",
+          "short": null,
+          "type": "int",
+          "desc": "Limitar profundidade da busca"
+        },
+        {
+          "flag": "--quiet",
+          "short": null,
+          "type": "bool",
+          "desc": "Modo silencioso"
+        },
+        {
+          "flag": "--force",
+          "short": null,
+          "type": "bool",
+          "desc": "Nao pedir confirmacao"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "fix-exec-bit.sh --dry-run ~/Downloads"
+    },
+    "folder-sync.sh": {
+      "description": "Sincroniza diretorios com rsync",
+      "category": "devops",
+      "risk": "destructive",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "rsync"
+      ],
+      "args": [
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem copiar"
+        },
+        {
+          "flag": "--all",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Executa sem confirmacao"
+        },
+        {
+          "flag": "--mirror",
+          "short": "-m",
+          "type": "bool",
+          "desc": "Espelha origem no destino"
+        },
+        {
+          "flag": "--watch",
+          "short": null,
+          "type": "bool",
+          "desc": "Monitora mudancas continuamente"
+        },
+        {
+          "flag": "--compress",
+          "short": null,
+          "type": "bool",
+          "desc": "Comprime durante transferencia"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "folder-sync.sh --dry-run ~/Documents /mnt/backup"
+    },
+    "git-sync.sh": {
+      "description": "Sincroniza multiplos repositorios git",
+      "category": "devops",
+      "risk": "destructive",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "git"
+      ],
+      "args": [
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem fazer fetch/pull/push"
+        },
+        {
+          "flag": "--push",
+          "short": null,
+          "type": "bool",
+          "desc": "Faz push apos pull"
+        },
+        {
+          "flag": "--fetch",
+          "short": null,
+          "type": "bool",
+          "desc": "Apenas fetch, sem pull/push"
+        },
+        {
+          "flag": "--all",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Executa sem confirmacao"
+        },
+        {
+          "flag": "--depth",
+          "short": null,
+          "type": "int",
+          "desc": "Profundidade maxima de busca"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "git-sync.sh ~/repos --push"
+    },
+    "hunt-duplicates.sh": {
+      "description": "Encontra arquivos duplicados por hash SHA-256",
+      "category": "system",
+      "risk": "destructive",
+      "has_json": true,
+      "has_dry_run": true,
+      "interactive": true,
+      "deps": [
+        "sha256sum"
+      ],
+      "args": [
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Apenas lista, sem interacao"
+        },
+        {
+          "flag": "--trash",
+          "short": null,
+          "type": "bool",
+          "desc": "Move duplicatas para lixeira"
+        },
+        {
+          "flag": "--delete",
+          "short": null,
+          "type": "bool",
+          "desc": "Deleta duplicatas permanentemente"
+        },
+        {
+          "flag": "--soft-link",
+          "short": null,
+          "type": "bool",
+          "desc": "Substitui duplicatas por symlink"
+        },
+        {
+          "flag": "--mode",
+          "short": null,
+          "type": "string",
+          "desc": "Estrategia de selecao: oldest, newest, smallest-path, first"
+        },
+        {
+          "flag": "--interactive",
+          "short": null,
+          "type": "bool",
+          "desc": "Modo interativo"
+        },
+        {
+          "flag": "--output",
+          "short": null,
+          "type": "string",
+          "desc": "Exporta resultados em JSON ou CSV"
+        },
+        {
+          "flag": "--ext",
+          "short": null,
+          "type": "string",
+          "desc": "Filtrar por extensoes"
+        },
+        {
+          "flag": "--type",
+          "short": null,
+          "type": "string",
+          "desc": "Filtrar por tipo MIME"
+        },
+        {
+          "flag": "--max-depth",
+          "short": null,
+          "type": "int",
+          "desc": "Limitar profundidade da busca"
+        },
+        {
+          "flag": "--exclude-dir",
+          "short": null,
+          "type": "string",
+          "desc": "Diretorios extras para ignorar"
+        },
+        {
+          "flag": "--include-hidden",
+          "short": null,
+          "type": "bool",
+          "desc": "Incluir arquivos ocultos"
+        },
+        {
+          "flag": "--threshold",
+          "short": null,
+          "type": "int",
+          "desc": "Exibir apenas grupos com N ou mais duplicatas"
+        },
+        {
+          "flag": "--quiet",
+          "short": null,
+          "type": "bool",
+          "desc": "Modo silencioso"
+        },
+        {
+          "flag": "--force",
+          "short": null,
+          "type": "bool",
+          "desc": "Nao pedir confirmacao"
+        },
+        {
+          "flag": "--use-cache",
+          "short": null,
+          "type": "bool",
+          "desc": "Usar cache de hashes"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "hunt-duplicates.sh --dry-run ~/Documents"
+    },
+    "install-scripts.sh": {
+      "description": "Instala scripts no ~/.local/bin e configura o PATH",
+      "category": "devops",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Simula a instalacao sem alterar arquivos"
+        },
+        {
+          "flag": "--uninstall",
+          "short": null,
+          "type": "bool",
+          "desc": "Remove scripts e limpa PATH"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "install-scripts.sh --dry-run"
+    },
+    "ip-info.sh": {
+      "description": "Info do IP publico, ISP e localizacao geografica",
+      "category": "network",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "curl",
+        "jq"
+      ],
+      "args": [
+        {
+          "flag": "--local",
+          "short": "-l",
+          "type": "bool",
+          "desc": "Mostra IP local"
+        },
+        {
+          "flag": "--public",
+          "short": "-p",
+          "type": "bool",
+          "desc": "Mostra apenas IP publico"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "ip-info.sh --json"
+    },
+    "jpg-to-text.sh": {
+      "description": "Extrai texto de imagens JPG via OCR",
+      "category": "conversion",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "tesseract"
+      ],
+      "args": [
+        {
+          "flag": "--lang",
+          "short": "-l",
+          "type": "string",
+          "desc": "Idioma do OCR"
+        },
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Salva saida em arquivo .txt"
+        },
+        {
+          "flag": "--preprocess",
+          "short": "-p",
+          "type": "bool",
+          "desc": "Aplica pre-processamento"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Simula a extracao sem gerar arquivos"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "jpg-to-text.sh -l por+eng foto.jpg"
+    },
+    "lab-manager.sh": {
+      "description": "Gerenciador unificado de ambiente de desenvolvimento",
+      "category": "devops",
+      "risk": "dry-run-ok",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--json",
+          "short": null,
+          "type": "bool",
+          "desc": "Saida JSON"
+        },
+        {
+          "flag": "--safe",
+          "short": null,
+          "type": "bool",
+          "desc": "Uninstall seguro"
+        },
+        {
+          "flag": "--force",
+          "short": null,
+          "type": "bool",
+          "desc": "Pular confirmacoes"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "lab-manager.sh install docker jupyter"
+    },
+    "log-analyzer.sh": {
+      "description": "Analisador de logs com coloracao e filtros",
+      "category": "system",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "grep"
+      ],
+      "args": [
+        {
+          "flag": "--follow",
+          "short": "-f",
+          "type": "bool",
+          "desc": "Acompanha o log em tempo real"
+        },
+        {
+          "flag": "--lines",
+          "short": "-n",
+          "type": "int",
+          "desc": "Numero de linhas a exibir"
+        },
+        {
+          "flag": "--stats",
+          "short": "-s",
+          "type": "bool",
+          "desc": "Exibe estatisticas por nivel"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "log-analyzer.sh /var/log/syslog --stats"
+    },
+    "md-to-pdf.sh": {
+      "description": "Converte Markdown para PDF usando pandoc + XeLaTeX",
+      "category": "conversion",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "pandoc",
+        "xelatex",
+        "rsvg-convert"
+      ],
+      "args": [
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "md-to-pdf.sh documento.md"
+    },
+    "media-control.sh": {
+      "description": "Controla players MPRIS e mostra now playing",
+      "category": "media",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "dbus-send"
+      ],
+      "args": [
+        {
+          "flag": "--play",
+          "short": null,
+          "type": "bool",
+          "desc": "Retoma reproducao"
+        },
+        {
+          "flag": "--pause",
+          "short": null,
+          "type": "bool",
+          "desc": "Pausa reproducao"
+        },
+        {
+          "flag": "--toggle",
+          "short": "-t",
+          "type": "bool",
+          "desc": "Alterna play/pause"
+        },
+        {
+          "flag": "--next",
+          "short": "-n",
+          "type": "bool",
+          "desc": "Proxima faixa"
+        },
+        {
+          "flag": "--prev",
+          "short": "-p",
+          "type": "bool",
+          "desc": "Faixa anterior"
+        },
+        {
+          "flag": "--stop",
+          "short": null,
+          "type": "bool",
+          "desc": "Para reproducao"
+        },
+        {
+          "flag": "--status",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra status atual"
+        },
+        {
+          "flag": "--volume",
+          "short": null,
+          "type": "int",
+          "desc": "Define volume do player (0-100)"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "media-control.sh --toggle"
+    },
+    "menu-launcher.sh": {
+      "description": "Menu interativo com barra luminosa para selecao de scripts",
+      "category": "devops",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": true,
+      "deps": [
+        "fzf"
+      ],
+      "args": [
+        {
+          "flag": "--fzf",
+          "short": null,
+          "type": "bool",
+          "desc": "Usa fzf para selecao rapida"
+        }
+      ],
+      "example": "menu-launcher.sh --fzf"
+    },
+    "nerd-font-install.sh": {
+      "description": "Baixa e instala fontes Nerd Fonts",
+      "category": "devops",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "curl",
+        "unzip",
+        "fc-cache"
+      ],
+      "args": [
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista familias de fontes disponiveis"
+        },
+        {
+          "flag": "--font",
+          "short": "-f",
+          "type": "string",
+          "desc": "Instala fonte(s) especifica(s)"
+        },
+        {
+          "flag": "--all",
+          "short": null,
+          "type": "bool",
+          "desc": "Instala todas as fontes"
+        },
+        {
+          "flag": "--install-dir",
+          "short": "-o",
+          "type": "string",
+          "desc": "Diretorio de instalacao"
+        },
+        {
+          "flag": "--system",
+          "short": null,
+          "type": "bool",
+          "desc": "Instala em /usr/local/share/fonts"
+        },
+        {
+          "flag": "--dry-run",
+          "short": "-n",
+          "type": "bool",
+          "desc": "Simula sem baixar ou instalar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "nerd-font-install.sh -f FiraCode"
+    },
+    "organize-downloads.sh": {
+      "description": "Organiza arquivos por tipo de extensao",
+      "category": "system",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem mover arquivos"
+        },
+        {
+          "flag": "--recursive",
+          "short": "-r",
+          "type": "bool",
+          "desc": "Processa subpastas tambem"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "organize-downloads.sh --dry-run ~/Downloads"
+    },
+    "package-list-backup.sh": {
+      "description": "Exporta/importa lista de pacotes instalados para replicar maquina",
+      "category": "devops",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--export",
+          "short": null,
+          "type": "string",
+          "desc": "Exporta lista de pacotes para arquivo"
+        },
+        {
+          "flag": "--import",
+          "short": null,
+          "type": "string",
+          "desc": "Instala pacotes a partir de arquivo"
+        },
+        {
+          "flag": "--diff",
+          "short": null,
+          "type": "string",
+          "desc": "Compara pacotes atuais com arquivo"
+        },
+        {
+          "flag": "--format",
+          "short": null,
+          "type": "string",
+          "desc": "Formato de saida: txt ou json"
+        },
+        {
+          "flag": "--scope",
+          "short": null,
+          "type": "string",
+          "desc": "Escopo: all, system, snap, flatpak, npm, pip, cargo, brew"
+        },
+        {
+          "flag": "--versions",
+          "short": null,
+          "type": "bool",
+          "desc": "Inclui versoes dos pacotes"
+        },
+        {
+          "flag": "--exclude",
+          "short": null,
+          "type": "string",
+          "desc": "Exclui pacotes que casam com o padrao"
+        },
+        {
+          "flag": "--include",
+          "short": null,
+          "type": "string",
+          "desc": "Inclui apenas pacotes que casam com o padrao"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem executar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "package-list-backup.sh --export ~/pkgs.txt --scope all"
+    },
+    "partitions-list.sh": {
+      "description": "Lista todas as particoes (montadas ou nao) com tipo de disco",
+      "category": "system",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "lsblk"
+      ],
+      "args": [
+        {
+          "flag": "--all",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Inclui loop devices, zram, crypt e swap"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--uuid",
+          "short": "-u",
+          "type": "bool",
+          "desc": "Mostra coluna UUID"
+        },
+        {
+          "flag": "--label",
+          "short": "-l",
+          "type": "bool",
+          "desc": "Mostra coluna LABEL"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "partitions-list.sh --json"
+    },
+    "password-gen.sh": {
+      "description": "Gerador de senhas configuravel",
+      "category": "security",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "bc"
+      ],
+      "args": [
+        {
+          "flag": "--length",
+          "short": "-l",
+          "type": "int",
+          "desc": "Comprimento da senha"
+        },
+        {
+          "flag": "--count",
+          "short": "-n",
+          "type": "int",
+          "desc": "Quantidade de senhas"
+        },
+        {
+          "flag": "--no-upper",
+          "short": null,
+          "type": "bool",
+          "desc": "Remove letras maiusculas"
+        },
+        {
+          "flag": "--no-lower",
+          "short": null,
+          "type": "bool",
+          "desc": "Remove letras minusculas"
+        },
+        {
+          "flag": "--no-digits",
+          "short": null,
+          "type": "bool",
+          "desc": "Remove digitos"
+        },
+        {
+          "flag": "--no-symbols",
+          "short": null,
+          "type": "bool",
+          "desc": "Remove simbolos"
+        },
+        {
+          "flag": "--only-hex",
+          "short": null,
+          "type": "bool",
+          "desc": "Apenas caracteres hexadecimais"
+        },
+        {
+          "flag": "--passphrase",
+          "short": null,
+          "type": "bool",
+          "desc": "Gera passphrase"
+        },
+        {
+          "flag": "--check",
+          "short": null,
+          "type": "string",
+          "desc": "Verifica forca de senha"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "password-gen.sh -l 32 -n 5"
+    },
+    "pdf-to-jpg.sh": {
+      "description": "Converte arquivos .pdf em imagens JPG",
+      "category": "conversion",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "pdftoppm",
+        "pdfinfo"
+      ],
+      "args": [
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Diretorio de saida"
+        },
+        {
+          "flag": "--quality",
+          "short": "-q",
+          "type": "int",
+          "desc": "Qualidade JPEG 1-100"
+        },
+        {
+          "flag": "--resolution",
+          "short": "-r",
+          "type": "int",
+          "desc": "Resolucao em DPI"
+        },
+        {
+          "flag": "--prefix",
+          "short": "-p",
+          "type": "string",
+          "desc": "Prefixo para arquivos de saida"
+        },
+        {
+          "flag": "--single-page",
+          "short": "-s",
+          "type": "int",
+          "desc": "Extrai apenas uma pagina"
+        },
+        {
+          "flag": "--first-page",
+          "short": "-f",
+          "type": "int",
+          "desc": "Primeira pagina"
+        },
+        {
+          "flag": "--last-page",
+          "short": "-l",
+          "type": "int",
+          "desc": "Ultima pagina"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Simula a conversao sem gerar arquivos"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "pdf-to-jpg.sh -q 90 -r 300 documento.pdf"
+    },
+    "pdf-to-md.sh": {
+      "description": "Converte arquivos .pdf para Markdown extraindo o texto",
+      "category": "conversion",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "pdftoppm",
+        "tesseract"
+      ],
+      "args": [
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Diretorio de saida"
+        },
+        {
+          "flag": "--recursive",
+          "short": "-r",
+          "type": "bool",
+          "desc": "Converte todos os .pdf em um diretorio"
+        },
+        {
+          "flag": "--suffix",
+          "short": "-s",
+          "type": "string",
+          "desc": "Sufixo antes de .md"
+        },
+        {
+          "flag": "--keep-page-breaks",
+          "short": null,
+          "type": "bool",
+          "desc": "Mantem separadores de pagina"
+        },
+        {
+          "flag": "--ocr",
+          "short": null,
+          "type": "bool",
+          "desc": "Usa OCR quando o PDF nao tiver texto"
+        },
+        {
+          "flag": "--ocr-lang",
+          "short": null,
+          "type": "string",
+          "desc": "Idioma do OCR"
+        },
+        {
+          "flag": "--overwrite",
+          "short": null,
+          "type": "bool",
+          "desc": "Sobrescreve .md existentes"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Simula conversao sem gravar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "pdf-to-md.sh -r --ocr ~/Documents"
+    },
+    "pomodoro-timer.sh": {
+      "description": "Timer Pomodoro com notificacoes",
+      "category": "productivity",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--work",
+          "short": "-w",
+          "type": "int",
+          "desc": "Minutos de trabalho"
+        },
+        {
+          "flag": "--break",
+          "short": "-b",
+          "type": "int",
+          "desc": "Minutos de pausa"
+        },
+        {
+          "flag": "--long-break",
+          "short": "-l",
+          "type": "int",
+          "desc": "Minutos de pausa longa"
+        },
+        {
+          "flag": "--cycles",
+          "short": "-c",
+          "type": "int",
+          "desc": "Sessoes antes de pausa longa"
+        },
+        {
+          "flag": "--status",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra sessoes de hoje"
+        },
+        {
+          "flag": "--reset",
+          "short": null,
+          "type": "bool",
+          "desc": "Reseta contagem do dia"
+        },
+        {
+          "flag": "--no-sound",
+          "short": null,
+          "type": "bool",
+          "desc": "Desativa som"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "pomodoro-timer.sh -w 25 -b 5"
+    },
+    "port-check.sh": {
+      "description": "Verifica se portas estao abertas em um host",
+      "category": "network",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "bc",
+        "nc"
+      ],
+      "args": [
+        {
+          "flag": "--host",
+          "short": "-h",
+          "type": "string",
+          "desc": "Host para verificar"
+        },
+        {
+          "flag": "--port",
+          "short": "-p",
+          "type": "string",
+          "desc": "Porta ou range"
+        },
+        {
+          "flag": "--common",
+          "short": null,
+          "type": "bool",
+          "desc": "Verifica portas comuns"
+        },
+        {
+          "flag": "--timeout",
+          "short": null,
+          "type": "int",
+          "desc": "Timeout em milissegundos"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "port-check.sh -h google.com -p 80,443"
+    },
+    "process-killer.sh": {
+      "description": "Seletor interativo de processos para termino",
+      "category": "system",
+      "risk": "destructive",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": true,
+      "deps": [
+        "fzf"
+      ],
+      "args": [
+        {
+          "flag": "--signal",
+          "short": "-s",
+          "type": "string",
+          "desc": "Sinal a enviar"
+        },
+        {
+          "flag": "--user",
+          "short": "-u",
+          "type": "string",
+          "desc": "Filtra processos por usuario"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "process-killer.sh"
+    },
+    "qr-gen.sh": {
+      "description": "Gera QR Code no terminal ou salva como PNG",
+      "category": "productivity",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "qrencode"
+      ],
+      "args": [
+        {
+          "flag": "--text",
+          "short": "-t",
+          "type": "string",
+          "desc": "Texto/URL para gerar QR Code"
+        },
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Salva como PNG"
+        },
+        {
+          "flag": "--size",
+          "short": "-s",
+          "type": "int",
+          "desc": "Tamanho do modulo"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "qr-gen.sh -t 'https://example.com'"
+    },
+    "quick-backup.sh": {
+      "description": "Backup incremental com rsync",
+      "category": "devops",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "rsync"
+      ],
+      "args": [
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem copiar"
+        },
+        {
+          "flag": "--all",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Executa sem confirmacao"
+        },
+        {
+          "flag": "--compress",
+          "short": null,
+          "type": "bool",
+          "desc": "Comprime durante transferencia"
+        },
+        {
+          "flag": "--keep",
+          "short": null,
+          "type": "int",
+          "desc": "Manter N ultimos backups"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "quick-backup.sh ~/Documents /mnt/backup --dry-run"
+    },
+    "quick-notes.sh": {
+      "description": "Bloco de notas rapido com busca e tags",
+      "category": "productivity",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--add",
+          "short": "-a",
+          "type": "string",
+          "desc": "Adiciona nota"
+        },
+        {
+          "flag": "--search",
+          "short": "-s",
+          "type": "string",
+          "desc": "Busca notas por termo"
+        },
+        {
+          "flag": "--tag",
+          "short": "-t",
+          "type": "string",
+          "desc": "Lista notas por tag"
+        },
+        {
+          "flag": "--delete",
+          "short": "-d",
+          "type": "int",
+          "desc": "Remove nota por ID"
+        },
+        {
+          "flag": "--list",
+          "short": "-l",
+          "type": "bool",
+          "desc": "Lista todas as notas"
+        },
+        {
+          "flag": "--edit",
+          "short": "-e",
+          "type": "int",
+          "desc": "Edita nota no editor"
+        },
+        {
+          "flag": "--export",
+          "short": null,
+          "type": "string",
+          "desc": "Exporta notas para arquivo"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "quick-notes.sh -a 'Revisar PR #123 #trabalho'"
+    },
+    "ris-to-csv.sh": {
+      "description": "Converte arquivos .ris (citacoes bibliograficas) para CSV",
+      "category": "conversion",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Diretorio de saida"
+        },
+        {
+          "flag": "--recursive",
+          "short": "-r",
+          "type": "bool",
+          "desc": "Converte todos os .ris recursivamente"
+        },
+        {
+          "flag": "--merge",
+          "short": "-m",
+          "type": "bool",
+          "desc": "Combina todos num unico CSV"
+        },
+        {
+          "flag": "--delimiter",
+          "short": "-d",
+          "type": "string",
+          "desc": "Separador dos campos CSV"
+        },
+        {
+          "flag": "--fields",
+          "short": "-f",
+          "type": "string",
+          "desc": "Campos a exportar"
+        },
+        {
+          "flag": "--all-fields",
+          "short": "-a",
+          "type": "bool",
+          "desc": "Exporta todas as tags"
+        },
+        {
+          "flag": "--no-header",
+          "short": null,
+          "type": "bool",
+          "desc": "Nao escreve cabecalho"
+        },
+        {
+          "flag": "--overwrite",
+          "short": null,
+          "type": "bool",
+          "desc": "Sobrescreve .csv existentes"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Exibe o que seria feito"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "ris-to-csv.sh -r -m ~/referencias"
+    },
+    "screenshot.sh": {
+      "description": "Captura de tela com salvamento automatico",
+      "category": "media",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "scrot",
+        "maim",
+        "gnome-screenshot"
+      ],
+      "args": [
+        {
+          "flag": "--mode",
+          "short": "-m",
+          "type": "string",
+          "desc": "Modo: full, area, window"
+        },
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Diretorio de saida"
+        },
+        {
+          "flag": "--delay",
+          "short": "-d",
+          "type": "int",
+          "desc": "Atraso em segundos"
+        },
+        {
+          "flag": "--clipboard",
+          "short": null,
+          "type": "bool",
+          "desc": "Copia para clipboard"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "screenshot.sh -m area -d 3"
+    },
+    "setup-workspace.sh": {
+      "description": "Multi-monitor workspace manager para Linux",
+      "category": "system",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": true,
+      "deps": [
+        "wmctrl",
+        "xdotool",
+        "xrandr"
+      ],
+      "args": [
+        {
+          "flag": "--save",
+          "short": null,
+          "type": "string",
+          "desc": "Grava o layout atual como perfil"
+        },
+        {
+          "flag": "--detect",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra monitores conectados"
+        },
+        {
+          "flag": "--init",
+          "short": null,
+          "type": "bool",
+          "desc": "Cria config editavel"
+        },
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista perfis salvos"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview do perfil sem aplicar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "setup-workspace.sh --detect"
+    },
+    "snap-flatpak-manager.sh": {
+      "description": "Lista, atualiza e limpa snaps e flatpaks",
+      "category": "devops",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "snap",
+        "flatpak"
+      ],
+      "args": [
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista pacotes instalados"
+        },
+        {
+          "flag": "--update",
+          "short": null,
+          "type": "bool",
+          "desc": "Atualiza pacotes"
+        },
+        {
+          "flag": "--clean",
+          "short": null,
+          "type": "bool",
+          "desc": "Remove runtimes nao utilizados"
+        },
+        {
+          "flag": "--snap-only",
+          "short": null,
+          "type": "bool",
+          "desc": "Opera apenas no snap"
+        },
+        {
+          "flag": "--flatpak-only",
+          "short": null,
+          "type": "bool",
+          "desc": "Opera apenas no flatpak"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem executar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "snap-flatpak-manager.sh --list"
+    },
+    "speedtest-log.sh": {
+      "description": "Executa testes de velocidade e mantem historico em CSV",
+      "category": "network",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "speedtest-cli"
+      ],
+      "args": [
+        {
+          "flag": "--run",
+          "short": "-r",
+          "type": "bool",
+          "desc": "Executa um teste agora"
+        },
+        {
+          "flag": "--history",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra historico"
+        },
+        {
+          "flag": "--today",
+          "short": "-t",
+          "type": "bool",
+          "desc": "Mostra apenas resultados de hoje"
+        },
+        {
+          "flag": "--chart",
+          "short": "-c",
+          "type": "bool",
+          "desc": "Mostra grafico ASCII"
+        },
+        {
+          "flag": "--csv",
+          "short": null,
+          "type": "bool",
+          "desc": "Exporta historico como CSV"
+        },
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Diretorio para dados"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "speedtest-log.sh --run"
+    },
+    "ssh-key-manager.sh": {
+      "description": "Gerencia chaves SSH (gerar, listar, rotacionar, distribuir)",
+      "category": "security",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "ssh-keygen",
+        "ssh-copy-id"
+      ],
+      "args": [
+        {
+          "flag": "--generate",
+          "short": null,
+          "type": "bool",
+          "desc": "Gera nova chave SSH"
+        },
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista chaves existentes"
+        },
+        {
+          "flag": "--rotate",
+          "short": null,
+          "type": "bool",
+          "desc": "Rotaciona chave"
+        },
+        {
+          "flag": "--deploy",
+          "short": null,
+          "type": "string",
+          "desc": "Distribui chave publica para host"
+        },
+        {
+          "flag": "--type",
+          "short": null,
+          "type": "string",
+          "desc": "Tipo de chave: ed25519 ou rsa"
+        },
+        {
+          "flag": "--bits",
+          "short": null,
+          "type": "int",
+          "desc": "Bits para RSA"
+        },
+        {
+          "flag": "--comment",
+          "short": null,
+          "type": "string",
+          "desc": "Comentario da chave"
+        },
+        {
+          "flag": "--key-path",
+          "short": null,
+          "type": "string",
+          "desc": "Caminho customizado da chave"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem executar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "ssh-key-manager.sh --generate --type ed25519"
+    },
+    "ssh-tunnel-mgr.sh": {
+      "description": "Gerenciador de tuneis SSH",
+      "category": "network",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "ssh"
+      ],
+      "args": [
+        {
+          "flag": "--create",
+          "short": "-l",
+          "type": "string",
+          "desc": "Cria tunel local"
+        },
+        {
+          "flag": "--remote",
+          "short": "-r",
+          "type": "string",
+          "desc": "Cria tunel reverso"
+        },
+        {
+          "flag": "--daemon",
+          "short": "-d",
+          "type": "bool",
+          "desc": "Executa o tunel em segundo plano"
+        },
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista tuneis SSH ativos"
+        },
+        {
+          "flag": "--stop",
+          "short": null,
+          "type": "string",
+          "desc": "Encerra tunel na porta especificada"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "ssh-tunnel-mgr.sh --create 8080 localhost 80 user@server"
+    },
+    "stopwatch.sh": {
+      "description": "Cronometro com voltas (laps)",
+      "category": "productivity",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": true,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--laps",
+          "short": "-l",
+          "type": "bool",
+          "desc": "Mostra voltas da ultima sessao"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "stopwatch.sh"
+    },
+    "subnet-calc.sh": {
+      "description": "Calculadora de sub-redes IPv4/CIDR",
+      "category": "network",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "bc"
+      ],
+      "args": [
+        {
+          "flag": "--ip",
+          "short": "-i",
+          "type": "string",
+          "desc": "Calcula sub-rede a partir do IP/CIDR"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "subnet-calc.sh -i 192.168.1.0/24"
+    },
+    "todo.sh": {
+      "description": "Lista de tarefas com prioridades, categorias e persistencia",
+      "category": "productivity",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--add",
+          "short": "-a",
+          "type": "string",
+          "desc": "Adiciona tarefa"
+        },
+        {
+          "flag": "--done",
+          "short": "-d",
+          "type": "int",
+          "desc": "Marca tarefa como concluida"
+        },
+        {
+          "flag": "--undo",
+          "short": "-u",
+          "type": "int",
+          "desc": "Desmarca tarefa concluida"
+        },
+        {
+          "flag": "--remove",
+          "short": "-r",
+          "type": "int",
+          "desc": "Remove tarefa"
+        },
+        {
+          "flag": "--list",
+          "short": "-l",
+          "type": "string",
+          "desc": "Lista tarefas"
+        },
+        {
+          "flag": "--edit",
+          "short": "-e",
+          "type": "string",
+          "desc": "Edita texto da tarefa"
+        },
+        {
+          "flag": "--pri",
+          "short": "-p",
+          "type": "string",
+          "desc": "Define prioridade (A-Z)"
+        },
+        {
+          "flag": "--clean",
+          "short": null,
+          "type": "bool",
+          "desc": "Remove tarefas concluidas"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "todo.sh -a 'Implementar feature X @backend +projeto'"
+    },
+    "unit-converter.sh": {
+      "description": "Conversao entre unidades de medida",
+      "category": "conversion",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "bc"
+      ],
+      "args": [
+        {
+          "flag": "--type",
+          "short": "-t",
+          "type": "string",
+          "desc": "Tipo de conversao: temp, length, weight, volume, speed, area, time"
+        },
+        {
+          "flag": "--from",
+          "short": "-f",
+          "type": "string",
+          "desc": "Unidade de origem"
+        },
+        {
+          "flag": "--input",
+          "short": "-i",
+          "type": "string",
+          "desc": "Valor a converter"
+        },
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista unidades disponiveis"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "unit-converter.sh -t length -f km -i 100"
+    },
+    "unarchive.sh": {
+      "description": "Descompacta arquivos compactados (zip, rar, 7z, tar, etc.)",
+      "category": "system",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "unzip",
+        "7z",
+        "tar",
+        "unrar"
+      ],
+      "args": [
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Diretorio base de saida"
+        },
+        {
+          "flag": "--recursive",
+          "short": "-r",
+          "type": "bool",
+          "desc": "Varre diretorios recursivamente"
+        },
+        {
+          "flag": "--force",
+          "short": "-f",
+          "type": "bool",
+          "desc": "Sobrescreve arquivos existentes"
+        },
+        {
+          "flag": "--flat",
+          "short": "-F",
+          "type": "bool",
+          "desc": "Extrai direto no destino"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Simula a extracao"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "unarchive.sh --dry-run arquivo.zip"
+    },
+    "update-all.sh": {
+      "description": "Atualiza pacotes do sistema e linguagens em um comando",
+      "category": "system",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--system",
+          "short": "-s",
+          "type": "bool",
+          "desc": "Atualiza pacotes do sistema"
+        },
+        {
+          "flag": "--npm",
+          "short": null,
+          "type": "bool",
+          "desc": "Atualiza pacotes globais npm"
+        },
+        {
+          "flag": "--pip",
+          "short": null,
+          "type": "bool",
+          "desc": "Atualiza pacotes pip globais"
+        },
+        {
+          "flag": "--cargo",
+          "short": null,
+          "type": "bool",
+          "desc": "Atualiza pacotes cargo"
+        },
+        {
+          "flag": "--brew",
+          "short": null,
+          "type": "bool",
+          "desc": "Atualiza Homebrew"
+        },
+        {
+          "flag": "--all",
+          "short": null,
+          "type": "bool",
+          "desc": "Atualiza tudo"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Preview sem executar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "update-all.sh --all --dry-run"
+    },
+    "url-shortener.sh": {
+      "description": "Encurta URLs usando is.gd",
+      "category": "productivity",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "curl"
+      ],
+      "args": [
+        {
+          "flag": "--url",
+          "short": "-u",
+          "type": "string",
+          "desc": "URL para encurtar"
+        },
+        {
+          "flag": "--custom",
+          "short": "-c",
+          "type": "string",
+          "desc": "Alias personalizado"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "url-shortener.sh -u https://example.com/long/path"
+    },
+    "video-catalog-organizer.sh": {
+      "description": "Organiza catalogo de videos por estrategia",
+      "category": "media",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "ffprobe"
+      ],
+      "args": [
+        {
+          "flag": "--by",
+          "short": null,
+          "type": "string",
+          "desc": "Estrategia: content, year, quality"
+        },
+        {
+          "flag": "--apply",
+          "short": null,
+          "type": "bool",
+          "desc": "Efetiva os mv"
+        },
+        {
+          "flag": "--probe-quality",
+          "short": null,
+          "type": "bool",
+          "desc": "Usa ffprobe para resolucao real"
+        },
+        {
+          "flag": "--recursive",
+          "short": "-r",
+          "type": "bool",
+          "desc": "Processa subpastas"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "video-catalog-organizer.sh --by year ~/Videos"
+    },
+    "video-to-audio.sh": {
+      "description": "Extrai a trilha de audio de arquivos de video",
+      "category": "media",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "ffmpeg"
+      ],
+      "args": [
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Arquivo de saida"
+        },
+        {
+          "flag": "--format",
+          "short": "-f",
+          "type": "string",
+          "desc": "Formato: mp3, m4a, ogg, wav, flac, opus"
+        },
+        {
+          "flag": "--copy",
+          "short": null,
+          "type": "bool",
+          "desc": "Copia stream sem re-encodar"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Simula a extracao"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "video-to-audio.sh -f mp3 video.mp4"
+    },
+    "volume.sh": {
+      "description": "Controle de volume e mute via PulseAudio/PipeWire",
+      "category": "system",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "wpctl",
+        "pactl",
+        "amixer",
+        "bc"
+      ],
+      "args": [
+        {
+          "flag": "--up",
+          "short": "-u",
+          "type": "int",
+          "desc": "Aumenta volume em N%"
+        },
+        {
+          "flag": "--down",
+          "short": "-d",
+          "type": "int",
+          "desc": "Diminui volume em N%"
+        },
+        {
+          "flag": "--set",
+          "short": "-s",
+          "type": "int",
+          "desc": "Define volume para N%"
+        },
+        {
+          "flag": "--mute",
+          "short": null,
+          "type": "bool",
+          "desc": "Alterna mute"
+        },
+        {
+          "flag": "--get",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra volume atual"
+        },
+        {
+          "flag": "--source",
+          "short": null,
+          "type": "bool",
+          "desc": "Opera no microfone"
+        },
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista dispositivos de audio"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "volume.sh --up 10"
+    },
+    "weather.sh": {
+      "description": "Previsao do tempo via wttr.in com localizacao automatica",
+      "category": "productivity",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "curl"
+      ],
+      "args": [
+        {
+          "flag": "--location",
+          "short": "-l",
+          "type": "string",
+          "desc": "Cidade ou localizacao"
+        },
+        {
+          "flag": "--format",
+          "short": "-f",
+          "type": "string",
+          "desc": "Formato: full, compact, simple"
+        },
+        {
+          "flag": "--forecast",
+          "short": null,
+          "type": "bool",
+          "desc": "Previsao de 3 dias"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "weather.sh -l Sao Paulo -f full"
+    },
+    "whois.sh": {
+      "description": "Consulta WHOIS de dominios",
+      "category": "network",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "whois"
+      ],
+      "args": [
+        {
+          "flag": "--domain",
+          "short": "-d",
+          "type": "string",
+          "desc": "Dominio para consultar"
+        },
+        {
+          "flag": "--raw",
+          "short": "-r",
+          "type": "bool",
+          "desc": "Saida bruta do whois"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "whois.sh -d example.com"
+    },
+    "wifi-scanner.sh": {
+      "description": "Escaneia redes Wi-Fi e sugere o melhor canal",
+      "category": "network",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "nmcli",
+        "iwlist"
+      ],
+      "args": [
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "wifi-scanner.sh"
+    },
+    "world-clock.sh": {
+      "description": "Relogio com multiplos fusos horarios configuraveis",
+      "category": "productivity",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--zones",
+          "short": "-z",
+          "type": "string",
+          "desc": "Lista de fusos separados por virgula"
+        },
+        {
+          "flag": "--add",
+          "short": null,
+          "type": "string",
+          "desc": "Adiciona fuso horario"
+        },
+        {
+          "flag": "--remove",
+          "short": null,
+          "type": "string",
+          "desc": "Remove fuso horario"
+        },
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista fusos disponiveis"
+        },
+        {
+          "flag": "--live",
+          "short": null,
+          "type": "bool",
+          "desc": "Modo continuo"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "world-clock.sh -z 'America/Sao_Paulo,Europe/London'"
+    },
+    "xlsx-to-csv.sh": {
+      "description": "Converte arquivos .xlsx para CSV, extraindo cada aba em arquivo separado",
+      "category": "conversion",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "ssconvert",
+        "python3"
+      ],
+      "args": [
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Diretorio de saida"
+        },
+        {
+          "flag": "--recursive",
+          "short": "-r",
+          "type": "bool",
+          "desc": "Converte todos os .xlsx recursivamente"
+        },
+        {
+          "flag": "--delimiter",
+          "short": "-d",
+          "type": "string",
+          "desc": "Separador dos campos CSV"
+        },
+        {
+          "flag": "--sheet",
+          "short": "-S",
+          "type": "string",
+          "desc": "Extrai apenas a aba especificada"
+        },
+        {
+          "flag": "--always-suffix",
+          "short": null,
+          "type": "bool",
+          "desc": "Usa sufixo de aba mesmo com uma aba"
+        },
+        {
+          "flag": "--overwrite",
+          "short": null,
+          "type": "bool",
+          "desc": "Sobrescreve .csv existentes"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Simula conversao sem gravar"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "xlsx-to-csv.sh dados.xlsx"
+    },
+    "yt-transcript.sh": {
+      "description": "Baixa transcricoes de videos do YouTube (EN e PT-BR)",
+      "category": "media",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "curl",
+        "yt-dlp"
+      ],
+      "args": [
+        {
+          "flag": "--lang",
+          "short": "-l",
+          "type": "string",
+          "desc": "Idioma: en, pt, both"
+        },
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Diretorio de saida"
+        },
+        {
+          "flag": "--format",
+          "short": "-f",
+          "type": "string",
+          "desc": "Formato: txt, srt, vtt"
+        },
+        {
+          "flag": "--no-auto",
+          "short": null,
+          "type": "bool",
+          "desc": "Nao incluir legendas automaticas"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra o que seria feito"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "yt-transcript.sh -l both https://youtube.com/watch?v=..."
+    },
+    "nvidia-gpu-monitor.sh": {
+      "description": "Monitora atividade da GPU NVIDIA em segundo plano",
+      "category": "system",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "nvidia-smi"
+      ],
+      "args": [
+        {
+          "flag": "--interval",
+          "short": null,
+          "type": "int",
+          "desc": "Intervalo de amostragem em segundos"
+        },
+        {
+          "flag": "--output",
+          "short": null,
+          "type": "string",
+          "desc": "Caminho do arquivo de log"
+        },
+        {
+          "flag": "--temp",
+          "short": null,
+          "type": "int",
+          "desc": "Limiar de alerta de temperatura"
+        },
+        {
+          "flag": "--retention",
+          "short": null,
+          "type": "int",
+          "desc": "Retencao do log em dias"
+        },
+        {
+          "flag": "--once",
+          "short": null,
+          "type": "bool",
+          "desc": "Coleta uma vez e sai"
+        },
+        {
+          "flag": "--notify",
+          "short": null,
+          "type": "bool",
+          "desc": "Notificacao de desktop em alertas"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "nvidia-gpu-monitor.sh --once"
+    },
+    "codebase-summary.sh": {
+      "description": "Resumo completo do projeto para agentes de IA entenderem o codebase",
+      "category": "code-analysis",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--path",
+          "short": "-p",
+          "type": "string",
+          "desc": "Caminho do projeto (padrao: diretorio atual)"
+        },
+        {
+          "flag": "--deep",
+          "short": "-d",
+          "type": "bool",
+          "desc": "Analise profunda (inclui complexidade)"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "codebase-summary.sh --json --path /meu/projeto"
+    },
+    "context-gather.sh": {
+      "description": "Coleta contexto do projeto para agentes de IA antes de modificar codigo",
+      "category": "code-analysis",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--project",
+          "short": "-p",
+          "type": "string",
+          "desc": "Caminho do projeto (padrao: diretorio atual)"
+        },
+        {
+          "flag": "--file",
+          "short": "-f",
+          "type": "string",
+          "desc": "Arquivo especifico para analisar"
+        },
+        {
+          "flag": "--include-deps",
+          "short": null,
+          "type": "bool",
+          "desc": "Inclui analise de dependencias"
+        },
+        {
+          "flag": "--include-tests",
+          "short": null,
+          "type": "bool",
+          "desc": "Inclui testes relacionados"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "context-gather.sh --json --file src/auth.py"
+    },
+    "stack-detector.sh": {
+      "description": "Detecta automaticamente a stack tecnologica do projeto",
+      "category": "code-analysis",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--path",
+          "short": "-p",
+          "type": "string",
+          "desc": "Caminho do projeto (padrao: diretorio atual)"
+        },
+        {
+          "flag": "--verbose",
+          "short": "-v",
+          "type": "bool",
+          "desc": "Mostra detalhes da deteccao"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "stack-detector.sh --json --path /meu/projeto"
+    },
+    "impact-analyzer.sh": {
+      "description": "Analisa o impacto de alteracoes em arquivos especificos",
+      "category": "code-analysis",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--file",
+          "short": "-f",
+          "type": "string",
+          "desc": "Arquivo a analisar (obrigatorio)"
+        },
+        {
+          "flag": "--project",
+          "short": "-p",
+          "type": "string",
+          "desc": "Caminho do projeto (padrao: diretorio atual)"
+        },
+        {
+          "flag": "--depth",
+          "short": "-d",
+          "type": "int",
+          "desc": "Profundidade da analise de dependencias (padrao: 2)"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "impact-analyzer.sh --json --file src/auth.py"
+    },
+    "env-validator.sh": {
+      "description": "Valida variaveis de ambiente obrigatorias para o projeto",
+      "category": "devops",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--project",
+          "short": "-p",
+          "type": "string",
+          "desc": "Caminho do projeto (padrao: diretorio atual)"
+        },
+        {
+          "flag": "--env-file",
+          "short": "-e",
+          "type": "string",
+          "desc": "Arquivo .env para validar (padrao: .env)"
+        },
+        {
+          "flag": "--strict",
+          "short": "-s",
+          "type": "bool",
+          "desc": "Falha se variaveis obrigatorias estiverem faltando"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "env-validator.sh --json --strict"
+    },
+    "dependency-tree.sh": {
+      "description": "Mostra arvore de dependencias internas do projeto",
+      "category": "code-analysis",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--file",
+          "short": "-f",
+          "type": "string",
+          "desc": "Arquivo especifico para analisar"
+        },
+        {
+          "flag": "--project",
+          "short": "-p",
+          "type": "string",
+          "desc": "Caminho do projeto (padrao: diretorio atual)"
+        },
+        {
+          "flag": "--max-depth",
+          "short": "-d",
+          "type": "int",
+          "desc": "Profundidade maxima (padrao: 3)"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "dependency-tree.sh --json --project /meu/projeto"
+    },
+    "test-coverage.sh": {
+      "description": "Analise de cobertura de testes por modulo",
+      "category": "code-analysis",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--project",
+          "short": "-p",
+          "type": "string",
+          "desc": "Caminho do projeto (padrao: diretorio atual)"
+        },
+        {
+          "flag": "--source",
+          "short": "-s",
+          "type": "string",
+          "desc": "Diretorio fonte para analise (padrao: src/)"
+        },
+        {
+          "flag": "--tests",
+          "short": "-t",
+          "type": "string",
+          "desc": "Diretorio de testes (padrao: tests/)"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "test-coverage.sh --json --project /meu/projeto"
+    },
+    "git-stale.sh": {
+      "description": "Lista branches antigas sem merge que podem ser limpas",
+      "category": "devops",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": true,
+      "interactive": true,
+      "deps": [
+        "git"
+      ],
+      "args": [
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--project",
+          "short": "-p",
+          "type": "string",
+          "desc": "Caminho do repositorio (padrao: diretorio atual)"
+        },
+        {
+          "flag": "--days",
+          "short": "-d",
+          "type": "int",
+          "desc": "Dias sem commit para considerar stale (padrao: 30)"
+        },
+        {
+          "flag": "--merged",
+          "type": "bool",
+          "desc": "Mostra apenas branches ja merged"
+        },
+        {
+          "flag": "--no-merged",
+          "type": "bool",
+          "desc": "Mostra apenas branches nao merged"
+        },
+        {
+          "flag": "--delete",
+          "type": "bool",
+          "desc": "Deleta branches stale (requer confirmacao)"
+        },
+        {
+          "flag": "--force",
+          "type": "bool",
+          "desc": "Deleta sem confirmacao"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "git-stale.sh --json --days 60"
+    },
+    "git-pr-checklist.sh": {
+      "description": "Checklist automatico de qualidade e conformidade antes de abrir Pull Request",
+      "category": "devops",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "git"
+      ],
+      "args": [
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--project",
+          "short": "-p",
+          "type": "string",
+          "desc": "Caminho do repositorio (padrao: diretorio atual)"
+        },
+        {
+          "flag": "--branch",
+          "short": "-b",
+          "type": "string",
+          "desc": "Branch a verificar (padrao: branch atual)"
+        },
+        {
+          "flag": "--fix",
+          "short": "-f",
+          "type": "bool",
+          "desc": "Tenta corrigir problemas automaticamente"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "git-pr-checklist.sh --json"
+    },
+    "secret-scanner.sh": {
+      "description": "Busca segredos expostos em codigo e configuracao (API keys, tokens, senhas)",
+      "category": "security",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "grep"
+      ],
+      "args": [
+        {
+          "flag": "--json",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--path",
+          "type": "string",
+          "desc": "Caminho para escanear (padrao: .)"
+        },
+        {
+          "flag": "--type",
+          "type": "string",
+          "desc": "Tipo de segredo: all, api-key, password, token, private-key (padrao: all)"
+        },
+        {
+          "flag": "--severity",
+          "type": "string",
+          "desc": "Severidade minima: low, medium, high, critical (padrao: low)"
+        },
+        {
+          "flag": "--exclude",
+          "type": "string",
+          "desc": "Diretorio para excluir (pode ser repetido)"
+        },
+        {
+          "flag": "--fix",
+          "type": "bool",
+          "desc": "Exibe sugestoes detalhadas de correcao"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "secret-scanner.sh --json --severity high"
+    }
+  }
+}

@@ -4,6 +4,7 @@
 # Opcoes:
 #   --dry-run       Preview sem alterar nada
 #   --all           Executa tudo sem confirmacao
+#   --json          Saida em formato JSON (requer --dry-run)
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
 #
@@ -16,14 +17,19 @@ set -euo pipefail
 readonly SCRIPT_VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-readonly GREEN='\033[1;32m'
-readonly YELLOW='\033[1;33m'
-readonly RED='\033[1;31m'
-readonly CYAN='\033[1;36m'
-readonly BLUE='\033[1;34m'
-readonly BOLD='\033[1m'
-readonly DIM='\033[0;90m'
-readonly RESET='\033[0m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+RED='\033[1;31m'
+CYAN='\033[1;36m'
+BLUE='\033[1;34m'
+BOLD='\033[1m'
+DIM='\033[0;90m'
+RESET='\033[0m'
+
+# NO_COLOR support (https://no-color.org/)
+if [[ -n "${NO_COLOR:-}" ]]; then
+  GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
+fi
 
 log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
@@ -38,11 +44,13 @@ if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" 
 
 DRY_RUN=false
 CLEAN_ALL=false
+JSON_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --dry-run) DRY_RUN=true; shift ;;
         --all|-a) CLEAN_ALL=true; shift ;;
+        --json|-j) JSON_MODE=true; DRY_RUN=true; shift ;;
         --help|-h)
             echo ""
             echo "  clean-system.sh — Limpeza profunda do sistema"
@@ -53,6 +61,7 @@ while [[ $# -gt 0 ]]; do
             echo "  Opcoes:"
             echo "    --dry-run     Preview sem alterar nada"
             echo "    --all         Executa tudo sem confirmacao"
+            echo "    --json        Saida em formato JSON (requer --dry-run)"
             echo "    --help        Mostra esta ajuda"
             echo "    --version     Mostra versao"
             echo ""
@@ -77,6 +86,11 @@ while [[ $# -gt 0 ]]; do
         *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
+
+# In JSON mode: save stdout to fd 3, redirect stdout to stderr for human-readable output
+if $JSON_MODE; then
+    exec 3>&1 1>&2
+fi
 
 human_size() {
     local bytes=$1
@@ -279,7 +293,7 @@ echo ""
 
 case "$DISTRO" in
     debian|ubuntu|linuxmint|pop*|elementary|kali)
-        apt_cache_size=$(du -sb /var/cache/apt/archives 2>/dev/null | tail -1 | awk '{print $1}' | tr -d '[:space:]')
+        apt_cache_size=$(du -sb /var/cache/apt/archives 2>/dev/null | tail -1 | awk '{print $1}' | tr -d '[:space:]' || true)
         [[ "$apt_cache_size" =~ ^[0-9]+$ ]] || apt_cache_size=0
 
         if [ "$apt_cache_size" -gt 0 ]; then
@@ -296,7 +310,7 @@ case "$DISTRO" in
         ;;
 
     fedora|rhel|centos|rocky|alma*)
-        dnf_cache_size=$(du -sb /var/cache/dnf 2>/dev/null | tail -1 | awk '{print $1}' | tr -d '[:space:]')
+        dnf_cache_size=$(du -sb /var/cache/dnf 2>/dev/null | tail -1 | awk '{print $1}' | tr -d '[:space:]' || true)
         [[ "$dnf_cache_size" =~ ^[0-9]+$ ]] || dnf_cache_size=0
 
         if [ "$dnf_cache_size" -gt 0 ]; then
@@ -313,7 +327,7 @@ case "$DISTRO" in
         ;;
 
     arch|manjaro|endeavouros|garuda*)
-        pacman_cache_size=$(du -sb /var/cache/pacman/pkg 2>/dev/null | tail -1 | awk '{print $1}' | tr -d '[:space:]')
+        pacman_cache_size=$(du -sb /var/cache/pacman/pkg 2>/dev/null | tail -1 | awk '{print $1}' | tr -d '[:space:]' || true)
         [[ "$pacman_cache_size" =~ ^[0-9]+$ ]] || pacman_cache_size=0
 
         if [ "$pacman_cache_size" -gt 0 ]; then
@@ -507,14 +521,26 @@ echo ""
 # Resumo
 # =============================================
 
-echo "  ─────────────────────────────────"
-echo -e "  ${BOLD}Limpeza do sistema concluida${RESET}"
+if $JSON_MODE; then
+    # Restore stdout from fd 3 for JSON output
+    exec 1>&3 3>&-
+    cat <<EOF
+{
+  "status": "ok",
+  "dry_run": true,
+  "distro": "$DISTRO"
+}
+EOF
+else
+    echo "  ─────────────────────────────────"
+    echo -e "  ${BOLD}Limpeza do sistema concluida${RESET}"
 
-if $DRY_RUN; then
-    echo -e "  ${DIM}Execute sem --dry-run para aplicar as limpezas.${RESET}"
+    if $DRY_RUN; then
+        echo -e "  ${DIM}Execute sem --dry-run para aplicar as limpezas.${RESET}"
+    fi
+
+    echo "  ─────────────────────────────────"
+    echo ""
+    echo -e "  ${DIM}Dica: rode clean-cache.sh para limpar caches de usuario/aplicativos tambem.${RESET}"
+    echo ""
 fi
-
-echo "  ─────────────────────────────────"
-echo ""
-echo -e "  ${DIM}Dica: rode clean-cache.sh para limpar caches de usuario/aplicativos tambem.${RESET}"
-echo ""

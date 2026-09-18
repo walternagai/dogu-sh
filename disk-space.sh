@@ -3,6 +3,7 @@
 # Uso: ./disk-space.sh [opcoes]
 # Opcoes:
 #   --all|-a         Inclui pseudo-filesystems e loop devices
+#   --json|-j        Saida em formato JSON
 #   --help|-h        Mostra esta ajuda
 #   --version|-V     Mostra versao
 
@@ -11,14 +12,19 @@ set -euo pipefail
 readonly VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-readonly GREEN='\033[1;32m'
-readonly YELLOW='\033[1;33m'
-readonly RED='\033[1;31m'
-readonly CYAN='\033[1;36m'
-readonly BLUE='\033[1;34m'
-readonly BOLD='\033[1m'
-readonly DIM='\033[0;90m'
-readonly RESET='\033[0m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+RED='\033[1;31m'
+CYAN='\033[1;36m'
+BLUE='\033[1;34m'
+BOLD='\033[1m'
+DIM='\033[0;90m'
+RESET='\033[0m'
+
+# NO_COLOR support (https://no-color.org/)
+if [[ -n "${NO_COLOR:-}" ]]; then
+  GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
+fi
 
 log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
@@ -39,10 +45,12 @@ EXCLUDE_FS="tmpfs devtmpfs squashfs overlay proc sysfs cgroup cgroup2 debugfs se
 REAL_FS="ext2,ext3,ext4,vfat,fat,ntfs,fuseblk,btrfs,xfs,zfs,f2fs,jfs,reiserfs"
 
 SHOW_ALL=false
+JSON_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --all|-a) SHOW_ALL=true; shift ;;
+        --json|-j) JSON_MODE=true; shift ;;
         --help|-h)
             echo ""
             echo "  disk-space.sh — Mostra espaco disponivel nos discos (SSD/NVMe/HDD)"
@@ -51,6 +59,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "  Opcoes:"
             echo "    --all|-a       Inclui pseudo-filesystems e loop devices"
+            echo "    --json|-j      Saida em formato JSON"
             echo "    --help|-h      Mostra esta ajuda"
             echo "    --version|-V   Mostra versao"
             echo ""
@@ -218,6 +227,8 @@ collect_mount_data_df() {
 }
 
 echo ""
+
+if ! $JSON_MODE; then
 echo -e "  ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo -e "  ${BOLD} Espaco nos Discos${RESET}"
 echo -e "  ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
@@ -226,6 +237,7 @@ echo ""
 printf "  ${BOLD}%-4s%-13s %-7s %-10s %-10s %-10s %-5s %-12s  %s${RESET}\n" \
     "TIPO" "DISPOSITIVO" "FS" "TOTAL" "USADO" "LIVRE" "USO%" "BARRA" "MONTAGEM"
 echo -e "  ${DIM}──────────────────────────────────────────────────────────────────────────────────${RESET}"
+fi
 
 USE_JQ=false
 if command -v jq &>/dev/null && command -v findmnt &>/dev/null; then
@@ -242,6 +254,7 @@ else
 fi
 
 count=0
+JSON_ITEMS=""
 
 if $USE_JQ; then
     while IFS='|' read -r device mount fstype size_bytes used_bytes avail_bytes pct; do
@@ -267,31 +280,58 @@ if $USE_JQ; then
         dev_name="${device#/dev/}"
         disk_type=$(get_disk_type "$dev_name")
 
-        type_icon=""
-        case "$disk_type" in
-            NVMe) type_icon="${CYAN}⚡${RESET}  " ;;
-            SSD)  type_icon="${GREEN}∎${RESET}   " ;;
-            HDD)  type_icon="${YELLOW}◎${RESET}   " ;;
-            USB)  type_icon="${BLUE}↗${RESET}   " ;;
-            Loop) type_icon="${DIM}◎${RESET}   " ;;
-            *)    type_icon="${DIM}?${RESET}   " ;;
-        esac
-
-        total_h=$(human_size "$size_bytes")
-        used_h=$(human_size "$used_bytes")
-        avail_h=$(human_size "$avail_bytes")
-        if [[ "$pct" =~ ^[0-9]+%$ ]]; then
-            pct_plain="$pct"
+        if $JSON_MODE; then
+            # Parse sizes to GB (ensure leading zero for bc output)
+            size_gb=$(echo "scale=1; ${size_bytes:-0} / 1073741824" | bc 2>/dev/null || echo "0")
+            [[ "$size_gb" =~ ^\. ]] && size_gb="0${size_gb}"
+            used_gb=$(echo "scale=1; ${used_bytes:-0} / 1073741824" | bc 2>/dev/null || echo "0")
+            [[ "$used_gb" =~ ^\. ]] && used_gb="0${used_gb}"
+            avail_gb=$(echo "scale=1; ${avail_bytes:-0} / 1073741824" | bc 2>/dev/null || echo "0")
+            [[ "$avail_gb" =~ ^\. ]] && avail_gb="0${avail_gb}"
+            pct_num=$(echo "$pct" | tr -d '%' | tr -d '[:space:]')
+            [[ "$pct_num" =~ ^[0-9]+$ ]] || pct_num=0
+            
+            if [ -n "$JSON_ITEMS" ]; then
+                JSON_ITEMS="${JSON_ITEMS},"
+            fi
+            JSON_ITEMS="${JSON_ITEMS}
+    {
+      \"device\": \"$device\",
+      \"mount\": \"$mount\",
+      \"type\": \"$fstype\",
+      \"disk_type\": \"$disk_type\",
+      \"total_gb\": $size_gb,
+      \"used_gb\": $used_gb,
+      \"available_gb\": $avail_gb,
+      \"use_percent\": $pct_num
+    }"
         else
-            pct_plain="--"
+            type_icon=""
+            case "$disk_type" in
+                NVMe) type_icon="${CYAN}⚡${RESET}  " ;;
+                SSD)  type_icon="${GREEN}∎${RESET}   " ;;
+                HDD)  type_icon="${YELLOW}◎${RESET}   " ;;
+                USB)  type_icon="${BLUE}↗${RESET}   " ;;
+                Loop) type_icon="${DIM}◎${RESET}   " ;;
+                *)    type_icon="${DIM}?${RESET}   " ;;
+            esac
+
+            total_h=$(human_size "$size_bytes")
+            used_h=$(human_size "$used_bytes")
+            avail_h=$(human_size "$avail_bytes")
+            if [[ "$pct" =~ ^[0-9]+%$ ]]; then
+                pct_plain="$pct"
+            else
+                pct_plain="--"
+            fi
+            bar=$(format_bar "$pct")
+
+            display_mount="$mount"
+            display_mount="${display_mount//$HOME/~}"
+
+            printf "  %b%-13s %-7s %-10s %-10s %-10s %-5s %b  %s\n" \
+                "$type_icon" "$dev_name" "$fstype" "$total_h" "$used_h" "$avail_h" "$pct_plain" "$bar" "$display_mount"
         fi
-        bar=$(format_bar "$pct")
-
-        display_mount="$mount"
-        display_mount="${display_mount//$HOME/~}"
-
-        printf "  %b%-13s %-7s %-10s %-10s %-10s %-5s %b  %s\n" \
-            "$type_icon" "$dev_name" "$fstype" "$total_h" "$used_h" "$avail_h" "$pct_plain" "$bar" "$display_mount"
 
         count=$((count + 1))
     done < "$TMPFILE"
@@ -320,35 +360,64 @@ else
         dev_name="${device#/dev/}"
         disk_type=$(get_disk_type "$dev_name")
 
-        type_icon=""
-        case "$disk_type" in
-            NVMe) type_icon="${CYAN}⚡${RESET}  " ;;
-            SSD)  type_icon="${GREEN}∎${RESET}   " ;;
-            HDD)  type_icon="${YELLOW}◎${RESET}   " ;;
-            USB)  type_icon="${BLUE}↗${RESET}   " ;;
-            Loop) type_icon="${DIM}◎${RESET}   " ;;
-            *)    type_icon="${DIM}?${RESET}   " ;;
-        esac
-
-        if [[ "$pct" =~ ^[0-9]+%$ ]]; then
-            pct_plain="$pct"
+        if $JSON_MODE; then
+            pct_num=$(echo "$pct" | tr -d '%' | tr -d '[:space:]')
+            [[ "$pct_num" =~ ^[0-9]+$ ]] || pct_num=0
+            
+            if [ -n "$JSON_ITEMS" ]; then
+                JSON_ITEMS="${JSON_ITEMS},"
+            fi
+            JSON_ITEMS="${JSON_ITEMS}
+    {
+      \"device\": \"$device\",
+      \"mount\": \"$mount\",
+      \"type\": \"$fstype\",
+      \"disk_type\": \"$disk_type\",
+      \"total_gb\": \"$total\",
+      \"used_gb\": \"$used\",
+      \"available_gb\": \"$avail\",
+      \"use_percent\": $pct_num
+    }"
         else
-            pct_plain="--"
+            type_icon=""
+            case "$disk_type" in
+                NVMe) type_icon="${CYAN}⚡${RESET}  " ;;
+                SSD)  type_icon="${GREEN}∎${RESET}   " ;;
+                HDD)  type_icon="${YELLOW}◎${RESET}   " ;;
+                USB)  type_icon="${BLUE}↗${RESET}   " ;;
+                Loop) type_icon="${DIM}◎${RESET}   " ;;
+                *)    type_icon="${DIM}?${RESET}   " ;;
+            esac
+
+            if [[ "$pct" =~ ^[0-9]+%$ ]]; then
+                pct_plain="$pct"
+            else
+                pct_plain="--"
+            fi
+            bar=$(format_bar "$pct")
+
+            display_mount="$mount"
+            display_mount="${display_mount//$HOME/~}"
+
+            printf "  %b%-13s %-7s %-10s %-10s %-10s %-5s %b  %s\n" \
+                "$type_icon" "$dev_name" "$fstype" "$total" "$used" "$avail" "$pct_plain" "$bar" "$display_mount"
         fi
-        bar=$(format_bar "$pct")
-
-        display_mount="$mount"
-        display_mount="${display_mount//$HOME/~}"
-
-        printf "  %b%-13s %-7s %-10s %-10s %-10s %-5s %b  %s\n" \
-            "$type_icon" "$dev_name" "$fstype" "$total" "$used" "$avail" "$pct_plain" "$bar" "$display_mount"
 
         count=$((count + 1))
     done < "$TMPFILE"
 fi
 
-if [[ $count -eq 0 ]]; then
-    echo -e "  ${DIM}Nenhum disco montado encontrado.${RESET}"
-fi
+if $JSON_MODE; then
+    cat <<EOF
+{
+  "filesystems": [$JSON_ITEMS
+  ]
+}
+EOF
+else
+    if [[ $count -eq 0 ]]; then
+        echo -e "  ${DIM}Nenhum disco montado encontrado.${RESET}"
+    fi
 
-echo ""
+    echo ""
+fi
