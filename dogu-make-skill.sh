@@ -6,10 +6,10 @@ set -euo pipefail
 
 # ─── Cores ───────────────────────────────────────────────────────────
 if [[ -n "${NO_COLOR:-}" ]]; then
-  GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
+  GREEN='' YELLOW='' RED='' CYAN='' DIM='' RESET=''
 else
   GREEN='\033[1;32m' YELLOW='\033[1;33m' RED='\033[1;31m'
-  CYAN='\033[1;36m' BLUE='\033[1;34m' BOLD='\033[1m'
+  CYAN='\033[1;36m'
   DIM='\033[0;90m'  RESET='\033[0m'
 fi
 
@@ -116,7 +116,7 @@ for name, meta in scripts.items():
 
 # Ordem de exibição das categorias
 cat_order = ['docker', 'system', 'devops', 'network', 'security',
-             'productivity', 'conversion', 'media', 'other']
+             'productivity', 'conversion', 'media', 'code-analysis', 'other']
 cat_names = {
     'docker': 'Docker',
     'system': 'Sistema',
@@ -126,8 +126,13 @@ cat_names = {
     'productivity': 'Produtividade',
     'conversion': 'Conversão',
     'media': 'Mídia',
+    'code-analysis': 'Análise de Código',
     'other': 'Outros',
 }
+# Garante que categorias novas no manifesto também apareçam
+for cat in sorted(categories):
+    if cat not in cat_order:
+        cat_order.append(cat)
 
 # ── Listas derivadas ───────────────────────────────────────────────
 json_scripts = sorted(
@@ -235,11 +240,12 @@ if all_deps:
     lines.append('')
 
 # ── Escrever saída ────────────────────────────────────────────────
-content = '\n'.join(lines)
+content = '\n'.join(lines) + '\n'
 with open(output_path, 'w') as f:
     f.write(content)
 
-print(f'{len(lines)} lines, {total} scripts, {len(categories)} categories')
+line_count = content.count('\n')
+print(f'{line_count} lines, {total} scripts, {len(categories)} categories')
 PYTHON_SCRIPT
 }
 

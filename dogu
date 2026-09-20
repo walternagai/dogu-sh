@@ -6,11 +6,10 @@ set -euo pipefail
 
 # ─── Cores ───────────────────────────────────────────────────────────
 if [[ -n "${NO_COLOR:-}" ]]; then
-  GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
+  GREEN='' YELLOW='' RED='' CYAN='' BOLD='' RESET=''
 else
   GREEN='\033[1;32m' YELLOW='\033[1;33m' RED='\033[1;31m'
-  CYAN='\033[1;36m' BLUE='\033[1;34m' BOLD='\033[1m'
-  DIM='\033[0;90m'   RESET='\033[0m'
+  CYAN='\033[1;36m' BOLD='\033[1m' RESET='\033[0m'
 fi
 
 # ─── Helpers ──────────────────────────────────────────────────────────
@@ -286,8 +285,6 @@ resolve_script() {
     path="${SCRIPT_DIR}/${name}.sh"
   elif [[ -f "${SCRIPT_DIR}/${name}" ]]; then
     path="${SCRIPT_DIR}/${name}"
-  elif [[ -f "${SCRIPT_DIR}/${name}.sh" ]]; then
-    path="${SCRIPT_DIR}/${name}.sh"
   fi
 
   if [[ -n "$path" ]]; then
@@ -305,30 +302,29 @@ cmd_version() {
 cmd_help() {
   local ver
   ver=$(mf_version)
-  cat <<EOF
+  printf '%b\n' "\
 ${BOLD}dogu${RESET} ${ver} — Dispatcher unificado para dogu-sh
 
 ${BOLD}Uso:${RESET}
-  dogu ${GREEN}<comando>${RESET} [args...]              Executa um script
-  dogu list [--category CAT] [--json]           Lista scripts disponíveis
-  dogu search ${GREEN}<query>${RESET} [--json]              Busca scripts por descrição
-  dogu info ${GREEN}<script>${RESET} [--json]                Metadados de um script
-  dogu categories [--json]                      Categorias com contagem
-  dogu risks [--json]                           Níveis de risco com contagem
-  dogu help                                     Esta ajuda
-  dogu version                                  Versão
+  dogu ${GREEN}<comando>${RESET} [args...]             Executa um script
+  dogu list [--category CAT] [--json]  Lista scripts disponíveis
+  dogu search ${GREEN}<query>${RESET} [--json]         Busca scripts por descrição
+  dogu info ${GREEN}<script>${RESET} [--json]          Metadados de um script
+  dogu categories [--json]             Categorias com contagem
+  dogu risks [--json]                  Níveis de risco com contagem
+  dogu help                            Esta ajuda
+  dogu version                         Versão
 
 ${BOLD}Exemplos:${RESET}
-  dogu docker-status                           Executa docker-status.sh
-  dogu docker-status --json                    Passa --json ao script
-  dogu list --category docker                  Só scripts docker
-  dogu search "limpeza"                        Busca por descrição
-  dogu info docker-clean.sh                    Ver metadados
+  dogu docker-status                   Executa docker-status.sh
+  dogu docker-status --json            Passa --json ao script
+  dogu list --category docker          Só scripts docker
+  dogu search \"limpeza\"                Busca por descrição
+  dogu info docker-clean.sh            Ver metadados
 
 ${BOLD}Segurança:${RESET}
   Scripts ${RED}destructive${RESET} pedem confirmação antes de executar.
-  Use ${BOLD}--yes${RESET} para confirmar automaticamente.
-EOF
+  Use ${BOLD}--yes${RESET} para confirmar automaticamente."
 }
 
 cmd_list() {
@@ -337,7 +333,9 @@ cmd_list() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --category) category="$2"; shift 2 ;;
+      --category)
+        [[ -z "${2:-}" ]] && error "Falta valor para --category"
+        category="$2"; shift 2 ;;
       --json)     json_out=true; shift ;;
       *)          warn "Opção desconhecida: $1"; shift ;;
     esac
@@ -560,7 +558,7 @@ main() {
   local cmd="$1"; shift
 
   case "$cmd" in
-    version)    cmd_version ;;
+    version|--version|-V) cmd_version ;;
     help|-h|--help) cmd_help ;;
     list)       cmd_list "$@" ;;
     search)     cmd_search "$@" ;;
