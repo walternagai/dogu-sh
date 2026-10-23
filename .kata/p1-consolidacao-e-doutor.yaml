@@ -11,7 +11,7 @@ done: >
   é verificada. Verificação: shellcheck, bash -n, doctor com 105/105, smoke de
   completion e --help/--version sem regressões.
 base_commit: "4f7b8c6a7dcd011042633288fca2aa2b4819363b"
-approved_commit: ""
+approved_commit: "5d52768eacf803114c43d6228a09f9e46ff8649d"
 fit:
   trivial: false
   route: code-loop
