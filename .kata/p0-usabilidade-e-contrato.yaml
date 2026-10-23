@@ -12,7 +12,7 @@ done: >
   smoke tests de --help/--version/--json, jq em todas as saídas JSON e
   nenhuma regressão nas verificações do projeto.
 base_commit: "d0470342e0da8d12aa8dbdcab65a084731dead39"
-approved_commit: ""
+approved_commit: "d0cebac11725bce256c9b6b8fb9a1dbe8038e781"
 fit:
   trivial: false
   route: code-loop
