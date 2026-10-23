@@ -44,7 +44,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -1990,6 +1990,18 @@ parse_args() {
 # ==============================================================================
 
 main() {
+    # Comandos que podem pedir confirmação exigem TTY, a menos que --force
+    # tenha sido passado explicitamente.
+    if [ ! -t 0 ] && [[ " $* " != *" --force "* ]]; then
+        case "${1:-}" in
+            status|validate|test|restore|generate-samples|help|-h|--help|-V|--version) ;;
+            *)
+                log_error "Execução não interativa detectada. Use --force para pular confirmações ou rode em terminal."
+                exit 2
+                ;;
+        esac
+    fi
+
     setup_logging
     detect_os
     manifest_init

@@ -26,7 +26,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -34,6 +34,13 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+json_escape() {
+    local s="$1"
+    s=${s//\\/\\\\}
+    s=${s//\"/\\\"}
+    s=${s//$'\n'/\\n}
+    printf '%s' "$s"
+}
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
@@ -46,6 +53,7 @@ FILTER_TEXT=""
 ERROR_ONLY=false
 SINCE=""
 USE_NOTIFY=false
+JSON_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -60,6 +68,7 @@ while [[ $# -gt 0 ]]; do
             [[ -z "${2-}" ]] && { echo "Flag --since requer um valor" >&2; exit 1; }
             SINCE="$2"; shift 2 ;;
         --notify|-n) USE_NOTIFY=true; shift ;;
+        --json|-j) JSON_MODE=true; shift ;;
         --help|-h)
             echo ""
             echo "  docker-logs-watcher.sh — Monitora logs de containers com filtros"
@@ -72,6 +81,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --error           Filtra apenas erros (ERROR, FATAL, etc)"
             echo "    --since TEMPO     Logs a partir de (ex: 5m, 1h, 1d)"
             echo "    --notify          Notificacao desktop ao detectar erro"
+            echo "    --json|-j         Saida JSON Lines (uma linha por log)"
             echo "    --help            Mostra esta ajuda"
             echo "    --version         Mostra versao"
             echo ""
@@ -132,24 +142,26 @@ colorize_line() {
     fi
 }
 
-echo ""
-echo -e "  ${BOLD}Docker Logs Watcher${RESET}"
-echo -e "  ${DIM}Monitorando ${#TARGET_CONTAINERS[@]} container(s)${RESET}"
+if ! $JSON_MODE; then
+    echo ""
+    echo -e "  ${BOLD}Docker Logs Watcher${RESET}"
+    echo -e "  ${DIM}Monitorando ${#TARGET_CONTAINERS[@]} container(s)${RESET}"
 
-if [ -n "$FILTER_TEXT" ]; then
-    echo -e "  ${DIM}Filtro: '$FILTER_TEXT'${RESET}"
+    if [ -n "$FILTER_TEXT" ]; then
+        echo -e "  ${DIM}Filtro: '$FILTER_TEXT'${RESET}"
+    fi
+
+    if $ERROR_ONLY; then
+        echo -e "  ${DIM}Modo: apenas erros${RESET}"
+    fi
+
+    if [ -n "$SINCE" ]; then
+        echo -e "  ${DIM}Desde: $SINCE${RESET}"
+    fi
+
+    echo -e "  ${DIM}Ctrl+C para sair${RESET}"
+    echo ""
 fi
-
-if $ERROR_ONLY; then
-    echo -e "  ${DIM}Modo: apenas erros${RESET}"
-fi
-
-if [ -n "$SINCE" ]; then
-    echo -e "  ${DIM}Desde: $SINCE${RESET}"
-fi
-
-echo -e "  ${DIM}Ctrl+C para sair${RESET}"
-echo ""
 
 error_count=0
 last_notify_time=0
@@ -174,10 +186,18 @@ for container in "${TARGET_CONTAINERS[@]}"; do
                 fi
             fi
 
-            colored=$(colorize_line "$line")
-            echo -e "  ${CYAN}[$container]${RESET} $colored"
+            is_error=false
+            echo "$line" | grep -qiE "$ERROR_PATTERN" && is_error=true
 
-            if echo "$line" | grep -qiE "$ERROR_PATTERN"; then
+            if $JSON_MODE; then
+                printf '{"container":"%s","error":%s,"line":"%s"}\n' \
+                    "$(json_escape "$container")" "$is_error" "$(json_escape "$line")"
+            else
+                colored=$(colorize_line "$line")
+                echo -e "  ${CYAN}[$container]${RESET} $colored"
+            fi
+
+            if $is_error; then
                 error_count=$((error_count + 1))
                 now=$(date +%s)
                 if $USE_NOTIFY && [ $((now - last_notify_time)) -gt 30 ]; then

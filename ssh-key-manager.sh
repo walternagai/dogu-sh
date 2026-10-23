@@ -30,7 +30,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -38,6 +38,13 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+json_escape() {
+    local s="$1"
+    s=${s//\\/\\\\}
+    s=${s//\"/\\\"}
+    s=${s//$'\n'/\\n}
+    printf '%s' "$s"
+}
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "ssh-keygen" "$INSTALLER" "openssh-client"; fi
@@ -52,6 +59,7 @@ KEY_COMMENT=""
 KEY_PATH=""
 DEPLOY_HOST=""
 DRY_RUN=false
+JSON_MODE=false
 SSH_DIR="$HOME/.ssh"
 
 while [[ $# -gt 0 ]]; do
@@ -75,6 +83,7 @@ while [[ $# -gt 0 ]]; do
             [[ -z "${2-}" ]] && { echo "Flag --key-path requer um valor" >&2; exit 1; }
             KEY_PATH="$2"; shift 2 ;;
         --dry-run) DRY_RUN=true; shift ;;
+        --json|-j) JSON_MODE=true; shift ;;
         --help|-h)
             echo ""
             echo "  ssh-key-manager.sh — Gerencia chaves SSH"
@@ -91,6 +100,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --comment COMMENT    Comentario da chave"
             echo "    --key-path PATH      Caminho customizado da chave"
             echo "    --dry-run            Preview sem executar"
+            echo "    --json|-j            Saida JSON (requer --list)"
             echo "    --help               Mostra esta ajuda"
             echo "    --version            Mostra versao"
             echo ""
@@ -135,17 +145,62 @@ get_fingerprint() {
     fi
 }
 
-echo ""
-echo -e "  ${BOLD}SSH Key Manager${RESET}  ${DIM}v$VERSION${RESET}"
+if ! $JSON_MODE; then
+    echo ""
+    echo -e "  ${BOLD}SSH Key Manager${RESET}  ${DIM}v$VERSION${RESET}"
 
-if $DRY_RUN; then
-    echo -e "  ${YELLOW}[DRY-RUN]${RESET} Preview sem executar"
+    if $DRY_RUN; then
+        echo -e "  ${YELLOW}[DRY-RUN]${RESET} Preview sem executar"
+    fi
+
+    echo ""
 fi
 
-echo ""
+if $JSON_MODE && [ "$ACTION" != "list" ]; then
+    error "--json so e suportado com --list"
+fi
 
 case "$ACTION" in
     list)
+        if $JSON_MODE; then
+            keys_json=""
+            keys_first=true
+            key_files=$(find "$SSH_DIR" -maxdepth 1 -name 'id_*' -not -name '*.pub' -type f 2>/dev/null | sort)
+            while IFS= read -r key_file; do
+                [ -z "$key_file" ] && continue
+                key_name=$(basename "$key_file")
+                key_type_local=""
+                bits=""
+                fingerprint=""
+                comment=""
+                fp=$(get_fingerprint "$key_file" 2>/dev/null)
+                if [ -n "$fp" ]; then
+                    bits=$(echo "$fp" | awk '{print $1}')
+                    fingerprint=$(echo "$fp" | awk '{print $2}')
+                    key_type_local=$(echo "$fp" | awk '{print $4}' | tr -d '()')
+                    comment=$(echo "$fp" | cut -d' ' -f3-)
+                fi
+                has_pub=false
+                [ -f "${key_file}.pub" ] && has_pub=true
+                $keys_first || keys_json+=","
+                keys_first=false
+                keys_json+=$(printf '{"file":"%s","type":"%s","bits":"%s","fingerprint":"%s","comment":"%s","has_pub":%s}' \
+                    "$(json_escape "$key_name")" "$(json_escape "$key_type_local")" \
+                    "$(json_escape "$bits")" "$(json_escape "$fingerprint")" \
+                    "$(json_escape "$comment")" "$has_pub")
+            done <<< "$key_files"
+
+            ak_count=0; kh_count=0; host_entries=0
+            [ -f "$SSH_DIR/authorized_keys" ] && ak_count=$(grep -c '^' "$SSH_DIR/authorized_keys" 2>/dev/null || echo 0)
+            [ -f "$SSH_DIR/known_hosts" ] && kh_count=$(grep -c '^' "$SSH_DIR/known_hosts" 2>/dev/null || echo 0)
+            [ -f "$SSH_DIR/config" ] && host_entries=$(grep -c '^Host ' "$SSH_DIR/config" 2>/dev/null || echo 0)
+            printf '{"ssh_dir":"%s","keys":[%s],"authorized_keys":%s,"known_hosts":%s,"config_hosts":%s}\n' \
+                "$(json_escape "$SSH_DIR")" "$keys_json" \
+                "$(echo "$ak_count" | tr -d '[:space:]')" \
+                "$(echo "$kh_count" | tr -d '[:space:]')" \
+                "$(echo "$host_entries" | tr -d '[:space:]')"
+            exit 0
+        fi
         echo -e "  ${BOLD}── Chaves SSH em ${SSH_DIR} ──${RESET}"
         echo ""
 

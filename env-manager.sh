@@ -19,7 +19,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -134,6 +134,11 @@ echo -e "\n${CYAN}O que deseja fazer?${RESET}"
 echo "  a) Executar TUDO"
 echo "  s) Selecionar scripts específicos (separados por vírgula, ex: 1,3)"
 echo "  n) Sair"
+
+if [ ! -t 0 ]; then
+    error "Execução não interativa detectada. Rode em terminal interativo para escolher as ações; os comandos do plano podem ser executados manualmente."
+fi
+
 read -p "Opção: " USER_CHOICE
 
 case "$USER_CHOICE" in

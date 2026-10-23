@@ -44,7 +44,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 

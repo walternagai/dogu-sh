@@ -5,7 +5,12 @@
 set -euo pipefail
 
 # ─── Cores ───────────────────────────────────────────────────────────
-if [[ -n "${NO_COLOR:-}" ]]; then
+# --no-color é aceito globalmente e tem precedência sobre o TTY.
+for _dogu_arg in "$@"; do
+  [[ "$_dogu_arg" == "--no-color" ]] && NO_COLOR=1
+done
+
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BOLD='' RESET=''
 else
   GREEN='\033[1;32m' YELLOW='\033[1;33m' RED='\033[1;31m'
@@ -36,18 +41,31 @@ for candidate in python3 python; do
 done
 [[ -z "$PYTHON" ]] && error "Python não encontrado. Necessário para parsear dogu.json"
 
+# Wrapper de execução Python: restaura SIGPIPE para não imprimir traceback
+# quando o consumidor fecha o pipe antes do fim da escrita (ex.: | head -c).
+py() {
+  local code="$1"; shift
+  "$PYTHON" -c "
+import signal
+try:
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+except Exception:
+    pass
+$code" "$@"
+}
+
 # Verifica módulo json
-if ! "$PYTHON" -c "import json" 2>/dev/null; then
+if ! py "import json" 2>/dev/null; then
   error "Módulo json do Python não disponível"
 fi
 
 # ─── Funções de query ao manifesto ───────────────────────────────────
 mf_version() {
-  "$PYTHON" -c "import json,sys; print(json.load(open('$MANIFEST'))['version'])"
+  py "import json,sys; print(json.load(open('$MANIFEST'))['version'])"
 }
 
 mf_scripts() {
-  "$PYTHON" -c "
+  py "
 import json,sys
 data = json.load(open('$MANIFEST'))
 scripts = data['scripts']
@@ -56,7 +74,7 @@ print(json.dumps(scripts, ensure_ascii=False, indent=2))
 }
 
 mf_list() {
-  "$PYTHON" -c "
+  py "
 import json,sys
 data = json.load(open('$MANIFEST'))
 scripts = data['scripts']
@@ -81,7 +99,7 @@ print(json.dumps(entries, ensure_ascii=False))
 }
 
 mf_list_formatted() {
-  "$PYTHON" -c "
+  py "
 import json,sys
 data = json.load(open('$MANIFEST'))
 scripts = data['scripts']
@@ -105,7 +123,7 @@ print(f'\n  {len(entries)} script(s)')
 
 mf_search() {
   local query="$1"
-  "$PYTHON" -c "
+  py "
 import json,sys
 data = json.load(open('$MANIFEST'))
 query = sys.argv[1].lower()
@@ -130,14 +148,14 @@ mf_search_formatted() {
   local json_out
   json_out=$(mf_search "$query")
   local count
-  count=$(echo "$json_out" | "$PYTHON" -c "import json,sys; print(len(json.load(sys.stdin)))")
+  count=$(echo "$json_out" | py "import json,sys; print(len(json.load(sys.stdin)))")
 
   if [[ "$count" -eq 0 ]]; then
     warn "Nenhum script encontrado para '$query'"
     return
   fi
 
-  echo "$json_out" | "$PYTHON" -c "
+  echo "$json_out" | py "
 import json,sys
 results = json.load(sys.stdin)
 nw = max(len(r['name']) for r in results)
@@ -152,7 +170,7 @@ print(f\"\n  {len(results)} resultado(s) para '{sys.argv[1]}'\")
 
 mf_info() {
   local script="$1"
-  "$PYTHON" -c "
+  py "
 import json,sys
 data = json.load(open('$MANIFEST'))
 name = sys.argv[1]
@@ -173,13 +191,13 @@ mf_info_formatted() {
     error "Script '$script' não encontrado no manifesto"
   }
   # Check if it's null
-  if echo "$json_out" | "$PYTHON" -c "import json,sys; d=json.load(sys.stdin); exit(0 if d is not None else 1)" 2>/dev/null; then
+  if echo "$json_out" | py "import json,sys; d=json.load(sys.stdin); exit(0 if d is not None else 1)" 2>/dev/null; then
     : # ok
   else
     error "Script '$script' não encontrado no manifesto"
   fi
 
-  echo "$json_out" | "$PYTHON" -c "
+  echo "$json_out" | py "
 import json,sys
 info = json.load(sys.stdin)
 print(f\"  {info['name']}\")
@@ -211,7 +229,7 @@ if flags:
 }
 
 mf_categories() {
-  "$PYTHON" -c "
+  py "
 import json
 data = json.load(open('$MANIFEST'))
 cats = data.get('categories', {})
@@ -226,7 +244,7 @@ print(json.dumps(cats, ensure_ascii=False))
 }
 
 mf_categories_formatted() {
-  "$PYTHON" -c "
+  py "
 import json
 data = json.load(open('$MANIFEST'))
 cats = data.get('categories', {})
@@ -244,7 +262,7 @@ print(f'\n  {len(cats)} categorias')
 }
 
 mf_risks() {
-  "$PYTHON" -c "
+  py "
 import json
 data = json.load(open('$MANIFEST'))
 risks = data.get('risk_levels', {})
@@ -258,7 +276,7 @@ print(json.dumps(risks, ensure_ascii=False))
 }
 
 mf_risks_formatted() {
-  "$PYTHON" -c "
+  py "
 import json
 data = json.load(open('$MANIFEST'))
 risks = data.get('risk_levels', {})
@@ -307,6 +325,7 @@ ${BOLD}dogu${RESET} ${ver} — Dispatcher unificado para dogu-sh
 
 ${BOLD}Uso:${RESET}
   dogu ${GREEN}<comando>${RESET} [args...]             Executa um script
+  dogu --no-color ${GREEN}<comando>${RESET} [args...]  Desativa cores (ou use NO_COLOR=1)
   dogu list [--category CAT] [--json]  Lista scripts disponíveis
   dogu search ${GREEN}<query>${RESET} [--json]         Busca scripts por descrição
   dogu info ${GREEN}<script>${RESET} [--json]          Metadados de um script
@@ -317,6 +336,7 @@ ${BOLD}Uso:${RESET}
 
 ${BOLD}Exemplos:${RESET}
   dogu docker-status                   Executa docker-status.sh
+  dogu --no-color docker-status        Executa sem cores
   dogu docker-status --json            Passa --json ao script
   dogu list --category docker          Só scripts docker
   dogu search \"limpeza\"                Busca por descrição
@@ -343,7 +363,7 @@ cmd_list() {
 
   if $json_out; then
     if [[ -n "$category" ]]; then
-      "$PYTHON" -c "
+      py "
 import json,sys
 data = json.load(open('$MANIFEST'))
 cat = sys.argv[1]
@@ -359,7 +379,7 @@ print(json.dumps(results, ensure_ascii=False, indent=2))
     fi
   else
     if [[ -n "$category" ]]; then
-      "$PYTHON" -c "
+      py "
 import json,sys
 data = json.load(open('$MANIFEST'))
 cat = sys.argv[1]
@@ -475,7 +495,7 @@ cmd_run() {
 
   # Verifica no manifesto
   local meta_json
-  meta_json=$("$PYTHON" -c "
+  meta_json=$(py "
 import json,sys
 data = json.load(open('$MANIFEST'))
 name = sys.argv[1]
@@ -485,7 +505,7 @@ else:
     sys.exit(1)
 " "$canonical" 2>/dev/null) || {
     # Tenta sem .sh no manifesto
-    meta_json=$("$PYTHON" -c "
+    meta_json=$(py "
 import json,sys
 data = json.load(open('$MANIFEST'))
 name = sys.argv[1]
@@ -522,11 +542,11 @@ else:
 
   # Verifica risco
   local risk
-  risk=$("$PYTHON" -c "import json,sys; print(json.load(sys.stdin).get('risk','read-only'))" <<< "$meta_json")
+  risk=$(py "import json,sys; print(json.load(sys.stdin).get('risk','read-only'))" <<< "$meta_json")
 
   if [[ "$risk" == "destructive" ]] && ! $has_yes && ! $is_info_query; then
     local desc
-    desc=$("$PYTHON" -c "import json,sys; print(json.load(sys.stdin).get('description',''))" <<< "$meta_json")
+    desc=$(py "import json,sys; print(json.load(sys.stdin).get('description',''))" <<< "$meta_json")
 
     warn "⚠  ${BOLD}${RED}ATENÇÃO${RESET}: ${BOLD}${canonical}${RESET} é um script ${RED}DESTRUTIVO${RESET}"
     echo "    $desc"
@@ -554,6 +574,14 @@ else:
 # ─── Main ────────────────────────────────────────────────────────────
 main() {
   [[ $# -eq 0 ]] && { cmd_help; exit 0; }
+
+  # Remove --no-color (já aplicado no topo) antes de despachar.
+  local -a _args=()
+  local _arg
+  for _arg in "$@"; do
+    [[ "$_arg" == "--no-color" ]] || _args+=("$_arg")
+  done
+  set -- ${_args[@]+"${_args[@]}"}
 
   local cmd="$1"; shift
 

@@ -171,6 +171,8 @@ chmod +x *.sh
 
 ### Dispatcher unificado (dogu)
 
+> Requisito: Python 3 para o dispatcher `dogu` (os scripts `.sh` continuam Bash e não dependem dele).
+
 ```bash
 # Listar todas as ferramentas
 ./dogu list
@@ -222,6 +224,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 
 | Script | Dependências |
 |--------|-------------|
+| `dogu` (dispatcher) | `python3` |
 | `docker-*.sh` | `docker` (e `docker-compose` para compose-manager) |
 | `disk-health.sh` | `smartmontools` (smartctl) |
 | `dedup-files.sh` | `findutils`, `coreutils` (sha256sum), `diffutils` (cmp) |

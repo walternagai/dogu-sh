@@ -1,0 +1,474 @@
+task: p0-usabilidade-e-contrato
+status: approved
+domain: coding
+done: >
+  Os oito achados P0 do relatório REVISAO-USABILIDADE.md implementados e
+  verificados: SIGPIPE corrigido no dispatcher; Python declarado/checado;
+  dogu-make-skill registrado com --version e SKILL.md gerado; oito metadados
+  corrigidos; dependências modeladas com deps_any/deps_python/deps_optional;
+  guards de TTY em env-manager, lab-manager e menu-launcher; cores
+  desativadas automaticamente fora de TTY e NO_COLOR respeitado; --json
+  adicionado aos nove scripts analíticos. Verificação: shellcheck, bash -n,
+  smoke tests de --help/--version/--json, jq em todas as saídas JSON e
+  nenhuma regressão nas verificações do projeto.
+base_commit: "d0470342e0da8d12aa8dbdcab65a084731dead39"
+approved_commit: ""
+fit:
+  trivial: false
+  route: code-loop
+  reason: >
+    Implementação de oito achados P0 já priorizados e com escopo definido no
+    relatório; o usuário autorizou a implementação. Há mudanças em múltiplos
+    scripts, manifesto, dispatcher, instalador e documentação.
+  answered: true
+  skipped: false
+think:
+  problem: >
+    O portfólio tem contratos de CLI quebrados em pontos de alto impacto:
+    dispatcher com SIGPIPE e dependência não declarada de Python, gerador de
+    skill invisível, oito metadados divergentes, dependências mal modeladas,
+    prompts sem guard de TTY, cores em pipes e ausência de JSON em nove
+    scripts analíticos. Esses problemas quebram automação, confundem agentes e
+    tornam a instalação frágil.
+  assumptions:
+    - "A correção deve preservar compatibilidade: nomes, flags e saídas humanas atuais continuam funcionando."
+    - "Não introduzir dependência nova obrigatória; JSON será gerado com Bash/printf e escapes locais."
+    - "O instalador pode exigir Python para o dispatcher, desde que avise claramente; os scripts continuam Bash."
+    - "Cores só em TTY; NO_COLOR continua tendo precedência."
+    - "Guards de TTY devem permitir --help/--version e falhar com mensagem acionável."
+  alternatives:
+    - "Fallback completo do dispatcher para jq/awk — descartado nesta rodada: reescrever o parser JSON é maior que o escopo e mais arriscado."
+    - "Adicionar --no-color em cada um dos 104 scripts — descartado: mudança repetitiva e arriscada nos parsers; NO_COLOR + detecção de TTY resolve o problema real, e o dispatcher ganha --no-color."
+    - "Adicionar --json com schema genérico {output: ...} — descartado: não é saída estruturada útil."
+    - "Corrigir apenas os scripts mais usados — descartado: o usuário pediu todos os P0."
+  unknowns: |
+    RESOLVIDO:
+    1. Como o dispatcher monta JSON? → snippets Python; um wrapper py() com SIGPIPE default resolve todos.
+    2. O instalador já verifica Python? → não; adicionar checagem e mensagem.
+    3. O gerador de SKILL tem versão? → não; adicionar.
+    4. Quais scripts precisam de --json? → os nove listados no relatório.
+    NÃO BLOQUEIA: o schema de cada JSON será o mínimo útil observável na saída atual.
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: >
+    Sem novas abstrações além de helpers locais reutilizados (py, json_escape).
+    Sem configurabilidade especulativa; os campos novos do manifesto são
+    exigidos pelos achados P0-04/P0-05.
+  answered: true
+  skipped: false
+intent:
+  code_does: "Dispatchers e scripts produzem os mesmos resultados humanos de antes, com correções de contrato e novos modos JSON."
+  check_expects: "shellcheck/bash -n continuam verdes; --help/--version não quebram; --json produz JSON válido; pipes não recebem ANSI."
+  spec_says: "AGENTS.md e SCRIPTING_GUIDE.md exigem --help, --version, set -euo pipefail, NO_COLOR, guards de TTY e registro no manifesto."
+  all_agree: true
+  conflict_resolution: ""
+  answered: true
+  skipped: false
+surgical:
+  files:
+    - path: ".kata/p0-usabilidade-e-contrato.yaml"
+      necessary: true
+      motivo: "Registro da task"
+    - path: "REVISAO-USABILIDADE.md"
+      necessary: true
+      motivo: "Atualização do status dos P0 e do PENDING"
+    - path: "README.md"
+      necessary: true
+      motivo: "P0-02 — requisito de Python 3 para o dispatcher"
+    - path: "SKILL.md"
+      necessary: true
+      motivo: "P0-03 — artefato gerado e versionado"
+    - path: "alarm.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "api-tester.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "archive-manager.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "audio-to-text.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "base64-tool.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "batch-rename.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "battery-monitor.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "brightness.sh"
+      necessary: true
+      motivo: "P0-05 — instala apenas uma alternativa de brilho"
+    - path: "calculator.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "calendar.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "clean-cache.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "clean-system.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "clipboard-manager.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "codebase-summary.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "color-converter.sh"
+      necessary: true
+      motivo: "P0-07 — preview colorido respeita NO_COLOR"
+    - path: "context-gather.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "currency-converter.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "dark-mode.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "dedup-files.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "dependency-checker.sh"
+      necessary: true
+      motivo: "P0-05 — lê deps e deps_python do manifesto"
+    - path: "dependency-tree.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "dir-summary.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "disk-health.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "disk-scanner.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "disk-space.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "dns-lookup.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-audit.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-backup.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-bottleneck-detect.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-cis-benchmark.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-clean.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-compose-manager.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-dependency-map.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-healthcheck.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-image-slimmer.sh"
+      necessary: true
+      motivo: "P0-08 — --json"
+    - path: "docker-logs-watcher.sh"
+      necessary: true
+      motivo: "P0-08 — --json (JSON Lines)"
+    - path: "docker-network-manager.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-resource-alert.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-restore.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-secret-scanner.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-stats-history.sh"
+      necessary: true
+      motivo: "P0-08 — --json (snapshot)"
+    - path: "docker-status.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "docker-volume-mgr.sh"
+      necessary: true
+      motivo: "P0-08 — --json"
+    - path: "docx-to-md.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "dogu"
+      necessary: true
+      motivo: "P0-01/P0-07 — wrapper py() com SIGPIPE e --no-color global"
+    - path: "dogu-make-skill.sh"
+      necessary: true
+      motivo: "P0-03/05 — --version e deps_any/deps_python/deps_optional"
+    - path: "dogu.json"
+      necessary: true
+      motivo: "P0-03/04/05/08 — registro, metadados, dependências e has_json"
+    - path: "download-icons.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "env-keygen.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "env-manager.sh"
+      necessary: true
+      motivo: "P0-06 — guard de TTY antes do prompt"
+    - path: "env-validator.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "fix-exec-bit.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "folder-sync.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "git-pr-checklist.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "git-stale.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "git-sync.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "hunt-duplicates.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "impact-analyzer.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "install-scripts.sh"
+      necessary: true
+      motivo: "P0-02 — checagem de Python 3 com aviso acionável"
+    - path: "ip-info.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "jpg-to-text.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "lab-manager.sh"
+      necessary: true
+      motivo: "P0-06 — exige TTY ou --force em comandos interativos"
+    - path: "log-analyzer.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "md-to-pdf.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "media-control.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "menu-launcher.sh"
+      necessary: true
+      motivo: "P0-03/06/07 — entrada no menu, guard de TTY e cores"
+    - path: "nerd-font-install.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "nvidia-gpu-monitor.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "organize-downloads.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "package-list-backup.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "partitions-list.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "password-gen.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "pdf-to-jpg.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "pdf-to-md.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "pomodoro-timer.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "port-check.sh"
+      necessary: true
+      motivo: "P0-08 — --json e correção do timeout do nc"
+    - path: "process-killer.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "qr-gen.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "quick-backup.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "quick-notes.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "ris-to-csv.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "screenshot.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "secret-scanner.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "setup-workspace.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "snap-flatpak-manager.sh"
+      necessary: true
+      motivo: "P0-08 — --json"
+    - path: "speedtest-log.sh"
+      necessary: true
+      motivo: "P0-08 — --json e dependência só no --run"
+    - path: "ssh-key-manager.sh"
+      necessary: true
+      motivo: "P0-08 — --json"
+    - path: "ssh-tunnel-mgr.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "stack-detector.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "stopwatch.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "subnet-calc.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "test-coverage.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "todo.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "unarchive.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "unit-converter.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "update-all.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "url-shortener.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "video-catalog-organizer.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "video-to-audio.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "volume.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "weather.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "whois.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "wifi-scanner.sh"
+      necessary: true
+      motivo: "P0-08 — --json"
+    - path: "world-clock.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "xlsx-to-csv.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+    - path: "yt-transcript.sh"
+      necessary: true
+      motivo: "P0-07 — cores somente em TTY; sem mudança de comportamento"
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+verify:
+  ruff_clean: "N/A (Bash; ShellCheck --severity=error passou em dogu + 105 scripts)"
+  tests_pass: "N/A (não há suíte; bash -n passou em 106 arquivos e 9 smoke tests JSON passaram)"
+  coverage_pct: 100.0
+  coverage_pass: true
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+  notes: |
+    Gate do projeto (.kata/config.yaml) via python -m kata --check-only:
+    - shellcheck --severity=error dogu *.sh → PASS
+    - bash -n dogu *.sh → PASS
+    - coverage do gerador de SKILL → 100%
+    Verificações adicionais:
+    - --help e --version passaram nos 105 scripts (0 falhas).
+    - 9 smoke tests --json passaram em jq (port-check, wifi, snap/flatpak, ssh-key,
+      speedtest, docker-stats, docker-logs, docker-volume, docker-image).
+    - dogu list --json | jq length = 105; categories/risks coerentes.
+    - SIGPIPE: ./dogu list --json | head -c 120 não imprime traceback (exit 141 é SIGPIPE esperado).
+    - Cores: 0 escapes ANSI em --help redirecionado nos 105 scripts; TTY continua colorido; NO_COLOR desliga.
+    - Instalador sem Python: aviso claro e exit 0.
+    - dependency-checker --all lê deps e deps_python e reporta faster_whisper/openpyxl.
+    - SKILL.md idêntico ao --dry-run.
+preflight:
+  skills_missing: []
+artifact:
+  intent_owed: true
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: true
+  pending_present: true
+  twins_owed: true
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: "Implementar os achados P1/P2 do relatório REVISAO-USABILIDADE.md (consolidações e scripts novos) — fora do escopo desta task de P0."
+  documented: true
+twins:
+  pattern: "readonly em variáveis de cor, timeout de nc em ms, command substitution sob set -e, dependência checada antes do parse de argumentos, instalação de alternativas simultâneas"
+  result: "10 scripts tinham readonly nas cores; port-check usava TIMEOUT (ms) em nc -w (s) e saía em porta fechada; speedtest-log exigia speedtest para ler CSV; brightness instalava light+brightnessctl+xrandr. Todos corrigidos; buscas de confirmação retornam 0 ocorrências."
+  searched: true
+  defect_fixed: true
+  matches_count: 10
+  files_count: 13
+  fix_applied: true
+metrics:
+  p0_implemented: 8
+  files_changed: 110
+  metadata_divergences: 0
+  help_version_failures: 0
+  json_smoke_tests: 9
+  json_scripts_total: 33
+judge:
+  verdict: VERIFIED
+  baseline_anchor: "refs/kata/base/336fdde01b1dcad0b2abdf88707212f64f00cd5b9db3f0e87ab4b1d453360eda"
+  claims_verified:
+    - "lint limpo (shellcheck --severity=error)"
+    - "testes passam (bash -n em 105 scripts + dispatcher)"
+    - "coverage 100% ≥ gate"
+    - "110 arquivos alterados cirurgicamente (necessários)"
+    - "intenção alinhada: código, teste e spec concordam"
+  accepted_without_verification:
+    - "critério de sucesso satisfeito (não re-executável pelo juiz)"
+  blind_spots: []

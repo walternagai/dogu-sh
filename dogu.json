@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "project": "dogu-sh",
   "description": "Manifesto estruturado das ferramentas dogu-sh para autodescoberta por agentes de IA",
-  "total_scripts": 104,
+  "total_scripts": 105,
   "categories": {
     "productivity": 13,
     "network": 9,
@@ -12,17 +12,17 @@
     "other": 1,
     "docker": 17,
     "security": 4,
-    "devops": 13,
+    "devops": 14,
     "code-analysis": 6
   },
   "risk_levels": {
     "read-only": 63,
-    "dry-run-ok": 33,
+    "dry-run-ok": 34,
     "destructive": 8
   },
   "features": {
-    "has_json": 25,
-    "has_dry_run": 38,
+    "has_json": 33,
+    "has_dry_run": 43,
     "interactive": 8
   },
   "scripts": {
@@ -248,7 +248,13 @@
           "desc": "Mostra versao"
         }
       ],
-      "example": "audio-to-text.sh -m base audio.mp3"
+      "example": "audio-to-text.sh -m base audio.mp3",
+      "deps_python": [
+        "faster-whisper"
+      ],
+      "deps_optional": [
+        "openai-whisper"
+      ]
     },
     "base64-tool.sh": {
       "description": "Codifica/decodifica Base64, URL encode, hex",
@@ -459,13 +465,9 @@
       "category": "system",
       "risk": "read-only",
       "has_json": false,
-      "has_dry_run": false,
+      "has_dry_run": true,
       "interactive": false,
-      "deps": [
-        "light",
-        "brightnessctl",
-        "xrandr"
-      ],
+      "deps": [],
       "args": [
         {
           "flag": "--up",
@@ -504,7 +506,14 @@
           "desc": "Mostra versao"
         }
       ],
-      "example": "brightness.sh --up 10"
+      "example": "brightness.sh --up 10",
+      "deps_any": [
+        [
+          "light",
+          "brightnessctl",
+          "xrandr"
+        ]
+      ]
     },
     "calculator.sh": {
       "description": "Calculadora interativa com historico e suporte a expressoes",
@@ -854,7 +863,7 @@
       "category": "system",
       "risk": "read-only",
       "has_json": false,
-      "has_dry_run": false,
+      "has_dry_run": true,
       "interactive": false,
       "deps": [],
       "args": [
@@ -1450,8 +1459,7 @@
       "has_dry_run": true,
       "interactive": false,
       "deps": [
-        "docker",
-        "docker-compose"
+        "docker"
       ],
       "args": [
         {
@@ -1509,7 +1517,10 @@
           "desc": "Mostra versao"
         }
       ],
-      "example": "docker-compose-manager.sh --status"
+      "example": "docker-compose-manager.sh --status",
+      "deps_optional": [
+        "docker-compose"
+      ]
     },
     "docker-dependency-map.sh": {
       "description": "Mapeia relacoes de dependencia entre containers",
@@ -1627,7 +1638,7 @@
       "description": "Analisa camadas de imagens e sugere reducoes",
       "category": "docker",
       "risk": "read-only",
-      "has_json": false,
+      "has_json": true,
       "has_dry_run": false,
       "interactive": false,
       "deps": [
@@ -1669,6 +1680,12 @@
           "short": "-V",
           "type": "bool",
           "desc": "Mostra versao"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
         }
       ],
       "example": "docker-image-slimmer.sh --image nginx"
@@ -1677,7 +1694,7 @@
       "description": "Monitora logs de containers com filtros",
       "category": "docker",
       "risk": "read-only",
-      "has_json": false,
+      "has_json": true,
       "has_dry_run": false,
       "interactive": false,
       "deps": [
@@ -1725,6 +1742,12 @@
           "short": "-V",
           "type": "bool",
           "desc": "Mostra versao"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
         }
       ],
       "example": "docker-logs-watcher.sh --error --since 1h"
@@ -1987,8 +2010,8 @@
       "description": "Registra historico de CPU/RAM dos containers em CSV",
       "category": "docker",
       "risk": "read-only",
-      "has_json": false,
-      "has_dry_run": false,
+      "has_json": true,
+      "has_dry_run": true,
       "interactive": false,
       "deps": [
         "docker"
@@ -2029,6 +2052,12 @@
           "short": "-V",
           "type": "bool",
           "desc": "Mostra versao"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
         }
       ],
       "example": "docker-stats-history.sh --watch 30"
@@ -2093,7 +2122,7 @@
       "description": "Lista, identifica orfaos, faz backup e restaura volumes Docker",
       "category": "docker",
       "risk": "dry-run-ok",
-      "has_json": false,
+      "has_json": true,
       "has_dry_run": true,
       "interactive": false,
       "deps": [
@@ -2159,6 +2188,12 @@
           "short": "-V",
           "type": "bool",
           "desc": "Mostra versao"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
         }
       ],
       "example": "docker-volume-mgr.sh --orphans"
@@ -2218,6 +2253,48 @@
         }
       ],
       "example": "docx-to-md.sh relatorio.docx"
+    },
+    "dogu-make-skill.sh": {
+      "description": "Gera SKILL.md a partir de dogu.json para agentes de IA",
+      "category": "devops",
+      "risk": "dry-run-ok",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Caminho de saida do SKILL.md"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra preview sem escrever arquivo"
+        },
+        {
+          "flag": "--verbose",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra detalhes durante a geracao"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        }
+      ],
+      "example": "dogu-make-skill.sh --dry-run"
     },
     "download-icons.sh": {
       "description": "Baixa icones Material Design Icons (MDI) e converte para PNG",
@@ -2340,7 +2417,9 @@
       "has_json": false,
       "has_dry_run": true,
       "interactive": false,
-      "deps": [],
+      "deps": [
+        "openssl"
+      ],
       "args": [
         {
           "flag": "--name",
@@ -2403,7 +2482,13 @@
           "desc": "Mostra versao"
         }
       ],
-      "example": "env-keygen.sh -n SECRET_KEY -f hex -l 64"
+      "example": "env-keygen.sh -n SECRET_KEY -f hex -l 64",
+      "deps_optional": [
+        "uuidgen",
+        "xclip",
+        "xsel",
+        "python3"
+      ]
     },
     "env-manager.sh": {
       "description": "Orquestrador de ambientes e dependencias multiplataforma",
@@ -2623,7 +2708,7 @@
       "description": "Encontra arquivos duplicados por hash SHA-256",
       "category": "system",
       "risk": "destructive",
-      "has_json": true,
+      "has_json": false,
       "has_dry_run": true,
       "interactive": true,
       "deps": [
@@ -2994,7 +3079,7 @@
       "has_dry_run": false,
       "interactive": false,
       "deps": [
-        "dbus-send"
+        "playerctl"
       ],
       "args": [
         {
@@ -3471,8 +3556,7 @@
       "has_dry_run": true,
       "interactive": false,
       "deps": [
-        "pdftoppm",
-        "tesseract"
+        "pdftotext"
       ],
       "args": [
         {
@@ -3536,7 +3620,11 @@
           "desc": "Mostra versao"
         }
       ],
-      "example": "pdf-to-md.sh -r --ocr ~/Documents"
+      "example": "pdf-to-md.sh -r --ocr ~/Documents",
+      "deps_optional": [
+        "pdftoppm",
+        "tesseract"
+      ]
     },
     "pomodoro-timer.sh": {
       "description": "Timer Pomodoro com notificacoes",
@@ -3608,7 +3696,7 @@
       "description": "Verifica se portas estao abertas em um host",
       "category": "network",
       "risk": "read-only",
-      "has_json": false,
+      "has_json": true,
       "has_dry_run": false,
       "interactive": false,
       "deps": [
@@ -3651,6 +3739,12 @@
           "short": "-V",
           "type": "bool",
           "desc": "Mostra versao"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
         }
       ],
       "example": "port-check.sh -h google.com -p 80,443"
@@ -4045,7 +4139,7 @@
       "description": "Lista, atualiza e limpa snaps e flatpaks",
       "category": "devops",
       "risk": "dry-run-ok",
-      "has_json": false,
+      "has_json": true,
       "has_dry_run": true,
       "interactive": false,
       "deps": [
@@ -4100,6 +4194,12 @@
           "short": "-V",
           "type": "bool",
           "desc": "Mostra versao"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
         }
       ],
       "example": "snap-flatpak-manager.sh --list"
@@ -4108,7 +4208,7 @@
       "description": "Executa testes de velocidade e mantem historico em CSV",
       "category": "network",
       "risk": "read-only",
-      "has_json": false,
+      "has_json": true,
       "has_dry_run": false,
       "interactive": false,
       "deps": [
@@ -4162,6 +4262,12 @@
           "short": "-V",
           "type": "bool",
           "desc": "Mostra versao"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
         }
       ],
       "example": "speedtest-log.sh --run"
@@ -4170,7 +4276,7 @@
       "description": "Gerencia chaves SSH (gerar, listar, rotacionar, distribuir)",
       "category": "security",
       "risk": "dry-run-ok",
-      "has_json": false,
+      "has_json": true,
       "has_dry_run": true,
       "interactive": false,
       "deps": [
@@ -4243,6 +4349,12 @@
           "short": "-V",
           "type": "bool",
           "desc": "Mostra versao"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
         }
       ],
       "example": "ssh-key-manager.sh --generate --type ed25519"
@@ -4252,7 +4364,7 @@
       "category": "network",
       "risk": "read-only",
       "has_json": false,
-      "has_dry_run": false,
+      "has_dry_run": true,
       "interactive": false,
       "deps": [
         "ssh"
@@ -4655,7 +4767,7 @@
       "category": "media",
       "risk": "dry-run-ok",
       "has_json": false,
-      "has_dry_run": true,
+      "has_dry_run": false,
       "interactive": false,
       "deps": [
         "ffprobe"
@@ -4698,7 +4810,8 @@
           "desc": "Mostra versao"
         }
       ],
-      "example": "video-catalog-organizer.sh --by year ~/Videos"
+      "example": "video-catalog-organizer.sh --by year ~/Videos",
+      "dry_run_default": true
     },
     "video-to-audio.sh": {
       "description": "Extrai a trilha de audio de arquivos de video",
@@ -4755,7 +4868,7 @@
       "category": "system",
       "risk": "read-only",
       "has_json": false,
-      "has_dry_run": false,
+      "has_dry_run": true,
       "interactive": false,
       "deps": [
         "wpctl",
@@ -4907,7 +5020,7 @@
       "description": "Escaneia redes Wi-Fi e sugere o melhor canal",
       "category": "network",
       "risk": "read-only",
-      "has_json": false,
+      "has_json": true,
       "has_dry_run": false,
       "interactive": false,
       "deps": [
@@ -4926,6 +5039,12 @@
           "short": "-V",
           "type": "bool",
           "desc": "Mostra versao"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
         }
       ],
       "example": "wifi-scanner.sh"
@@ -4992,7 +5111,6 @@
       "has_dry_run": true,
       "interactive": false,
       "deps": [
-        "ssconvert",
         "python3"
       ],
       "args": [
@@ -5051,7 +5169,10 @@
           "desc": "Mostra versao"
         }
       ],
-      "example": "xlsx-to-csv.sh dados.xlsx"
+      "example": "xlsx-to-csv.sh dados.xlsx",
+      "deps_python": [
+        "openpyxl"
+      ]
     },
     "yt-transcript.sh": {
       "description": "Baixa transcricoes de videos do YouTube (EN e PT-BR)",

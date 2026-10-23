@@ -22,7 +22,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -42,6 +42,7 @@ FIX_MODE=false
 ALL_MODE=false
 
 declare -A DEPS
+declare -A PY_DEPS
 DEPS["curl"]="curl"
 DEPS["jq"]="jq"
 DEPS["bc"]="bc"
@@ -84,9 +85,28 @@ while [[ $# -gt 0 ]]; do
 done
 
 if $ALL_MODE; then
-    while IFS= read -r tool; do
-        [ -n "$tool" ] && DEPS["$tool"]="$tool"
-    done < <(grep -rhoP 'check_and_install\s+"?\K[a-zA-Z0-9_.-]+' "$SCRIPT_DIR"/*.sh 2>/dev/null | sort -u || true)
+    if [ -f "$SCRIPT_DIR/dogu.json" ] && command -v python3 &>/dev/null; then
+        while IFS=$'\t' read -r kind name pkg; do
+            [ -z "$name" ] && continue
+            case "$kind" in
+                req) DEPS["$name"]="$pkg" ;;
+                py)  PY_DEPS["$name"]="$pkg" ;;
+            esac
+        done < <(python3 - "$SCRIPT_DIR/dogu.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+for meta in data.get('scripts', {}).values():
+    for dep in meta.get('deps', []):
+        print(f"req\t{dep}\t{dep}")
+    for dep in meta.get('deps_python', []):
+        print(f"py\t{dep.replace('-', '_')}\t{dep}")
+PY
+)
+    else
+        while IFS= read -r tool; do
+            [ -n "$tool" ] && DEPS["$tool"]="$tool"
+        done < <(grep -rhoP 'check_and_install\s+"?\K[a-zA-Z0-9_.-]+' "$SCRIPT_DIR"/*.sh 2>/dev/null | sort -u || true)
+    fi
 fi
 
 echo ""
@@ -105,22 +125,39 @@ for tool in "${!DEPS[@]}"; do
     fi
 done
 
+py_missing=()
+if [ ${#PY_DEPS[@]} -gt 0 ]; then
+    echo ""
+    echo -e "  ${BOLD}Dependencias Python:${RESET}"
+    for module in "${!PY_DEPS[@]}"; do
+        pkg="${PY_DEPS[$module]}"
+        printf "  %-20s" "$module..."
+        if python3 -c "import $module" 2>/dev/null; then
+            echo -e " ${GREEN}✓${RESET}"
+        else
+            echo -e " ${RED}✗${RESET} ${DIM}(pip install $pkg)${RESET}"
+            py_missing+=("$module:$pkg")
+        fi
+    done
+fi
+
 echo ""
 echo -e "  ${DIM}────────────────────────────────────────────${RESET}"
 echo ""
-total=${#DEPS[@]}
-found=$((total - ${#missing[@]}))
-echo -e "  ${BOLD}Total:${RESET} ${total}  ${GREEN}Instalados:${RESET} ${found}  ${RED}Ausentes:${RESET} ${#missing[@]}"
+total=$(( ${#DEPS[@]} + ${#PY_DEPS[@]} ))
+found=$((total - ${#missing[@]} - ${#py_missing[@]}))
+echo -e "  ${BOLD}Total:${RESET} ${total}  ${GREEN}Instalados:${RESET} ${found}  ${RED}Ausentes:${RESET} $(( ${#missing[@]} + ${#py_missing[@]} ))"
 echo ""
 
-if [ ${#missing[@]} -eq 0 ]; then
+if [ ${#missing[@]} -eq 0 ] && [ ${#py_missing[@]} -eq 0 ]; then
     success "Todas as dependencias estao instaladas."
     echo ""
     exit 0
 fi
 
 if $FIX_MODE; then
-    echo -e "  ${YELLOW}Deseja instalar as ${#missing[@]} dependencias faltantes?${RESET}"
+    total_missing=$(( ${#missing[@]} + ${#py_missing[@]} ))
+    echo -e "  ${YELLOW}Deseja instalar as ${total_missing} dependencias faltantes?${RESET}"
     if [ -t 0 ]; then
         read -r -p "  Confirmar? [s/N] " CONFIRM
     else
@@ -128,20 +165,33 @@ if $FIX_MODE; then
     fi
     echo ""
     if [[ "$CONFIRM" =~ ^[Ss]$ ]]; then
-        for entry in "${missing[@]}"; do
-            tool="${entry%%:*}"
-            pkg="${entry#*:}"
-            echo -e "  ${CYAN}▶ Instalando ${tool} (${pkg})...${RESET}"
-            if [ -n "${INSTALLER:-}" ]; then
-                if $INSTALLER "$pkg" 2>/dev/null; then
-                    echo -e "  ${GREEN}  ✓ ${tool} instalado${RESET}"
+        if [ ${#missing[@]} -gt 0 ]; then
+            for entry in "${missing[@]}"; do
+                tool="${entry%%:*}"
+                pkg="${entry#*:}"
+                echo -e "  ${CYAN}▶ Instalando ${tool} (${pkg})...${RESET}"
+                if [ -n "${INSTALLER:-}" ]; then
+                    if $INSTALLER "$pkg" 2>/dev/null; then
+                        echo -e "  ${GREEN}  ✓ ${tool} instalado${RESET}"
+                    else
+                        warn "  Falha ao instalar ${tool}. Tente manualmente."
+                    fi
                 else
-                    warn "  Falha ao instalar ${tool}. Tente manualmente."
+                    warn "  Instalador nao disponivel. Instale '${pkg}' manualmente."
                 fi
-            else
-                warn "  Instalador nao disponivel. Instale '${pkg}' manualmente."
-            fi
-        done
+            done
+        fi
+        if [ ${#py_missing[@]} -gt 0 ]; then
+            for entry in "${py_missing[@]}"; do
+                pkg="${entry#*:}"
+                echo -e "  ${CYAN}▶ Instalando pacote Python ${pkg}...${RESET}"
+                if python3 -m pip install --user "$pkg" 2>/dev/null; then
+                    echo -e "  ${GREEN}  ✓ ${pkg} instalado${RESET}"
+                else
+                    warn "  Falha ao instalar ${pkg}. Tente: python3 -m pip install --user ${pkg}"
+                fi
+            done
+        fi
         echo ""
         success "Processo de instalacao concluido."
     else

@@ -23,7 +23,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -31,6 +31,14 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+json_escape() {
+    local s="$1"
+    s=${s//\\/\\\\}
+    s=${s//\"/\\\"}
+    s=${s//$'\n'/\\n}
+    printf '%s' "$s"
+}
+JSON_MODE=false
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "nmcli" "$INSTALLER" "network-manager"; check_and_install "iwlist" "$INSTALLER" "wireless-tools"; fi
@@ -45,6 +53,7 @@ show_help() {
     echo "  Uso: ./wifi-scanner.sh"
     echo ""
     echo "  Opcoes:"
+    echo "    --json|-j   Saida em formato JSON"
     echo "    --help      Mostra esta ajuda"
     echo "    --version   Mostra versao"
     echo ""
@@ -60,6 +69,10 @@ show_help() {
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --json|-j)
+            JSON_MODE=true
+            shift
+            ;;
         --help|-h)
             show_help
             exit 0
@@ -214,15 +227,38 @@ signal_bar() {
     echo "$bar"
 }
 
-echo ""
-echo -e "  Escaneando redes Wi-Fi..."
-echo ""
+if ! $JSON_MODE; then
+    echo ""
+    echo -e "  Escaneando redes Wi-Fi..."
+    echo ""
+fi
 
 current_ssid=$(get_current_ssid)
 current_channel=$(get_current_channel)
 
 > "$PARSED_FILE"
 scan_networks
+
+if $JSON_MODE; then
+    json_networks=""
+    json_first=true
+    while IFS='|' read -r ch ssid; do
+        [ -z "$ch" ] && continue
+        $json_first || json_networks+=","
+        json_first=false
+        json_networks+=$(printf '{"channel":%s,"ssid":"%s"}' "$ch" "$(json_escape "$ssid")")
+    done < "$PARSED_FILE"
+    channels_json=$(awk -F'|' '
+        { c[$1]++ }
+        END {
+            first=1; printf "{"
+            for (ch in c) { if (!first) printf ","; printf "\"%s\":%d", ch, c[ch]; first=0 }
+            printf "}"
+        }' "$PARSED_FILE")
+    printf '{"current_ssid":"%s","current_channel":%s,"networks":[%s],"channel_counts":%s}\n' \
+        "$(json_escape "$current_ssid")" "${current_channel:-null}" "$json_networks" "$channels_json"
+    exit 0
+fi
 
 if [ ! -s "$PARSED_FILE" ]; then
     echo -e "  ${RED}Nenhuma rede encontrada.${RESET}"

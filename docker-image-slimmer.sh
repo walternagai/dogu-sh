@@ -25,7 +25,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -33,6 +33,13 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+json_escape() {
+    local s="$1"
+    s=${s//\\/\\\\}
+    s=${s//\"/\\\"}
+    s=${s//$'\n'/\\n}
+    printf '%s' "$s"
+}
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
@@ -44,6 +51,7 @@ TARGET_IMAGE=""
 ANALYZE_ALL=false
 SHOW_HISTORY=false
 TIPS_ONLY=false
+JSON_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -53,6 +61,7 @@ while [[ $# -gt 0 ]]; do
         --all|-a) ANALYZE_ALL=true; shift ;;
         --history|-H) SHOW_HISTORY=true; shift ;;
         --tips|-t) TIPS_ONLY=true; shift ;;
+        --json|-j) JSON_MODE=true; shift ;;
         --help|-h)
             echo ""
             echo "  docker-image-slimmer.sh — Analisa camadas e sugere reducoes"
@@ -64,6 +73,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --all           Analisa todas as imagens locais"
             echo "    --history       Mostra historico detalhado de camadas"
             echo "    --tips          Apenas dicas gerais (sem analise)"
+            echo "    --json|-j       Saida JSON"
             echo "    --help          Mostra esta ajuda"
             echo "    --version       Mostra versao"
             echo ""
@@ -306,6 +316,100 @@ analyze_image() {
         echo -e "  ${YELLOW}⚡ $suggestions sugestao(oes) de otimizacao${RESET}"
     fi
 }
+
+analyze_image_json() {
+    local img="$1"
+    local img_id
+    img_id=$(docker inspect --format '{{.Id}}' "$img" 2>/dev/null | head -1 || true)
+    [ -z "$img_id" ] && return 1
+
+    local size_bytes size_str repo_tag created layer_count base_image
+    size_bytes=$(docker inspect --format '{{.Size}}' "$img" 2>/dev/null | tr -d '[:space:]' || true)
+    [[ "$size_bytes" =~ ^[0-9]+$ ]] || size_bytes=0
+    size_str=$(format_bytes "$size_bytes")
+    repo_tag=$(docker inspect --format '{{if .RepoTags}}{{index .RepoTags 0}}{{end}}' "$img" 2>/dev/null || true)
+    created=$(docker inspect --format '{{.Created}}' "$img" 2>/dev/null | cut -dT -f1 || true)
+    layer_count=$(docker history --no-trunc "$img" 2>/dev/null | tail -n +2 | wc -l | tr -d ' ' || true)
+    base_image=$(docker inspect --format '{{.Config.Image}}' "$img" 2>/dev/null || true)
+
+    local history_output
+    history_output=$(docker history --no-trunc --format '{{.CreatedBy}}|{{.Size}}' "$img" 2>/dev/null | tail -n +2 || true)
+
+    local has_apt_without=false has_rm_separate=false large_layers=0 last_cmd=""
+    while IFS='|' read -r created_by size; do
+        local cmd_lower
+        cmd_lower=$(echo "$created_by" | tr '[:upper:]' '[:lower:]')
+        if echo "$cmd_lower" | grep -qi 'apt-get install' && ! echo "$cmd_lower" | grep -qi 'no-install-recommends'; then
+            has_apt_without=true
+        fi
+        if echo "$last_cmd" | grep -qi 'apt-get install' && echo "$cmd_lower" | grep -qi 'rm -rf'; then
+            has_rm_separate=true
+        fi
+        last_cmd="$cmd_lower"
+        local size_bytes_layer
+        size_bytes_layer=$(echo "$size" | grep -oE '[0-9]+' | head -1 || true)
+        if [[ "$size_bytes_layer" =~ ^[0-9]+$ ]] && [ "$size_bytes_layer" -gt 52428800 ]; then
+            large_layers=$((large_layers + 1))
+        fi
+    done <<< "$history_output"
+
+    local total_env
+    total_env=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$img" 2>/dev/null | wc -l | tr -d ' ' || true)
+
+    local su_json="" su_first=true su_item
+    if [ -n "$base_image" ]; then
+        local base_lower
+        base_lower=$(echo "$base_image" | tr '[:upper:]' '[:lower:]')
+        case "$base_lower" in
+            *alpine*|*slim*|*distroless*) ;;
+            *)
+                su_item=$(printf '"%s"' "$(json_escape "base $base_image: considere alpine, slim ou distroless")")
+                if $su_first; then su_json="$su_item"; su_first=false; else su_json+=",$su_item"; fi
+                ;;
+        esac
+    fi
+    if $has_apt_without; then
+        su_item=$(printf '"%s"' "$(json_escape "apt-get install sem --no-install-recommends")")
+        if $su_first; then su_json="$su_item"; su_first=false; else su_json+=",$su_item"; fi
+    fi
+    if $has_rm_separate; then
+        su_item=$(printf '"%s"' "$(json_escape "rm de cache em camada separada do apt-get install")")
+        if $su_first; then su_json="$su_item"; su_first=false; else su_json+=",$su_item"; fi
+    fi
+    if [ "$large_layers" -gt 0 ]; then
+        su_item=$(printf '"%s"' "$(json_escape "$large_layers camada(s) acima de 50MB: considere multi-stage build")")
+        if $su_first; then su_json="$su_item"; su_first=false; else su_json+=",$su_item"; fi
+    fi
+    if [[ "$total_env" =~ ^[0-9]+$ ]] && [ "$total_env" -gt 10 ]; then
+        su_item=$(printf '"%s"' "$(json_escape "$total_env variaveis de ambiente: considere agrupar em .env")")
+        if $su_first; then su_json="$su_item"; su_first=false; else su_json+=",$su_item"; fi
+    fi
+
+    printf '{"image":"%s","size_bytes":%s,"size":"%s","tag":"%s","created":"%s","layers":%s,"base_image":"%s","suggestions":[%s]}' \
+        "$(json_escape "$img")" "$size_bytes" "$(json_escape "$size_str")" \
+        "$(json_escape "$repo_tag")" "$(json_escape "$created")" \
+        "${layer_count:-0}" "$(json_escape "$base_image")" "$su_json"
+}
+
+if $JSON_MODE; then
+    images=""
+    if [ -n "$TARGET_IMAGE" ]; then
+        images="$TARGET_IMAGE"
+    else
+        images=$(docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | grep -v '<none>' | sort || true)
+    fi
+    printf '{"images":['
+    first=true
+    while IFS= read -r img; do
+        [ -z "$img" ] && continue
+        obj=$(analyze_image_json "$img" 2>/dev/null) || continue
+        $first || printf ','
+        first=false
+        printf '%s' "$obj"
+    done <<< "$images"
+    printf ']}\n'
+    exit 0
+fi
 
 if $TIPS_ONLY; then
     show_tips

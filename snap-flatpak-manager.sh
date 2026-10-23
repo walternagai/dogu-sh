@@ -37,7 +37,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -45,6 +45,13 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+json_escape() {
+    local s="$1"
+    s=${s//\\/\\\\}
+    s=${s//\"/\\\"}
+    s=${s//$'\n'/\\n}
+    printf '%s' "$s"
+}
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ]; then source "$DEP_HELPER"; fi
@@ -56,6 +63,7 @@ ACTION="list"
 SNAP_ONLY=false
 FLATPAK_ONLY=false
 DRY_RUN=false
+JSON_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -65,6 +73,7 @@ while [[ $# -gt 0 ]]; do
         --snap-only) SNAP_ONLY=true; shift ;;
         --flatpak-only) FLATPAK_ONLY=true; shift ;;
         --dry-run) DRY_RUN=true; shift ;;
+        --json|-j) JSON_MODE=true; shift ;;
         --help|-h)
             echo ""
             echo "  snap-flatpak-manager.sh — Gerencia snaps e flatpaks"
@@ -78,6 +87,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --snap-only      Opera apenas no snap"
             echo "    --flatpak-only   Opera apenas no flatpak"
             echo "    --dry-run        Preview sem executar"
+            echo "    --json|-j        Saida JSON (requer --list)"
             echo "    --help           Mostra esta ajuda"
             echo "    --version        Mostra versao"
             echo ""
@@ -98,6 +108,38 @@ done
 if ! $SNAP_ONLY && ! $FLATPAK_ONLY; then
     SNAP_ONLY=true
     FLATPAK_ONLY=true
+fi
+
+if $JSON_MODE; then
+    if [ "$ACTION" != "list" ]; then
+        error "--json so e suportado com --list"
+    fi
+    snap_json=""
+    snap_first=true
+    if $SNAP_ONLY && command -v snap &>/dev/null; then
+        while read -r name ver rev channel publisher; do
+            [ -z "$name" ] && continue
+            $snap_first || snap_json+=","
+            snap_first=false
+            snap_json+=$(printf '{"name":"%s","version":"%s","revision":"%s","channel":"%s","publisher":"%s"}' \
+                "$(json_escape "$name")" "$(json_escape "$ver")" "$(json_escape "$rev")" \
+                "$(json_escape "$channel")" "$(json_escape "$publisher")")
+        done < <(snap list 2>/dev/null | tail -n +2)
+    fi
+    flatpak_json=""
+    flatpak_first=true
+    if $FLATPAK_ONLY && command -v flatpak &>/dev/null; then
+        while IFS=$'\t' read -r name ver branch size origin; do
+            [ -z "$name" ] && continue
+            $flatpak_first || flatpak_json+=","
+            flatpak_first=false
+            flatpak_json+=$(printf '{"name":"%s","version":"%s","branch":"%s","size":"%s","origin":"%s"}' \
+                "$(json_escape "$name")" "$(json_escape "$ver")" "$(json_escape "$branch")" \
+                "$(json_escape "$size")" "$(json_escape "$origin")")
+        done < <(flatpak list --app --columns=name,version,branch,size,origin 2>/dev/null)
+    fi
+    printf '{"snap":[%s],"flatpak":[%s]}\n' "$snap_json" "$flatpak_json"
+    exit 0
 fi
 
 run_or_dry() {

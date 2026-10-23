@@ -24,7 +24,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -39,9 +39,14 @@ DEP_HELPER="./dependency-helper.sh"
 if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then
     source "$DEP_HELPER"
     INSTALLER=$(detect_installer)
-    check_and_install "light" "$INSTALLER" "light"
-    check_and_install "brightnessctl" "$INSTALLER" "brightnessctl"
-    check_and_install "xrandr" "$INSTALLER" "x11-xserver-utils"
+    # light, brightnessctl e xrandr são alternativas: instala só uma quando
+    # nenhuma via de controle (incluindo sysfs) está disponível.
+    if ! command -v light &>/dev/null \
+       && ! command -v brightnessctl &>/dev/null \
+       && ! command -v xrandr &>/dev/null \
+       && [ ! -d "/sys/class/backlight" ]; then
+        check_and_install "brightnessctl" "$INSTALLER" "brightnessctl"
+    fi
 fi
 
 

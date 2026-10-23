@@ -15,7 +15,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -40,6 +40,8 @@ for arg in "$@"; do
             echo "    --help|-h       Mostra esta ajuda"
             echo "    --version|-V    Mostra versao"
             echo ""
+            echo "  Requisitos: Python 3 para o dispatcher 'dogu' (os scripts .sh sao Bash)."
+            echo ""
             exit 0
             ;;
         --version|-V) echo "install-scripts.sh $VERSION"; exit 0 ;;
@@ -55,6 +57,13 @@ log() { echo -e "${CYAN}[INFO]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
+
+# O dispatcher 'dogu' usa Python 3 para ler dogu.json. Os scripts .sh não
+# dependem dele, então a instalação continua, mas o usuário é avisado.
+if ! command -v python3 &>/dev/null && ! command -v python &>/dev/null; then
+    warn "Python 3 não encontrado. O dispatcher 'dogu' exige Python 3 para ler dogu.json."
+    warn "Instale python3 (ex.: sudo apt install python3) ou execute os scripts diretamente."
+fi
 
 # --- Uninstall Logic ---
 if [ "$UNINSTALL" = true ]; then

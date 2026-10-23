@@ -16,7 +16,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -89,6 +89,7 @@ SCRIPT_DESC=(
     [qr-gen.sh]="Gera QR Code no terminal ou salva como PNG"
     [base64-tool.sh]="Codifica/decodifica Base64, URL e Hex"
     [docx-to-md.sh]="Converte arquivos .docx para Markdown (.md) via pandoc"
+    [dogu-make-skill.sh]="Gera SKILL.md a partir de dogu.json para agentes de IA"
     [env-keygen.sh]="Gera chaves secretas seguras para arquivos .env"
     [pdf-to-md.sh]="Converte arquivos .pdf para Markdown (.md) extraindo texto"
     [pdf-to-jpg.sh]="Converte arquivos .pdf em imagens JPG"
@@ -197,6 +198,7 @@ SCRIPT_CATEGORY=(
     [qr-gen.sh]="Produtividade e Notas"
     [base64-tool.sh]="Produtividade e Notas"
     [docx-to-md.sh]="Produtividade e Notas"
+    [dogu-make-skill.sh]="Instalacao e Execucao"
     [env-keygen.sh]="Seguranca e Criptografia"
     [pdf-to-md.sh]="Produtividade e Notas"
     [pdf-to-jpg.sh]="Produtividade e Notas"
@@ -563,6 +565,10 @@ main() {
     if [ ${#CAT_NAMES[@]} -eq 0 ]; then
         echo -e "${RED}Nenhum script encontrado em: ${SCRIPT_DIR}${RESET}"
         exit 1
+    fi
+
+    if [ ! -t 0 ] || [ ! -t 1 ]; then
+        error "O menu interativo exige um terminal (TTY). Use 'dogu <comando>' ou execute o script desejado diretamente."
     fi
 
     if [ "${USE_FZF:-false}" = true ] && command -v fzf &>/dev/null; then

@@ -27,7 +27,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -35,15 +35,22 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+json_escape() {
+    local s="$1"
+    s=${s//\\/\\\\}
+    s=${s//\"/\\\"}
+    s=${s//$'\n'/\\n}
+    printf '%s' "$s"
+}
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
-if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "speedtest" "$INSTALLER" "speedtest-cli"; fi
 
 
 
 
 ACTION="run"
 DATA_DIR="$HOME/.local/share/speedtest-log"
+JSON_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -52,6 +59,7 @@ while [[ $# -gt 0 ]]; do
         --today|-t) ACTION="today"; shift ;;
         --chart|-c) ACTION="chart"; shift ;;
         --csv) ACTION="csv"; shift ;;
+        --json|-j) JSON_MODE=true; shift ;;
         --output|-o)
             [[ -z "${2-}" ]] && { echo "Flag --output requer um valor" >&2; exit 1; }
             DATA_DIR="$2"; shift 2 ;;
@@ -67,6 +75,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --today         Mostra apenas resultados de hoje"
             echo "    --chart         Mostra grafico ASCII dos resultados recentes"
             echo "    --csv           Exporta historico completo como CSV"
+            echo "    --json|-j       Saida JSON (run, history, today, chart, csv)"
             echo "    --output DIR    Diretorio de dados (padrao: ~/.local/share/speedtest-log)"
             echo "    --help          Mostra esta ajuda"
             echo "    --version       Mostra versao"
@@ -87,6 +96,13 @@ while [[ $# -gt 0 ]]; do
         *) echo -e "${RED}Opcao desconhecida: $1${RESET}" >&2; exit 2 ;;
     esac
 done
+
+# Só o modo --run precisa do speedtest; history/today/chart/csv leem o CSV.
+if [ "$ACTION" = "run" ] && [ -f "$DEP_HELPER" ]; then
+    source "$DEP_HELPER"
+    INSTALLER=$(detect_installer)
+    check_and_install "speedtest" "$INSTALLER" "speedtest-cli"
+fi
 
 mkdir -p "$DATA_DIR"
 
@@ -350,10 +366,50 @@ export_csv() {
     fi
 }
 
+json_from_csv() {
+    local limit="${1:-}"
+    local filter="${2:-}"
+    local data
+    data=$(tail -n +2 "$CSV_FILE" 2>/dev/null || true)
+    if [ -n "$filter" ]; then
+        data=$(printf '%s\n' "$data" | grep "^$filter" || true)
+    fi
+    if [ -n "$limit" ]; then
+        data=$(printf '%s\n' "$data" | tail -n "$limit")
+    fi
+    local first=true
+    printf '['
+    while IFS=',' read -r timestamp isp server ping download upload jitter loss; do
+        [ -z "$timestamp" ] && continue
+        $first || printf ','
+        first=false
+        printf '{"timestamp":"%s","isp":"%s","server":"%s","ping_ms":"%s","download_mbps":"%s","upload_mbps":"%s","jitter_ms":"%s","packet_loss_pct":"%s"}' \
+            "$(json_escape "$timestamp")" "$(json_escape "$isp")" "$(json_escape "$server")" \
+            "$(json_escape "$ping")" "$(json_escape "$download")" "$(json_escape "$upload")" \
+            "$(json_escape "$jitter")" "$(json_escape "$loss")"
+    done <<< "$data"
+    printf ']\n'
+}
+
 case "$ACTION" in
-    run) run_test ;;
-    history) show_history 20 ;;
-    today) show_today ;;
-    chart) show_chart 30 ;;
-    csv) export_csv ;;
+    run)
+        if $JSON_MODE; then
+            run_test >/dev/null 2>&1 || exit $?
+            json_from_csv 1
+        else
+            run_test
+        fi
+        ;;
+    history)
+        if $JSON_MODE; then json_from_csv 20; else show_history 20; fi
+        ;;
+    today)
+        if $JSON_MODE; then json_from_csv "" "$(date '+%Y-%m-%d')"; else show_today; fi
+        ;;
+    chart)
+        if $JSON_MODE; then json_from_csv 30; else show_chart 30; fi
+        ;;
+    csv)
+        if $JSON_MODE; then json_from_csv ""; else export_csv; fi
+        ;;
 esac

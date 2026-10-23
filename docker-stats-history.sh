@@ -25,7 +25,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -33,6 +33,13 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+json_escape() {
+    local s="$1"
+    s=${s//\\/\\\\}
+    s=${s//\"/\\\"}
+    s=${s//$'\n'/\\n}
+    printf '%s' "$s"
+}
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
@@ -45,6 +52,7 @@ WATCH_INTERVAL=10
 CONTAINER_FILTER=""
 NO_HEADER=false
 DRY_RUN=false
+JSON_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -59,6 +67,7 @@ while [[ $# -gt 0 ]]; do
             CONTAINER_FILTER="$2"; shift 2 ;;
         --no-header) NO_HEADER=true; shift ;;
         --dry-run) DRY_RUN=true; shift ;;
+        --json|-j) JSON_MODE=true; shift ;;
         --help|-h)
             echo ""
             echo "  docker-stats-history.sh — Historico de CPU/RAM em CSV"
@@ -70,6 +79,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --watch N       Intervalo em segundos (padrao: 10)"
             echo "    --container N   Filtrar por nome do container"
             echo "    --no-header     Nao escrever header CSV"
+            echo "    --json|-j       Snapshot unico em JSON (nao grava CSV)"
             echo "    --help          Mostra esta ajuda"
             echo "    --version       Mostra versao"
             echo ""
@@ -94,7 +104,7 @@ if ! command -v docker &>/dev/null || ! docker info &>/dev/null; then
     exit 1
 fi
 
-if ! $NO_HEADER && [ ! -f "$OUTPUT_FILE" ]; then
+if ! $JSON_MODE && ! $NO_HEADER && [ ! -f "$OUTPUT_FILE" ]; then
     echo "timestamp,container,cpu_pct,mem_usage,mem_limit,mem_pct,net_io,block_io" > "$OUTPUT_FILE"
 fi
 
@@ -147,6 +157,44 @@ collect_stats() {
     total_lines=$(wc -l < "$OUTPUT_FILE" | tr -d ' ')
     echo -e "  ${DIM}[$(date '+%H:%M:%S')]${RESET} ${row_count} container(s) registrados  |  Total: ${BOLD}$((total_lines - 1))${RESET} linhas em ${OUTPUT_FILE}"
 }
+
+collect_stats_json() {
+    local timestamp
+    timestamp=$(date '+%Y-%m-%dT%H:%M:%S')
+
+    local filter_arg=""
+    if [ -n "$CONTAINER_FILTER" ]; then
+        filter_arg="--filter name=$CONTAINER_FILTER"
+    fi
+
+    local containers
+    containers=$(docker ps $filter_arg --format '{{.Names}}' 2>/dev/null)
+
+    local first=true
+    printf '['
+    while IFS= read -r cname; do
+        [ -z "$cname" ] && continue
+        local stats
+        stats=$(docker stats --no-stream --format "{{.CPUPerc}}|{{.MemUsage}}|{{.MemPerc}}|{{.NetIO}}|{{.BlockIO}}" "$cname" 2>/dev/null | head -1)
+        [ -z "$stats" ] && continue
+        IFS='|' read -r cpu_pct mem_usage mem_pct net_io block_io <<< "$stats"
+        local mem_usage_val mem_limit_val
+        mem_usage_val=$(echo "$mem_usage" | awk -F'/' '{print $1}' | tr -d '[:space:]')
+        mem_limit_val=$(echo "$mem_usage" | awk -F'/' '{print $2}' | tr -d '[:space:]')
+        $first || printf ','
+        first=false
+        printf '{"timestamp":"%s","container":"%s","cpu_pct":"%s","mem_usage":"%s","mem_limit":"%s","mem_pct":"%s","net_io":"%s","block_io":"%s"}' \
+            "$timestamp" "$(json_escape "$cname")" "$(json_escape "$cpu_pct")" \
+            "$(json_escape "$mem_usage_val")" "$(json_escape "$mem_limit_val")" \
+            "$(json_escape "$mem_pct")" "$(json_escape "$net_io")" "$(json_escape "$block_io")"
+    done <<< "$containers"
+    printf ']\n'
+}
+
+if $JSON_MODE; then
+    collect_stats_json
+    exit 0
+fi
 
 echo ""
 echo -e "  ${BOLD}Docker Stats History${RESET}  ${DIM}v$VERSION${RESET}"

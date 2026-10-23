@@ -24,7 +24,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -48,6 +48,15 @@ HOST="localhost"
 PORT_SPEC=""
 CHECK_COMMON=false
 TIMEOUT=2000
+JSON_MODE=false
+
+json_escape() {
+    local s="$1"
+    s=${s//\\/\\\\}
+    s=${s//\"/\\\"}
+    s=${s//$'\n'/\\n}
+    printf '%s' "$s"
+}
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -58,6 +67,7 @@ while [[ $# -gt 0 ]]; do
             [[ -z "${2-}" ]] && { echo "Flag --port requer um valor" >&2; exit 2; }
             PORT_SPEC="$2"; shift 2 ;;
         --common|-c) CHECK_COMMON=true; shift ;;
+        --json|-j) JSON_MODE=true; shift ;;
         --timeout|-t)
             [[ -z "${2-}" ]] && { echo "Flag --timeout requer um valor" >&2; exit 2; }
             TIMEOUT="$2"; shift 2 ;;
@@ -71,6 +81,7 @@ while [[ $# -gt 0 ]]; do
             echo "    -h, --host HOST    Host (padrao: localhost)"
             echo "    -p, --port PORT    Porta, range ou lista (80, 1-1024, 80,443,8080)"
             echo "    --common           Verifica portas comuns"
+            echo "    --json|-j          Saida em formato JSON"
             echo "    --timeout MS       Timeout em ms (padrao: 2000)"
             echo "    --help             Mostra esta ajuda"
             echo "    --version          Mostra versao"
@@ -95,7 +106,7 @@ check_port() {
     local timeout_secs=$(echo "scale=2; $TIMEOUT / 1000" | bc)
 
     if command -v nc &>/dev/null; then
-        nc -z -w "$TIMEOUT" "$host" "$port" 2>/dev/null && return 0 || return 1
+        nc -z -w "$timeout_secs" "$host" "$port" 2>/dev/null && return 0 || return 1
     elif command -v timeout &>/dev/null && command -v bash &>/dev/null; then
         (echo > /dev/tcp/"$host"/"$port") &>/dev/null && return 0 || return 1
     else
@@ -122,25 +133,24 @@ if $CHECK_COMMON; then
     PORT_SPEC=$(echo $COMMON_PORTS | tr ' ' ',')
 fi
 
-if [ -z "$PORT_SPEC" ]; then
+if [ -z "$PORT_SPEC" ] && ! $JSON_MODE; then
+    if [ ! -t 0 ]; then
+        error "Execução não interativa detectada. Informe --port (ex.: --port 443) ou rode em terminal."
+    fi
     echo ""
     echo -e "  ${BOLD}Port Check${RESET}  ${DIM}v$VERSION${RESET}"
     echo ""
     printf "  Host (padrao: localhost): "
-    read -r input_host < /dev/tty
+    read -r input_host < /dev/tty 2>/dev/null || input_host=""
     [ -n "$input_host" ] && HOST="$input_host"
     printf "  Porta(s): "
-    read -r PORT_SPEC < /dev/tty
+    read -r PORT_SPEC < /dev/tty 2>/dev/null || PORT_SPEC=""
 fi
 
 if [ -z "$PORT_SPEC" ]; then
-    echo -e "  ${RED}Erro: especifique porta(s).${RESET}"
+    echo -e "  ${RED}Erro: especifique porta(s).${RESET}" >&2
     exit 1
 fi
-
-echo ""
-echo -e "  ${BOLD}── Port Check: ${HOST} ──${RESET}"
-echo ""
 
 ports=()
 
@@ -158,29 +168,61 @@ fi
 
 open_count=0
 closed_count=0
-printf "  %-8s %-10s %-15s %s\n" "PORTA" "STATUS" "SERVICO" "DETALHE"
-printf "  %-8s %-10s %-15s %s\n" "─────" "──────────" "───────────────" "───────"
+error_count=0
+json_items=""
+json_first=true
+
+if ! $JSON_MODE; then
+    echo ""
+    echo -e "  ${BOLD}── Port Check: ${HOST} ──${RESET}"
+    echo ""
+    printf "  %-8s %-10s %-15s %s\n" "PORTA" "STATUS" "SERVICO" "DETALHE"
+    printf "  %-8s %-10s %-15s %s\n" "─────" "──────────" "───────────────" "───────"
+fi
 
 for port in "${ports[@]}"; do
     port=$(echo "$port" | xargs)
     [ -z "$port" ] && continue
 
-    result=$(check_port "$HOST" "$port" 2>/dev/null)
-    exit_code=$?
+    if result=$(check_port "$HOST" "$port" 2>/dev/null); then
+        exit_code=0
+    else
+        exit_code=$?
+    fi
 
     service=$(get_service_name "$port")
 
     if [ $exit_code -eq 0 ]; then
-        printf "  ${GREEN}%-8s%-10s${RESET} %-15s %s\n" "$port" "ABERTA" "$service" "✓"
+        status="open"; status_label="ABERTA"; detail="✓"
         open_count=$((open_count + 1))
     elif [ $exit_code -eq 2 ]; then
-        printf "  ${YELLOW}%-8s%-10s${RESET} %-15s %s\n" "$port" "ERRO" "$service" "sem ferramenta"
+        status="error"; status_label="ERRO"; detail="sem ferramenta"
+        error_count=$((error_count + 1))
     else
-        printf "  ${RED}%-8s%-10s${RESET} %-15s %s\n" "$port" "FECHADA" "$service" "✗"
+        status="closed"; status_label="FECHADA"; detail="✗"
         closed_count=$((closed_count + 1))
+    fi
+
+    if $JSON_MODE; then
+        $json_first || json_items+=","
+        json_first=false
+        json_items+=$(printf '{"port":%s,"status":"%s","service":"%s"}' \
+            "$port" "$status" "$(json_escape "$service")")
+    elif [ "$status" = "open" ]; then
+        printf "  ${GREEN}%-8s%-10s${RESET} %-15s %s\n" "$port" "$status_label" "$service" "$detail"
+    elif [ "$status" = "error" ]; then
+        printf "  ${YELLOW}%-8s%-10s${RESET} %-15s %s\n" "$port" "$status_label" "$service" "$detail"
+    else
+        printf "  ${RED}%-8s%-10s${RESET} %-15s %s\n" "$port" "$status_label" "$service" "$detail"
     fi
 done
 
-echo ""
-echo -e "  ${DIM}Abertas: ${open_count} | Fechadas: ${closed_count} | Timeout: ${TIMEOUT}ms${RESET}"
-echo ""
+if $JSON_MODE; then
+    printf '{"host":"%s","timeout_ms":%s,"ports":[%s],"summary":{"open":%s,"closed":%s,"error":%s}}\n' \
+        "$(json_escape "$HOST")" "$TIMEOUT" "$json_items" \
+        "$open_count" "$closed_count" "$error_count"
+else
+    echo ""
+    echo -e "  ${DIM}Abertas: ${open_count} | Fechadas: ${closed_count} | Timeout: ${TIMEOUT}ms${RESET}"
+    echo ""
+fi

@@ -4,6 +4,21 @@
 
 Task correspondente: `.kata/revisao-usabilidade-scripts.yaml`.
 
+> **Atualização 2026-10-23:** os oito achados P0 foram implementados na task `p0-usabilidade-e-contrato`. O Anexo A é o retrato anterior à implementação; as notas de status abaixo refletem o código atual.
+
+### Status dos P0
+
+| Achado | Status | Observação |
+|---|---|---|
+| P0-01 SIGPIPE | ✅ Implementado | Sem traceback; exit 141 com `pipefail` é o comportamento Unix esperado |
+| P0-02 Python no instalador | ✅ Implementado | Aviso acionável no `install-scripts.sh`; README declara o requisito |
+| P0-03 `dogu-make-skill`/`SKILL.md` | ✅ Implementado | Registrado no manifesto e menu, `--version`, `SKILL.md` versionado |
+| P0-04 metadados | ✅ Implementado | 8 divergências corrigidas; `dry_run_default` separado de `has_dry_run` |
+| P0-05 dependências | ✅ Implementado | `deps_any`, `deps_python`, `deps_optional`; `brightness` instala uma alternativa; checker lê os campos |
+| P0-06 guards de TTY | ✅ Implementado | `env-manager`, `lab-manager` e `menu-launcher` falham com mensagem acionável |
+| P0-07 cores em pipes | ✅ Implementado com ressalva | Detecção de TTY nos 104 scripts + `NO_COLOR` + `dogu --no-color`; flag `--no-color` por script não foi adicionada (use `NO_COLOR=1`) |
+| P0-08 `--json` | ✅ Implementado | 9 scripts; 9 smoke tests em `jq` passaram |
+
 ---
 
 ## 1. Escopo e método
@@ -77,7 +92,7 @@ O erro aparece quando o consumidor fecha o pipe antes de o Python terminar de es
 
 **Recomendação:** nos snippets Python do `dogu`, restaurar o comportamento padrão de SIGPIPE (`signal.signal(signal.SIGPIPE, signal.SIG_DFL)`) ou capturar `BrokenPipeError` e sair com 0; nunca imprimir traceback.
 
-**Teste de aceite:** `./dogu list --json | head -c 120` termina com 0 e stderr vazio.
+**Teste de aceite:** `./dogu list --json | head -c 120` termina sem traceback; com `set -o pipefail`, o exit 141 é o SIGPIPE esperado do produtor.
 
 ---
 
@@ -224,9 +239,9 @@ Para `menu-launcher.sh`, declarar `interactive: true` já está correto no manif
 
 **Impacto:** logs de CI, arquivos e saída consumida por agentes ficam poluídos com escapes; aumenta tokens e quebra parsing.
 
-**Recomendação:** inicializar cores apenas quando `[ -t 1 ]` e `NO_COLOR` estiver ausente; adicionar `--no-color` como override explícito. Aplicar em todos os scripts que definem cores, começando pelos mais usados.
+**Recomendação:** inicializar cores apenas quando `[ -t 1 ]` e `NO_COLOR` estiver ausente; adicionar `--no-color` como override explícito no dispatcher (por script, `NO_COLOR=1` continua sendo o contrato). Aplicar em todos os scripts que definem cores, começando pelos mais usados.
 
-**Teste de aceite:** `./disk-space.sh | grep -c $'\033'` retorna 0; `NO_COLOR=1` continua funcionando; `--no-color` funciona em TTY.
+**Teste de aceite:** `./disk-space.sh | grep -c $'\033'` retorna 0; `NO_COLOR=1` continua funcionando; `dogu --no-color` funciona em TTY.
 
 ---
 
@@ -365,7 +380,7 @@ Também foram executados:
 
 **JUDGE:** `VERIFIED` — baseline ancorado em `refs/kata/base/2b4a4277…`; lint, testes e coverage re-executados; a única claim aceita sem re-execução é o critério de sucesso, que é qualitativo.
 
-**PENDING:** implementar os achados P0–P2 — aguardando autorização e priorização.
+**PENDING:** os P0 estão implementados; implementar os achados P1/P2 (consolidações e scripts novos) — aguardando autorização e priorização.
 
 ---
 

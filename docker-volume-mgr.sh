@@ -30,7 +30,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -38,6 +38,13 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+json_escape() {
+    local s="$1"
+    s=${s//\\/\\\\}
+    s=${s//\"/\\\"}
+    s=${s//$'\n'/\\n}
+    printf '%s' "$s"
+}
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
@@ -51,6 +58,7 @@ RESTORE_FILE=""
 OUTPUT_DIR="."
 DRY_RUN=false
 SHOW_SIZE=false
+JSON_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -69,6 +77,7 @@ while [[ $# -gt 0 ]]; do
             [[ -z "${2-}" ]] && { echo "Flag --output requer um valor" >&2; exit 1; }
             OUTPUT_DIR="$2"; shift 2 ;;
         --dry-run) DRY_RUN=true; shift ;;
+        --json|-j) JSON_MODE=true; shift ;;
         --help|-h)
             echo ""
             echo "  docker-volume-mgr.sh — Gerencia volumes Docker"
@@ -85,6 +94,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --restore VOLUME FILE Restaura volume de tar.gz"
             echo "    --output DIR        Diretorio de destino (padrao: .)"
             echo "    --dry-run           Preview sem executar"
+            echo "    --json|-j           Saida JSON (requer --list ou --orphans)"
             echo "    --help              Mostra esta ajuda"
             echo "    --version           Mostra versao"
             echo ""
@@ -140,6 +150,55 @@ is_orphan() {
     [[ "$count" =~ ^[0-9]+$ ]] || count=0
     [ "$count" -eq 0 ]
 }
+
+if $JSON_MODE; then
+    case "$ACTION" in
+        list)
+            volumes=$(docker volume ls -q 2>/dev/null)
+            total=0; orphan_count=0; json_items=""; first=true
+            while IFS= read -r vname; do
+                [ -z "$vname" ] && continue
+                total=$((total + 1))
+                driver=$(docker volume inspect --format '{{.Driver}}' "$vname" 2>/dev/null)
+                mountpoint=$(docker volume inspect --format '{{.Mountpoint}}' "$vname" 2>/dev/null)
+                orphan=false
+                if is_orphan "$vname"; then orphan=true; orphan_count=$((orphan_count + 1)); fi
+                $first || json_items+=","
+                first=false
+                if $SHOW_SIZE; then
+                    size_json=$(printf '%s' "$(get_volume_size "$vname")")
+                else
+                    size_json=null
+                fi
+                json_items+=$(printf '{"name":"%s","driver":"%s","mountpoint":"%s","orphan":%s,"size_bytes":%s}' \
+                    "$(json_escape "$vname")" "$(json_escape "$driver")" \
+                    "$(json_escape "$mountpoint")" "$orphan" "$size_json")
+            done <<< "$volumes"
+            printf '{"volumes":[%s],"summary":{"total":%s,"orphans":%s}}\n' \
+                "$json_items" "$total" "$orphan_count"
+            ;;
+        orphans)
+            json_items=""; first=true; orphan_count=0
+            volumes=$(docker volume ls -q 2>/dev/null)
+            while IFS= read -r vname; do
+                [ -z "$vname" ] && continue
+                if is_orphan "$vname"; then
+                    orphan_count=$((orphan_count + 1))
+                    driver=$(docker volume inspect --format '{{.Driver}}' "$vname" 2>/dev/null)
+                    $first || json_items+=","
+                    first=false
+                    json_items+=$(printf '{"name":"%s","driver":"%s"}' \
+                        "$(json_escape "$vname")" "$(json_escape "$driver")")
+                fi
+            done <<< "$volumes"
+            printf '{"orphans":[%s],"summary":{"orphans":%s}}\n' "$json_items" "$orphan_count"
+            ;;
+        *)
+            error "--json so e suportado com --list ou --orphans"
+            ;;
+    esac
+    exit 0
+fi
 
 echo ""
 echo -e "  ${BOLD}Docker Volume Manager${RESET}"

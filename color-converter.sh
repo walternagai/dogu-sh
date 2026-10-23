@@ -24,7 +24,7 @@ DIM='\033[0;90m'
 RESET='\033[0m'
 
 # NO_COLOR support (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
@@ -104,7 +104,7 @@ if $LIST_COLORS; then
         g=$(echo "$rgb" | cut -d',' -f2)
         b=$(echo "$rgb" | cut -d',' -f3)
         hex=$(printf '#%02x%02x%02x' "$r" "$g" "$b")
-        if [ -t 1 ]; then
+        if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
             printf "  \033[48;2;%s;%s;%sm      \033[0m " "$r" "$g" "$b"
         else
             printf "  "
@@ -285,7 +285,7 @@ echo -e "  HSL:    ${GREEN}${H}°, ${S}%, ${L_V}%${RESET}  ${DIM}hsl(${H},${S}%,
 echo -e "  Nome:   ${GREEN}${CLOSEST_NAME}${RESET} ${DIM}(mais proximo)${RESET}"
 echo ""
 
-if $SHOW_PREVIEW && [ -t 1 ]; then
+if $SHOW_PREVIEW && [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
     for i in $(seq 1 3); do
         echo -e "  \033[48;2;${R};${G};${B}m                                                    \033[0m"
     done

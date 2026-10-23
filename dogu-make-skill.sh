@@ -5,7 +5,7 @@
 set -euo pipefail
 
 # ─── Cores ───────────────────────────────────────────────────────────
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' DIM='' RESET=''
 else
   GREEN='\033[1;32m' YELLOW='\033[1;33m' RED='\033[1;31m'
@@ -20,6 +20,7 @@ warn()    { echo -e "${YELLOW}⚠${RESET} $1" >&2; }
 error()   { echo -e "${RED}✗${RESET} $1" >&2; exit 1; }
 
 # ─── Resolve paths ──────────────────────────────────────────────────
+readonly VERSION="1.0.0"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 MANIFEST="${SCRIPT_DIR}/dogu.json"
 
@@ -56,6 +57,7 @@ Opções:
   --output CAMINHO   Caminho de saída do SKILL.md (padrão: ./SKILL.md)
   --dry-run          Mostra preview sem escrever arquivo
   --verbose          Mostra detalhes durante geração
+  --version          Mostra versão
   --help             Mostra esta ajuda
 
 Exemplos:
@@ -74,6 +76,8 @@ while [[ $# -gt 0 ]]; do
       DRY_RUN=true; shift ;;
     --verbose)
       VERBOSE=true; shift ;;
+    --version|-V)
+      echo "dogu-make-skill.sh $VERSION"; exit 0 ;;
     --help|-h)
       usage; exit 0 ;;
     *)
@@ -149,6 +153,12 @@ all_deps = {}
 for name, meta in scripts.items():
     for dep in meta.get('deps', []):
         all_deps.setdefault(dep, []).append(name)
+    for dep in meta.get('deps_optional', []):
+        all_deps.setdefault(f'{dep} (opcional)', []).append(name)
+    for dep in meta.get('deps_python', []):
+        all_deps.setdefault(f'{dep} (Python)', []).append(name)
+    for group in meta.get('deps_any', []):
+        all_deps.setdefault(' / '.join(group), []).append(name)
 
 # ── Gerar markdown ─────────────────────────────────────────────────
 lines = []
