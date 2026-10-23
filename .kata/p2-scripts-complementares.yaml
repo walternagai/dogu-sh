@@ -10,7 +10,7 @@ done: >
   --json quando aplicável. Verificação: shellcheck, bash -n, smoke tests
   individuais e doctor 116/116.
 base_commit: "c27561933622692d4ead9c6d6a38380095bfa5b8"
-approved_commit: ""
+approved_commit: "aae983ed929a0c57aabf02a608025fec85c90eb8"
 fit:
   trivial: false
   route: code-loop
