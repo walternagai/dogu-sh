@@ -108,7 +108,7 @@ run_check() {
     local JSON_CONTAINERS=""
 
     containers=$(docker ps --format '{{.ID}}|{{.Names}}|{{.Status}}' 2>/dev/null)
-    total_running=$(echo "$containers" | grep -c '|' || echo 0)
+    total_running=$(echo "$containers" | grep -c '|' || true)
 
     if [ "$total_running" -eq 0 ]; then
         if $JSON_MODE; then
@@ -121,7 +121,8 @@ run_check() {
     "healthy": 0,
     "unhealthy": 0,
     "starting": 0,
-    "no_health": 0
+    "no_health": 0,
+    "restarted": 0
   }
 }
 EOF

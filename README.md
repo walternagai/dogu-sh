@@ -32,12 +32,14 @@ Uma coleção de **104 ferramentas Bash precisas** para artesãos do terminal. N
 - `docker-cis-benchmark.sh`: Verificação de conformidade com CIS Docker Benchmark.
 - `docker-secret-scanner.sh`: Detecção de segredos expostos em variáveis de ambiente e labels.
 - `docker-bottleneck-detect.sh`: Detecção de gargalos e desperdício de recursos comparando limites vs uso real.
+- `docker-doctor.sh`: Diagnóstico agregado — status, saúde e auditoria em um resumo; `--full` inclui CIS e gargalos.
 
 ### 🛡️ Segurança e Criptografia
 - `ssh-key-manager.sh`: Geração, listagem, rotação e distribuição de chaves SSH entre hosts.
 - `ssh-tunnel-mgr.sh`: Gerenciador de túneis SSH (local e remoto).
 - `env-keygen.sh`: Gera chaves secretas seguras para arquivos `.env` (hex, base64, uuid, django, fernet, rails, alnum, ascii, numeric, password).
 - `secret-scanner.sh`: Busca segredos expostos em código e arquivos de configuração (API keys, tokens, senhas, chaves privadas).
+- `ssl-cert-check.sh`: Verifica validade, emissor, SAN e dias restantes de um certificado TLS.
 
 ### 🛠️ Sistema e Manutenção
 - `clean-cache.sh`: Limpeza de arquivos temporários e caches de apps.
@@ -53,6 +55,7 @@ Uma coleção de **104 ferramentas Bash precisas** para artesãos do terminal. N
 - `video-catalog-organizer.sh`: Reorganiza catálogo de vídeos por estratégia — `--by content` (filmes/séries/cursos/clipes), `--by year` (pastas `YYYY/`) ou `--by quality` (`2160p/1080p/720p/480p`); dry-run por padrão, `--apply` efetiva; `--probe-quality` ativa `ffprobe` (opcional) para resolução real.
 - `dir-summary.sh`: Resumo de diretório com distribuição visual, top arquivos, subdiretórios e idade.
 - `archive-manager.sh`: Compacta pastas individualmente em arquivos .tar.gz ou .zip e descompacta arquivos em massa em um diretório alvo.
+- `file-watcher.sh`: Observa arquivos e reporta criações, alterações e remoções (polling, JSON Lines).
 - `unarchive.sh`: Descompacta arquivos compactados (zip, cbz, jar, rar, cbr, 7z, tar, tar.gz, tgz, tar.bz2, tar.xz, tar.zst, gz, bz2, xz, zst) sozinhos ou em lote, com opção de diretório de saída e varredura recursiva de subpastas.
 - `fix-exec-bit.sh`: Remove o bit de execução de arquivos de dados/documentos (útil após copiar de NTFS/exFAT, onde arquivos regulares ganham `+x` indevidamente).
 - `update-all.sh`: Atualiza pacotes do sistema + linguagens (npm, pip, cargo, brew) em um comando.
@@ -67,6 +70,8 @@ Uma coleção de **104 ferramentas Bash precisas** para artesãos do terminal. N
 
 ### ⚙️ Infraestrutura
 - `dependency-helper.sh`: Biblioteca compartilhada de verificação e auto-instalação de dependências.
+- `cron-manager.sh`: Lista, adiciona e remove tarefas do crontab com backup e marcadores seguros.
+- `dotfiles-manager.sh`: Gerencia dotfiles com symlinks e um repositório local.
 
 ### 🔢 Calculadoras e Conversores
 - `calculator.sh`: Calculadora interativa com histórico e suporte a expressões (bc).
@@ -101,6 +106,11 @@ Uma coleção de **104 ferramentas Bash precisas** para artesãos do terminal. N
 - `xlsx-to-csv.sh`: Converte arquivos `.xlsx` para CSV via openpyxl — cada aba vira um `.csv` separado.
 - `ris-to-csv.sh`: Converte arquivos `.ris` (citações bibliográficas) para CSV — colunas padrão, `--all-fields` ou `--fields` customizados, suporte a lote e modo recursivo.
 - `yt-transcript.sh`: Baixa transcrições de vídeos do YouTube em inglês e/ou português (txt, srt, vtt).
+- `video-to-text.sh`: Pipeline vídeo → áudio (ffmpeg) → transcrição (Whisper), com txt/srt/vtt.
+- `pdf-split.sh`: Divide um PDF em páginas ou intervalos (`1-3,5,7-`).
+- `pdf-merge.sh`: Junta vários PDFs em um único arquivo.
+- `image-optimizer.sh`: Redimensiona e comprime imagens em lote (jpg/png/webp).
+- `json-yaml-tool.sh`: Valida, formata, consulta com `jq` e converte JSON ↔ YAML.
 - `video-to-audio.sh`: Extrai a trilha de áudio de vídeos via `ffmpeg` (mp3, m4a, ogg, wav, flac, opus), com modo `--copy` sem re-encode.
 - `audio-to-text.sh`: Transcreve áudios locais via Whisper (`faster-whisper` em CPU/CUDA por padrão; `--backend openai-whisper` opcional; txt, srt, vtt; `--language auto|en|pt`).
 
@@ -118,6 +128,7 @@ Uma coleção de **104 ferramentas Bash precisas** para artesãos do terminal. N
 - `ip-info.sh`: Info do IP público, ISP, localização geográfica.
 - `dns-lookup.sh`: Lookup DNS (A, AAAA, MX, NS, TXT, CNAME).
 - `port-check.sh`: Verifica se portas estão abertas em um host.
+- `http-server.sh`: Servidor HTTP local para um diretório (escuta em localhost por padrão).
 - `whois.sh`: Consulta WHOIS de domínios.
 - `api-tester.sh`: Teste rápido de APIs REST com formatação JSON.
 - `url-shortener.sh`: Encurta URLs usando is.gd.
@@ -290,6 +301,16 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `batch-rename.sh` | nenhum (coreutils: `sed`, `mv`) |
 | `archive-manager.sh` | `tar`, `gzip`, `zip`, `unzip` |
 | `unarchive.sh` | `unzip`, `p7zip`, `unrar`/`7z` (rar), `tar`, `zstd` — instalados sob demanda |
+| `video-to-text.sh` | `ffmpeg`, `python3`, `faster-whisper` (pip) |
+| `pdf-split.sh`, `pdf-merge.sh` | `pdfseparate`, `pdfunite`, `pdfinfo` (`poppler-utils`/`poppler`) |
+| `image-optimizer.sh` | `convert` (ImageMagick) |
+| `ssl-cert-check.sh` | `openssl` |
+| `docker-doctor.sh` | `docker`, `jq` |
+| `json-yaml-tool.sh` | `jq`, `python3`, `pyyaml` (pip) |
+| `cron-manager.sh` | `crontab` (cron) |
+| `http-server.sh` | `python3` |
+| `dotfiles-manager.sh` | nenhum (coreutils: `ln`, `cp`, `readlink`) |
+| `file-watcher.sh` | `python3`, `findutils`, `stat` |
 | `fzf` (opcional) | habilita menus interativos no `menu-launcher.sh` e em scripts com seletor |
 
 ## 📝 Notas

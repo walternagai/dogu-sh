@@ -34,6 +34,22 @@ Task correspondente: `.kata/revisao-usabilidade-scripts.yaml`.
 
 Detalhes em `P1-DECISOES.md`.
 
+### Status dos P2
+
+| Script | Status | Observação |
+|---|---|---|
+| `video-to-text` | ✅ Implementado | Pipeline video → áudio → Whisper; testado com backend fake |
+| `pdf-split` / `pdf-merge` | ✅ Implementado | `pdfseparate`/`pdfunite`; testado com PDF de 3 páginas |
+| `image-optimizer` | ✅ Implementado | ImageMagick; PNG e WebP testados |
+| `ssl-cert-check` | ✅ Implementado | `openssl s_client`; testado contra example.com |
+| `docker-doctor` | ✅ Implementado | Agrega status, saúde e auditoria; `--full` inclui CIS/gargalos |
+| `json-yaml-tool` | ✅ Implementado | jq + PyYAML; validate/format/query/to-yaml/to-json |
+| `cron-manager` | ✅ Implementado | `--list/--add/--remove`, backup, marcadores, JSON |
+| `systemd-timer` | ⏳ Pendente | Backend systemd não entrou nesta rodada |
+| `http-server` | ✅ Implementado | Python `http.server`, bind localhost por padrão |
+| `dotfiles-manager` | ✅ Implementado | init/add/remove/list/status/apply com symlinks |
+| `file-watcher` | ✅ Implementado | Polling com snapshot e JSON Lines |
+
 ---
 
 ## 1. Escopo e método
@@ -395,7 +411,7 @@ Também foram executados:
 
 **JUDGE:** `VERIFIED` — baseline ancorado em `refs/kata/base/2b4a4277…`; lint, testes e coverage re-executados; a única claim aceita sem re-execução é o critério de sucesso, que é qualitativo.
 
-**PENDING:** P0 e P1 implementados; implementar os scripts novos e o agregador `docker-doctor` do P2 — aguardando autorização e priorização.
+**PENDING:** P2 implementado, exceto o backend `systemd-timer` e uma transcrição real com Whisper (o pipeline foi validado com backend fake) — aguardando autorização.
 
 ---
 

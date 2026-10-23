@@ -571,7 +571,8 @@ else:
     esac
   fi
 
-  # Executa
+  # Executa (DOGU_CONFIRMED evita confirmação dupla em scripts destrutivos)
+  export DOGU_CONFIRMED=1
   exec "$script_path" "${filtered_args[@]}"
 }
 

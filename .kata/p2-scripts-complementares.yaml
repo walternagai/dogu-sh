@@ -1,0 +1,212 @@
+task: p2-scripts-complementares
+status: approved
+domain: coding
+done: >
+  Os scripts novos do P2 implementados, registrados e verificados:
+  video-to-text, pdf-split, pdf-merge, image-optimizer, ssl-cert-check,
+  docker-doctor, json-yaml-tool, cron-manager, http-server,
+  dotfiles-manager e file-watcher. Todos com --help/--version, manifesto,
+  menu, README e SKILL.md; modificadores com --dry-run; analíticos com
+  --json quando aplicável. Verificação: shellcheck, bash -n, smoke tests
+  individuais e doctor 116/116.
+base_commit: "c27561933622692d4ead9c6d6a38380095bfa5b8"
+approved_commit: ""
+fit:
+  trivial: false
+  route: code-loop
+  reason: >
+    Onze scripts novos em três ondas, com registro em manifesto/menu/README,
+    dependências variadas e necessidade de smoke tests. Escopo aprovado pelo
+    pedido direto de execução do P2.
+  answered: true
+  skipped: false
+think:
+  problem: >
+    O portfólio não cobre fluxos pedidos com frequência: vídeo para texto,
+    divisão/junção de PDF, otimização de imagens, checagem de TLS, diagnóstico
+    agregado de Docker, manipulação JSON/YAML, agendamento, servidor HTTP local,
+    gestão de dotfiles e observação de arquivos. Hoje esses fluxos exigem
+    combinar ferramentas externas manualmente.
+  assumptions:
+    - "Cada script deve ser útil sozinho e compor com os existentes, sem duplicar lógica."
+    - "Dependências devem ser checadas pelo dependency-helper e declaradas no manifesto."
+    - "Modificadores devem ter --dry-run e confirmação; analíticos devem ter --json quando fizer sentido."
+    - "Portabilidade Linux/macOS: evitar flags GNU-only quando houver alternativa simples."
+    - "Nada de systemd-timer nesta rodada; cron-manager cobre o caso principal via crontab."
+  alternatives:
+    - "Um único script 'multitool' — descartada: viola o princípio um script por ferramenta."
+    - "Implementar só a Onda 1 — descartada: o pedido foi executar o P2."
+    - "Usar inotifywait no file-watcher — descartada: dependência extra; polling com find/stat é suficiente."
+    - "Usar qpdf/pdftk para PDF — descartada: pdfseparate/pdfunite já estão em poppler-utils e cobrem o caso."
+  unknowns: |
+    RESOLVIDO:
+    1. video-to-text pode reutilizar video-to-audio e audio-to-text? → sim, com --output e --format.
+    2. PDF: pdfseparate/pdfunite disponíveis? → sim.
+    3. ImageMagick disponível? → sim (convert).
+    4. Docker disponível para testar docker-doctor? → sim.
+    5. PyYAML disponível para json-yaml-tool? → sim; fallback com erro acionável.
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: >
+    Cada script implementa o fluxo mínimo viável; flags extras só quando
+    necessárias ao uso real. Sem biblioteca compartilhada nova.
+  answered: true
+  skipped: false
+intent:
+  code_does: "Novos scripts standalone, compostos com os existentes, sem alterar o comportamento dos antigos."
+  check_expects: "shellcheck/bash -n verdes; --help/--version; dry-run sem efeitos; JSON válido; doctor 116/116."
+  spec_says: "AGENTS.md e SCRIPTING_GUIDE.md exigem boilerplate, manifesto, menu, README, NO_COLOR, TTY e deps."
+  all_agree: true
+  conflict_resolution: ""
+  answered: true
+  skipped: false
+surgical:
+  files:
+    - path: ".kata/p2-scripts-complementares.yaml"
+      necessary: true
+      motivo: "Registro da task P2"
+    - path: "REVISAO-USABILIDADE.md"
+      necessary: true
+      motivo: "Atualização do status dos P2 e do PENDING"
+    - path: "README.md"
+      necessary: true
+      motivo: "Documentação e tabela de dependências dos 11 scripts"
+    - path: "SKILL.md"
+      necessary: true
+      motivo: "Regenerado com 116 scripts"
+    - path: "cron-manager.sh"
+      necessary: true
+      motivo: "Novo script P2"
+    - path: "docker-audit.sh"
+      necessary: true
+      motivo: "JSON real + contadores em loops com process substitution"
+    - path: "docker-bottleneck-detect.sh"
+      necessary: true
+      motivo: "Correção de contagem duplicada"
+    - path: "docker-cis-benchmark.sh"
+      necessary: true
+      motivo: "Correção de contagem duplicada"
+    - path: "docker-doctor.sh"
+      necessary: true
+      motivo: "Novo script P2"
+    - path: "docker-healthcheck.sh"
+      necessary: true
+      motivo: "Correção de contagem duplicada e JSON de resumo vazio"
+    - path: "dogu"
+      necessary: true
+      motivo: "Exporta DOGU_CONFIRMED=1 para evitar confirmação dupla"
+    - path: "dogu.json"
+      necessary: true
+      motivo: "Registro dos 11 scripts e contadores 116"
+    - path: "dotfiles-manager.sh"
+      necessary: true
+      motivo: "Novo script P2"
+    - path: "file-watcher.sh"
+      necessary: true
+      motivo: "Novo script P2"
+    - path: "http-server.sh"
+      necessary: true
+      motivo: "Novo script P2"
+    - path: "image-optimizer.sh"
+      necessary: true
+      motivo: "Novo script P2"
+    - path: "json-yaml-tool.sh"
+      necessary: true
+      motivo: "Novo script P2"
+    - path: "menu-launcher.sh"
+      necessary: true
+      motivo: "Registro dos 11 scripts no menu"
+    - path: "pdf-merge.sh"
+      necessary: true
+      motivo: "Novo script P2"
+    - path: "pdf-split.sh"
+      necessary: true
+      motivo: "Novo script P2"
+    - path: "ssl-cert-check.sh"
+      necessary: true
+      motivo: "Novo script P2"
+    - path: "video-to-text.sh"
+      necessary: true
+      motivo: "Novo script P2"
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+verify:
+  ruff_clean: "N/A (Bash; ShellCheck --severity=error passou em dogu + 115 scripts)"
+  tests_pass: "N/A (não há suíte; bash -n em 117 arquivos e smoke tests individuais passaram)"
+  coverage_pct: 100.0
+  coverage_pass: true
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+  notes: |
+    Gate do projeto (.kata/config.yaml) via python -m kata --check-only:
+    - shellcheck --severity=error dogu *.sh → PASS
+    - bash -n dogu *.sh → PASS
+    - coverage do gerador de SKILL → 100%
+    Verificações adicionais:
+    - ./dogu doctor → 8 checks OK, 116/116 em manifesto, arquivos, menu, README e metadados.
+    - --help/--version nos 116 scripts → 0 falhas.
+    - 9 smoke tests JSON novos: video-to-text (pipeline fake), pdf-split, pdf-merge,
+      image-optimizer, ssl-cert-check, docker-doctor, cron-manager, dotfiles-manager,
+      file-watcher. Todos válidos em jq.
+    - pdf-split/pdf-merge: PDF de 3 páginas gerado e dividido/juntado; pdfinfo confirma 3 páginas.
+    - image-optimizer: PNG 3000x2000 reduzido para 1280x853 e WebP gerado.
+    - ssl-cert-check: example.com retornou 62 dias e JSON válido.
+    - http-server: subiu em 127.0.0.1:8089 e respondeu HTTP 200; encerrado em seguida.
+    - file-watcher: eventos modified/added/removed capturados em JSON Lines.
+    - cron-manager: testado com crontab fake (add/list/remove/dry-run/json).
+    - dotfiles-manager: testado com HOME temporário (init/add/list/remove).
+    - Regressões corrigidas: docker-audit --json agora é JSON real; docker-healthcheck
+      não gera mais "0\n0"; cis/bottleneck usam contagem correta.
+preflight:
+  skills_missing: []
+artifact:
+  intent_owed: true
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: true
+  pending_present: true
+  twins_owed: true
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: "Implementar um backend systemd-timer para cron-manager e rodar uma transcricao real do video-to-text com Whisper; ambos fora do escopo desta rodada."
+  documented: true
+twins:
+  pattern: "JSON declarado sem saída JSON válida e contadores em subshell (grep -c || echo 0)"
+  result: "docker-audit --json imprimia texto humano; docker-healthcheck gerava '0\n0' e JSON inválido; cis/bottleneck tinham o mesmo padrão de contagem. Corrigidos e validados com jq."
+  searched: true
+  defect_fixed: true
+  matches_count: 4
+  files_count: 4
+  fix_applied: true
+metrics:
+  p2_items: 10
+  scripts_created: 11
+  manifest_entries: 116
+  doctor_checks: 8
+  json_smoke_tests: 9
+  help_version_failures: 0
+  files_changed: 22
+judge:
+  verdict: VERIFIED
+  baseline_anchor: "refs/kata/base/d80d93c1886747cb7118e1694b0acb2d9bc49a21b025856d5492ce4f89f7614a"
+  claims_verified:
+    - "lint limpo (shellcheck --severity=error)"
+    - "testes passam (bash -n em 116 scripts + dispatcher)"
+    - "coverage 100% ≥ gate"
+    - "21 arquivos alterados cirurgicamente (necessários)"
+    - "intenção alinhada: código, teste e spec concordam"
+  accepted_without_verification:
+    - "critério de sucesso satisfeito (não re-executável pelo juiz)"
+  blind_spots: []

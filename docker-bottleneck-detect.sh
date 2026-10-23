@@ -134,7 +134,7 @@ run_analysis() {
     fi
 
     local total_running
-    total_running=$(echo "$container_list" | grep -c '|' || echo 0)
+    total_running=$(echo "$container_list" | grep -c '|' || true)
     total_running=$(echo "$total_running" | tr -d '[:space:]')
     [[ "$total_running" =~ ^[0-9]+$ ]] || total_running=0
 

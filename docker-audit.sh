@@ -31,6 +31,13 @@ log()     { echo -e "${CYAN}[INFO]${RESET} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${RESET} $1"; }
 warn()    { echo -e "${YELLOW}[WARN]${RESET} $1" >&2; }
 error()   { echo -e "${RED}[ERROR]${RESET} $1" >&2; exit 1; }
+json_escape() {
+    local s="$1"
+    s=${s//\\/\\\\}
+    s=${s//\"/\\\"}
+    s=${s//$'\n'/\\n}
+    printf '%s' "$s"
+}
 DEP_HELPER="./dependency-helper.sh"
 [ ! -f "$DEP_HELPER" ] && DEP_HELPER="$HOME/.local/bin/dependency-helper.sh"
 if [ -f "$DEP_HELPER" ] && [[ "${1-}" != "--help" && "${1-}" != "-h" && "${1-}" != "--version" && "${1-}" != "-V" ]]; then source "$DEP_HELPER"; INSTALLER=$(detect_installer); check_and_install "docker" "$INSTALLER" "docker.io"; fi
@@ -86,6 +93,12 @@ TOTAL_ISSUES=0
 CRITICAL=0
 WARNING=0
 INFO=0
+AUDIT_ISSUES=()
+
+if $JSON_OUTPUT; then
+    exec 3>&1
+    exec 1>/dev/null
+fi
 
 issue() {
     local severity="$1"
@@ -93,6 +106,7 @@ issue() {
     local detail="${3:-}"
 
     TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
+    AUDIT_ISSUES+=("${severity}|${message}|${detail}")
 
     case "$severity" in
         critical) CRITICAL=$((CRITICAL + 1)); icon="${RED}CRIT${RESET}" ;;
@@ -117,12 +131,12 @@ echo ""
 echo -e "  ${BOLD}── Containers como Root ──${RESET}"
 echo ""
 
-docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null | while IFS='|' read -r cid cname; do
+while IFS='|' read -r cid cname; do
     user=$(docker inspect --format '{{.Config.User}}' "$cid" 2>/dev/null)
     if [ -z "$user" ] || [ "$user" = "root" ] || [ "$user" = "0" ] || [ "$user" = "" ]; then
         issue "warning" "Container '$cname' rodando como root" "User: ${user:-root}"
     fi
-done
+done < <(docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null)
 
 echo ""
 
@@ -133,7 +147,7 @@ echo ""
 echo -e "  ${BOLD}── Portas Expostas ──${RESET}"
 echo ""
 
-docker ps --format '{{.ID}}|{{.Names}}|{{.Ports}}' 2>/dev/null | while IFS='|' read -r cid cname ports; do
+while IFS='|' read -r cid cname ports; do
     if [ -n "$ports" ]; then
         # Portas com 0.0.0.0 (expostas a todos)
         if echo "$ports" | grep -q '0\.0\.0\.0'; then
@@ -143,7 +157,7 @@ docker ps --format '{{.ID}}|{{.Names}}|{{.Ports}}' 2>/dev/null | while IFS='|' r
             echo -e "  ${GREEN}✓${RESET} $cname: $ports"
         fi
     fi
-done
+done < <(docker ps --format '{{.ID}}|{{.Names}}|{{.Ports}}' 2>/dev/null)
 
 echo ""
 
@@ -154,12 +168,12 @@ echo ""
 echo -e "  ${BOLD}── Modo Privilegiado ──${RESET}"
 echo ""
 
-docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null | while IFS='|' read -r cid cname; do
+while IFS='|' read -r cid cname; do
     privileged=$(docker inspect --format '{{.HostConfig.Privileged}}' "$cid" 2>/dev/null)
     if [ "$privileged" = "true" ]; then
         issue "critical" "Container '$cname' rodando em modo privilegiado" "HostConfig.Privileged = true"
     fi
-done
+done < <(docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null)
 
 echo ""
 
@@ -172,7 +186,7 @@ echo ""
 
 DANGEROUS_CAPS="SYS_ADMIN SYS_PTRACE NET_ADMIN SYS_PTRACE DAC_OVERRIDE SETUID SETGID"
 
-docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null | while IFS='|' read -r cid cname; do
+while IFS='|' read -r cid cname; do
     caps=$(docker inspect --format '{{range .HostConfig.CapAdd}}{{.}} {{end}}' "$cid" 2>/dev/null)
     if [ -n "$caps" ]; then
         for cap in $DANGEROUS_CAPS; do
@@ -182,7 +196,7 @@ docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null | while IFS='|' read -r cid 
             fi
         done
     fi
-done
+done < <(docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null)
 
 echo ""
 
@@ -195,7 +209,7 @@ echo ""
 
 SENSITIVE_PATHS="/etc /var/run/docker.sock /proc /sys /dev /root /home"
 
-docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null | while IFS='|' read -r cid cname; do
+while IFS='|' read -r cid cname; do
     mounts=$(docker inspect --format '{{range .Mounts}}{{.Source}}:{{.Destination}} {{end}}' "$cid" 2>/dev/null)
     for mount in $mounts; do
         src=$(echo "$mount" | cut -d: -f1)
@@ -211,7 +225,7 @@ docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null | while IFS='|' read -r cid 
             fi
         done
     done
-done
+done < <(docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null)
 
 echo ""
 
@@ -222,12 +236,12 @@ echo ""
 echo -e "  ${BOLD}── Network Mode ──${RESET}"
 echo ""
 
-docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null | while IFS='|' read -r cid cname; do
+while IFS='|' read -r cid cname; do
     net_mode=$(docker inspect --format '{{.HostConfig.NetworkMode}}' "$cid" 2>/dev/null)
     if [ "$net_mode" = "host" ]; then
         issue "warning" "Container '$cname' usando network mode host" "Acesso direto a rede do host"
     fi
-done
+done < <(docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null)
 
 echo ""
 
@@ -238,7 +252,7 @@ echo ""
 echo -e "  ${BOLD}── Resource Limits ──${RESET}"
 echo ""
 
-docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null | while IFS='|' read -r cid cname; do
+while IFS='|' read -r cid cname; do
     mem_limit=$(docker inspect --format '{{.HostConfig.Memory}}' "$cid" 2>/dev/null)
     cpu_quota=$(docker inspect --format '{{.HostConfig.CpuQuota}}' "$cid" 2>/dev/null)
 
@@ -258,7 +272,7 @@ docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null | while IFS='|' read -r cid 
     if ! $has_limits; then
         issue "info" "Container '$cname' sem limites de memoria" "Memory: ${mem_limit:-0}, CPU quota: ${cpu_quota:-0}"
     fi
-done
+done < <(docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null)
 
 echo ""
 
@@ -271,7 +285,7 @@ echo ""
 
 SENSITIVE_ENV="PASSWORD SECRET TOKEN KEY API_KEY PRIVATE CREDENTIAL AUTH"
 
-docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null | while IFS='|' read -r cid cname; do
+while IFS='|' read -r cid cname; do
     env_vars=$(docker inspect --format '{{range .Config.Env}}{{.}}|{{end}}' "$cid" 2>/dev/null)
     found_sensitive=""
     for env_var in $(echo "$env_vars" | tr '|' '\n'); do
@@ -286,7 +300,7 @@ docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null | while IFS='|' read -r cid 
     if [ -n "$found_sensitive" ]; then
         issue "warning" "Container '$cname' com envs sensiveis: $found_sensitive"
     fi
-done
+done < <(docker ps --format '{{.ID}}|{{.Names}}' 2>/dev/null)
 
 echo ""
 
@@ -332,3 +346,19 @@ else
 fi
 
 echo ""
+if $JSON_OUTPUT; then
+    exec 1>&3
+    printf '{"timestamp":"%s","critical":%s,"warning":%s,"info":%s,"total":%s,"issues":[' \
+        "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$CRITICAL" "$WARNING" "$INFO" "$TOTAL_ISSUES"
+    first=true
+    if [ ${#AUDIT_ISSUES[@]} -gt 0 ]; then
+        for entry in "${AUDIT_ISSUES[@]}"; do
+            IFS='|' read -r sev msg detail <<< "$entry"
+            $first || printf ','
+            first=false
+            printf '{"severity":"%s","message":"%s","detail":"%s"}' \
+                "$(json_escape "$sev")" "$(json_escape "$msg")" "$(json_escape "$detail")"
+        done
+    fi
+    printf ']}\n'
+fi

@@ -135,6 +135,17 @@ SCRIPT_DESC=(
     [git-stale.sh]="Lista branches antigas sem merge que podem ser limpas"
     [git-pr-checklist.sh]="Checklist automatico antes de abrir Pull Request"
     [secret-scanner.sh]="Busca segredos expostos em codigo e configuracao"
+    [video-to-text.sh]="Converte video em texto (audio + Whisper)"
+    [pdf-split.sh]="Divide PDF em paginas ou intervalos"
+    [pdf-merge.sh]="Junta varios PDFs em um arquivo"
+    [image-optimizer.sh]="Redimensiona e comprime imagens em lote"
+    [ssl-cert-check.sh]="Verifica certificado TLS e dias restantes"
+    [docker-doctor.sh]="Diagnostico agregado do Docker"
+    [json-yaml-tool.sh]="Valida, formata e converte JSON/YAML"
+    [cron-manager.sh]="Gerencia tarefas do crontab"
+    [http-server.sh]="Servidor HTTP local para um diretorio"
+    [dotfiles-manager.sh]="Gerencia dotfiles com symlinks"
+    [file-watcher.sh]="Observa arquivos e reporta mudancas"
 )
 
 declare -A SCRIPT_CATEGORY
@@ -244,6 +255,17 @@ SCRIPT_CATEGORY=(
     [git-stale.sh]="Sincronizacao e Backup"
     [git-pr-checklist.sh]="Analise de Codigo"
     [secret-scanner.sh]="Seguranca e Criptografia"
+    [video-to-text.sh]="Produtividade e Notas"
+    [pdf-split.sh]="Produtividade e Notas"
+    [pdf-merge.sh]="Produtividade e Notas"
+    [image-optimizer.sh]="Produtividade e Notas"
+    [ssl-cert-check.sh]="Seguranca e Criptografia"
+    [docker-doctor.sh]="Docker"
+    [json-yaml-tool.sh]="Produtividade e Notas"
+    [cron-manager.sh]="Infraestrutura"
+    [http-server.sh]="Rede e Lookup"
+    [dotfiles-manager.sh]="Instalacao e Execucao"
+    [file-watcher.sh]="Sistema e Monitoramento"
 )
 
 CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup" "Seguranca e Criptografia" "Analise de Codigo")

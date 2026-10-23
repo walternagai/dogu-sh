@@ -219,7 +219,7 @@ if $CHECK_CONTAINERS; then
         container_list=$(docker ps -a --format '{{.ID}}|{{.Names}}' 2>/dev/null)
     fi
 
-    total_checked=$(echo "$container_list" | grep -c '|' || echo 0)
+    total_checked=$(echo "$container_list" | grep -c '|' || true)
     total_checked=$(echo "$total_checked" | tr -d '[:space:]')
     [[ "$total_checked" =~ ^[0-9]+$ ]] || total_checked=0
 
@@ -324,7 +324,7 @@ if $CHECK_CONTAINERS; then
                 add_result "2.11" "Portas expostas no host" "pass" "Nenhuma porta no host" "$cname"
             fi
 
-            image_tag=$(docker inspect --format '{{.RepoTags}}' "$cid" 2>/dev/null | grep -c '<none>' || echo 0)
+            image_tag=$(docker inspect --format '{{.RepoTags}}' "$cid" 2>/dev/null | grep -c '<none>' || true)
             if [ "$image_tag" -gt 0 ]; then
                 add_result "2.12" "Imagem com tag valida" "warn" "Imagem sem tag (<none>)" "$cname"
             else

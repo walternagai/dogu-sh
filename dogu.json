@@ -2,27 +2,27 @@
   "version": "1.0.0",
   "project": "dogu-sh",
   "description": "Manifesto estruturado das ferramentas dogu-sh para autodescoberta por agentes de IA",
-  "total_scripts": 105,
+  "total_scripts": 116,
   "categories": {
     "productivity": 13,
-    "network": 9,
-    "system": 24,
-    "media": 6,
-    "conversion": 11,
+    "network": 10,
+    "system": 25,
+    "media": 7,
+    "conversion": 15,
     "other": 1,
-    "docker": 17,
-    "security": 4,
-    "devops": 14,
+    "docker": 18,
+    "devops": 16,
+    "security": 5,
     "code-analysis": 6
   },
   "risk_levels": {
-    "read-only": 63,
-    "dry-run-ok": 34,
-    "destructive": 8
+    "read-only": 68,
+    "dry-run-ok": 38,
+    "destructive": 10
   },
   "features": {
-    "has_json": 33,
-    "has_dry_run": 43,
+    "has_json": 42,
+    "has_dry_run": 50,
     "interactive": 8
   },
   "scripts": {
@@ -5797,6 +5797,661 @@
         }
       ],
       "example": "secret-scanner.sh --json --severity high"
+    },
+    "video-to-text.sh": {
+      "description": "Converte video em texto via extracao de audio e Whisper",
+      "category": "media",
+      "risk": "dry-run-ok",
+      "has_json": true,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "ffmpeg"
+      ],
+      "deps_python": [
+        "faster-whisper"
+      ],
+      "args": [
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Arquivo de saida"
+        },
+        {
+          "flag": "--format",
+          "short": "-f",
+          "type": "string",
+          "desc": "Formato: txt, srt ou vtt"
+        },
+        {
+          "flag": "--language",
+          "short": "-l",
+          "type": "string",
+          "desc": "Idioma: auto, en ou pt"
+        },
+        {
+          "flag": "--keep-audio",
+          "short": null,
+          "type": "bool",
+          "desc": "Mantem o audio extraido"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra os comandos"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "video-to-text.sh -f srt -l pt aula.mp4"
+    },
+    "pdf-split.sh": {
+      "description": "Divide um PDF em paginas ou intervalos",
+      "category": "conversion",
+      "risk": "dry-run-ok",
+      "has_json": true,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "pdfseparate",
+        "pdfunite",
+        "pdfinfo"
+      ],
+      "args": [
+        {
+          "flag": "--pages",
+          "short": "-p",
+          "type": "string",
+          "desc": "Intervalos: 1-3,5,7-"
+        },
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Diretorio de saida"
+        },
+        {
+          "flag": "--prefix",
+          "short": null,
+          "type": "string",
+          "desc": "Prefixo dos arquivos"
+        },
+        {
+          "flag": "--force",
+          "short": null,
+          "type": "bool",
+          "desc": "Sobrescreve arquivos"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra o que seria feito"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "pdf-split.sh --pages 1-3,7 documento.pdf"
+    },
+    "pdf-merge.sh": {
+      "description": "Junta varios PDFs em um unico arquivo",
+      "category": "conversion",
+      "risk": "dry-run-ok",
+      "has_json": true,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "pdfunite",
+        "pdfinfo"
+      ],
+      "args": [
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Arquivo de saida"
+        },
+        {
+          "flag": "--force",
+          "short": null,
+          "type": "bool",
+          "desc": "Sobrescreve a saida"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra o que seria feito"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "pdf-merge.sh -o contrato.pdf parte1.pdf parte2.pdf"
+    },
+    "image-optimizer.sh": {
+      "description": "Redimensiona e comprime imagens em lote",
+      "category": "conversion",
+      "risk": "dry-run-ok",
+      "has_json": true,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "convert"
+      ],
+      "args": [
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Diretorio de saida"
+        },
+        {
+          "flag": "--recursive",
+          "short": "-r",
+          "type": "bool",
+          "desc": "Varre subdiretorios"
+        },
+        {
+          "flag": "--quality",
+          "short": "-q",
+          "type": "int",
+          "desc": "Qualidade (1-100)"
+        },
+        {
+          "flag": "--max-width",
+          "short": null,
+          "type": "int",
+          "desc": "Largura maxima em pixels"
+        },
+        {
+          "flag": "--format",
+          "short": "-f",
+          "type": "string",
+          "desc": "keep, jpg, png ou webp"
+        },
+        {
+          "flag": "--force",
+          "short": null,
+          "type": "bool",
+          "desc": "Sobrescreve a saida"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra o que seria feito"
+        },
+        {
+          "flag": "--json",
+          "short": "-j",
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "image-optimizer.sh -r ./fotos -o ./web -f webp"
+    },
+    "ssl-cert-check.sh": {
+      "description": "Verifica validade e emissor de certificado TLS",
+      "category": "security",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "openssl"
+      ],
+      "args": [
+        {
+          "flag": "--port",
+          "short": "-p",
+          "type": "int",
+          "desc": "Porta (padrao: 443)"
+        },
+        {
+          "flag": "--warn-days",
+          "short": "-w",
+          "type": "int",
+          "desc": "Alerta em N dias"
+        },
+        {
+          "flag": "--json",
+          "short": null,
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "ssl-cert-check.sh example.com --json"
+    },
+    "docker-doctor.sh": {
+      "description": "Diagnostico agregado de Docker (status, saude e auditoria)",
+      "category": "docker",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "docker",
+        "jq"
+      ],
+      "args": [
+        {
+          "flag": "--full",
+          "short": null,
+          "type": "bool",
+          "desc": "Inclui CIS Benchmark e gargalos"
+        },
+        {
+          "flag": "--json",
+          "short": null,
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "docker-doctor.sh --full"
+    },
+    "json-yaml-tool.sh": {
+      "description": "Valida, formata, consulta e converte JSON/YAML",
+      "category": "conversion",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "jq",
+        "python3"
+      ],
+      "deps_python": [
+        "pyyaml"
+      ],
+      "args": [
+        {
+          "flag": "--validate",
+          "short": null,
+          "type": "bool",
+          "desc": "Valida o arquivo"
+        },
+        {
+          "flag": "--format",
+          "short": null,
+          "type": "bool",
+          "desc": "Formata o arquivo"
+        },
+        {
+          "flag": "--query",
+          "short": null,
+          "type": "string",
+          "desc": "Aplica expressao jq"
+        },
+        {
+          "flag": "--to-yaml",
+          "short": null,
+          "type": "bool",
+          "desc": "Converte JSON para YAML"
+        },
+        {
+          "flag": "--to-json",
+          "short": null,
+          "type": "bool",
+          "desc": "Converte YAML para JSON"
+        },
+        {
+          "flag": "--output",
+          "short": "-o",
+          "type": "string",
+          "desc": "Arquivo de saida"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "json-yaml-tool.sh --to-yaml config.json"
+    },
+    "cron-manager.sh": {
+      "description": "Lista, adiciona e remove tarefas do crontab",
+      "category": "devops",
+      "risk": "destructive",
+      "has_json": true,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "crontab"
+      ],
+      "args": [
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista tarefas"
+        },
+        {
+          "flag": "--add",
+          "short": null,
+          "type": "string",
+          "desc": "Adiciona tarefa"
+        },
+        {
+          "flag": "--remove",
+          "short": null,
+          "type": "string",
+          "desc": "Remove por ID ou linha"
+        },
+        {
+          "flag": "--force",
+          "short": null,
+          "type": "bool",
+          "desc": "Nao pede confirmacao"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra sem gravar"
+        },
+        {
+          "flag": "--json",
+          "short": null,
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "cron-manager.sh --add \"0 3 * * * /path/backup.sh\""
+    },
+    "http-server.sh": {
+      "description": "Servidor HTTP local para um diretorio",
+      "category": "network",
+      "risk": "read-only",
+      "has_json": false,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "python3"
+      ],
+      "args": [
+        {
+          "flag": "--directory",
+          "short": "-d",
+          "type": "string",
+          "desc": "Diretorio a servir"
+        },
+        {
+          "flag": "--port",
+          "short": "-p",
+          "type": "int",
+          "desc": "Porta (padrao: 8000)"
+        },
+        {
+          "flag": "--bind",
+          "short": "-b",
+          "type": "string",
+          "desc": "Endereco de escuta"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra o comando"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "http-server.sh -d ./public -p 8080"
+    },
+    "dotfiles-manager.sh": {
+      "description": "Gerencia dotfiles com symlinks e repositorio local",
+      "category": "devops",
+      "risk": "destructive",
+      "has_json": true,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [],
+      "args": [
+        {
+          "flag": "--init",
+          "short": null,
+          "type": "bool",
+          "desc": "Cria repositorio e manifesto"
+        },
+        {
+          "flag": "--add",
+          "short": null,
+          "type": "string",
+          "desc": "Adiciona arquivo"
+        },
+        {
+          "flag": "--remove",
+          "short": null,
+          "type": "string",
+          "desc": "Remove arquivo"
+        },
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista entradas"
+        },
+        {
+          "flag": "--status",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra status"
+        },
+        {
+          "flag": "--apply",
+          "short": null,
+          "type": "bool",
+          "desc": "Recria symlinks"
+        },
+        {
+          "flag": "--repo",
+          "short": null,
+          "type": "string",
+          "desc": "Diretorio do repositorio"
+        },
+        {
+          "flag": "--force",
+          "short": null,
+          "type": "bool",
+          "desc": "Sobrescreve arquivos"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra o que seria feito"
+        },
+        {
+          "flag": "--json",
+          "short": null,
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "dotfiles-manager.sh --add .bashrc"
+    },
+    "file-watcher.sh": {
+      "description": "Observa arquivos e reporta criacoes, alteracoes e remocoes",
+      "category": "system",
+      "risk": "read-only",
+      "has_json": true,
+      "has_dry_run": false,
+      "interactive": false,
+      "deps": [
+        "python3"
+      ],
+      "args": [
+        {
+          "flag": "--path",
+          "short": "-p",
+          "type": "string",
+          "desc": "Diretorio a observar"
+        },
+        {
+          "flag": "--glob",
+          "short": "-g",
+          "type": "string",
+          "desc": "Filtro de nome"
+        },
+        {
+          "flag": "--interval",
+          "short": "-i",
+          "type": "int",
+          "desc": "Intervalo em segundos"
+        },
+        {
+          "flag": "--once",
+          "short": null,
+          "type": "bool",
+          "desc": "Snapshot unico"
+        },
+        {
+          "flag": "--json",
+          "short": null,
+          "type": "bool",
+          "desc": "Saida JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "file-watcher.sh -p ./src -g \"*.py\" --json"
     }
   }
 }
