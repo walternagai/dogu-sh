@@ -192,6 +192,14 @@ chmod +x *.sh
 # Saída em JSON (para agentes de IA)
 ./dogu docker-status --json
 ./dogu list --json
+
+# Diagnóstico de manifesto, menu, README e SKILL.md
+./dogu doctor
+./dogu doctor --json
+
+# Completion (Bash e Zsh)
+source <(./dogu completion bash)
+./dogu completion zsh > ~/.zfunc/_dogu
 ```
 
 ### Menu interativo
@@ -285,6 +293,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `fzf` (opcional) | habilita menus interativos no `menu-launcher.sh` e em scripts com seletor |
 
 ## 📝 Notas
+- Decisões de consolidação e descoberta: [P1-DECISOES.md](P1-DECISOES.md).
 - A maioria dos scripts suporta a flag `--dry-run` para visualização das alterações antes de aplicá-las.
 - Execute qualquer script com `--help` para ver todas as opções disponíveis.
 - Scripts com `--json` produzem saída estruturada para integração com agentes de IA e automação.

@@ -98,6 +98,8 @@ while [[ $# -gt 0 ]]; do
             echo "    --help              Mostra esta ajuda"
             echo "    --version           Mostra versao"
             echo ""
+            echo "  Veja tambem: docker-backup.sh / docker-restore.sh (snapshot completo de volumes + configs)"
+            echo ""
             echo "  Exemplos:"
             echo "    ./docker-volume-mgr.sh --list --size"
             echo "    ./docker-volume-mgr.sh --orphans"

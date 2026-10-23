@@ -10,6 +10,7 @@
 #   --include-hidden     Incluir arquivos e diretorios ocultos
 #   --help               Mostra esta ajuda
 #   --version            Mostra versao
+#   Veja tambem:         hunt-duplicates.sh (lixeira, restore e watch)
 #
 # Algoritmo em estagios (barato -> caro), sem comparacoes exponenciais ou O(N^2):
 #   Fase 1: inode       — hardlinks (mesmo inode) nunca sao re-avaliados. O(N)

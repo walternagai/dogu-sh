@@ -72,42 +72,18 @@ unpack_files() {
     local target_dir="$1"
     local dry_run="$2"
 
-    log "Iniciando descompactacao em massa em: $target_dir"
-    echo -e "  ${DIM}────────────────────────────────────────────${RESET}"
+    local unarchive="$SCRIPT_DIR/unarchive.sh"
+    if [[ ! -x "$unarchive" ]]; then
+        unarchive="$HOME/.local/bin/unarchive.sh"
+    fi
+    if [[ ! -x "$unarchive" ]]; then
+        error "unarchive.sh nao encontrado. Instale-o ou rode ./install-scripts.sh."
+    fi
 
-    # Procurar arquivos compactados comuns
-    find "$target_dir" -maxdepth 1 -mindepth 1 -type f \( -name "*.zip" -o -name "*.tar.gz" -o -name "*.tgz" -o -name "*.rar" \) | while read -r file; do
-        local filename=$(basename "$file")
-        local extension="${filename##*.}"
-        local folder_name="${filename%.*}"
-        
-        # Tratar extensões duplas como .tar.gz
-        if [[ "$filename" == *.tar.gz ]]; then
-            folder_name="${filename%.tar.gz}"
-        fi
-        folder_name="${target_dir%/}/${folder_name}"
-
-        if [[ "$dry_run" == true ]]; then
-            echo -e "  ${DIM}[Dry-run] mkdir -p \"$folder_name\" && unzip/tar \"$file\" -d \"$folder_name\""
-        else
-            echo -n "  ▶ Extraindo $filename... "
-            mkdir -p "$folder_name"
-            
-            local status=1
-            case "$filename" in
-                *.zip) unzip -q "$file" -d "$folder_name" && status=0 ;;
-                *.tar.gz|*.tgz) tar -xzf "$file" -C "$folder_name" && status=0 ;;
-                *.rar) unrar x "$file" "$folder_name/" >/dev/null 2>&1 && status=0 || warn "unrar nao instalado" ;;
-                *) warn "Formato nao suportado: $filename" ;;
-            esac
-
-            if [[ $status -eq 0 ]]; then
-                echo -e "${GREEN}✓${RESET}"
-            else
-                echo -e "${RED}✗${RESET}"
-            fi
-        fi
-    done
+    log "Delegando descompactacao a unarchive.sh: $target_dir"
+    local args=()
+    [[ "$dry_run" == true ]] && args+=(--dry-run)
+    "$unarchive" "${args[@]}" "$target_dir"
 }
 
 # --- Parsing de Argumentos ---
@@ -130,7 +106,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "  Opcoes:"
             echo "    --pack|-p       Compacta subdiretorios em .zip individuais"
-            echo "    --unpack|-u     Descompacta arquivos em pastas separadas"
+            echo "    --unpack|-u     Descompacta arquivos em pastas separadas (via unarchive.sh)"
             echo "    --dry-run       Simula as operacoes"
             echo "    --help|-h       Mostra esta ajuda"
             echo "    --version|-V    Mostra versao"

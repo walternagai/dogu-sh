@@ -189,6 +189,8 @@ while [[ $# -gt 0 ]]; do
             echo "    --help               Mostra esta ajuda"
             echo "    --version            Mostra versao"
             echo ""
+            echo "  Veja tambem: dedup-files.sh (remocao segura, dry-run padrao)"
+            echo ""
             echo "  Exemplos:"
             echo "    ./hunt-duplicates.sh ~/Downloads"
             echo "    ./hunt-duplicates.sh --trash ~/Documents 2048"

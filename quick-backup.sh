@@ -75,6 +75,8 @@ while [[ $# -gt 0 ]]; do
             echo "  Excluidos automaticamente:"
             echo "    .git, node_modules, .venv, venv, __pycache__, .cache, .local/share/Trash"
             echo ""
+            echo "  Veja tambem: folder-sync.sh (sincronizacao/mirror continuo)"
+            echo ""
             echo "  Exemplos:"
             echo "    ./quick-backup.sh --dry-run ~/Documents /mnt/backup"
             echo "    ./quick-backup.sh --all --compress ~/Projects /run/media/user/hd"

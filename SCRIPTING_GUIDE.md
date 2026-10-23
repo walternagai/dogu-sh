@@ -79,17 +79,17 @@ fi
 
 ## 3. Paleta de Cores e Formatação
 
-Usar **sempre** estas variáveis para qualquer saída colorida. Declará-las como `readonly`:
+Usar **sempre** estas variáveis para qualquer saída colorida. Não usar `readonly`: as variáveis são reatribuídas quando as cores são desligadas.
 
 ```bash
-readonly GREEN='\033[1;32m'
-readonly YELLOW='\033[1;33m'
-readonly RED='\033[1;31m'
-readonly CYAN='\033[1;36m'
-readonly BLUE='\033[1;34m'
-readonly BOLD='\033[1m'
-readonly DIM='\033[0;90m'
-readonly RESET='\033[0m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+RED='\033[1;31m'
+CYAN='\033[1;36m'
+BLUE='\033[1;34m'
+BOLD='\033[1m'
+DIM='\033[0;90m'
+RESET='\033[0m'
 ```
 
 ### Suporte a NO_COLOR
@@ -98,12 +98,12 @@ Todos os scripts devem respeitar a variável de ambiente `NO_COLOR` (padrão [no
 
 ```bash
 # Suporte a NO_COLOR (https://no-color.org/)
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 ```
 
-Isso garante que `export NO_COLOR=1` desabilite todas as cores na saída.
+Isso desliga cores quando a saída não é um TTY (pipes, logs, agentes) e garante que `export NO_COLOR=1` também as desabilite.
 
 ### Uso semântico
 
@@ -430,12 +430,12 @@ fi
 
 set -euo pipefail
 
-readonly GREEN='\033[1;32m'
-readonly CYAN='\033[1;36m'
-readonly DIM='\033[0;90m'
-readonly RESET='\033[0m'
+GREEN='\033[1;32m'
+CYAN='\033[1;36m'
+DIM='\033[0;90m'
+RESET='\033[0m'
 
-if [[ -n "${NO_COLOR:-}" ]]; then
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' CYAN='' DIM='' RESET=''
 fi
 
@@ -522,8 +522,8 @@ Antes de considerar um script pronto, verificar:
 - [ ] `readonly VERSION` definida
 - [ ] `SCRIPT_DIR` definido
 - [ ] `dependency-helper.sh` importado quando necessário
-- [ ] Paleta de cores padronizada com `readonly`
-- [ ] Suporte a `NO_COLOR` (após definição das cores)
+- [ ] Paleta de cores padronizada (sem `readonly`; TTY + `NO_COLOR` reatribuem)
+- [ ] Detecção de TTY + `NO_COLOR` (após definição das cores)
 - [ ] Funções `log`, `warn`, `error`, `success` definidas (`warn`/`error` escrevem em stderr)
 - [ ] `--help` e `--version` implementados (`-V` para version)
 - [ ] Argumentos via `while/case` com validação de valor obrigatório e tratamento de `--`
@@ -539,3 +539,18 @@ Antes de considerar um script pronto, verificar:
 - [ ] Registrado no `dogu.json` (metadados: category, risk, args, deps)
 - [ ] Permissão de execução (`chmod +x`)
 - [ ] Listado na tabela de dependências do `README.md`
+
+---
+
+## 17. Conversores em Lote (Convenção)
+
+Os conversores (`docx-to-md`, `pdf-to-md`, `pdf-to-jpg`, `xlsx-to-csv`, `ris-to-csv`) devem seguir o mesmo contrato de lote:
+
+- aceitar um arquivo ou um diretório;
+- exigir `--recursive` para varrer subpastas;
+- aceitar `--output DIR` para o destino;
+- aceitar `--overwrite` para sobrescrever (padrão: pular e avisar);
+- aceitar `--dry-run` para listar sem converter;
+- não misturar log humano no `stdout` quando `--json` estiver ativo.
+
+Não extrair uma biblioteca comum enquanto os toolchains forem distintos (`pandoc`, `pdftotext`, `pdftoppm`, `openpyxl`, `awk`). A duplicação atual é pequena e legível; a abstração só se paga quando um sexto conversor repetir o mesmo loop.

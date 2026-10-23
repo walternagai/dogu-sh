@@ -19,6 +19,21 @@ Task correspondente: `.kata/revisao-usabilidade-scripts.yaml`.
 | P0-07 cores em pipes | ✅ Implementado com ressalva | Detecção de TTY nos 104 scripts + `NO_COLOR` + `dogu --no-color`; flag `--no-color` por script não foi adicionada (use `NO_COLOR=1`) |
 | P0-08 `--json` | ✅ Implementado | 9 scripts; 9 smoke tests em `jq` passaram |
 
+### Status dos P1
+
+| Item | Status | Resultado |
+|---|---|---|
+| P1-01 backup Docker | ✅ Decidido | Manter separados; fronteiras e "Veja também" documentados |
+| P1-02 `archive-manager` × `unarchive` | ✅ Implementado | `--unpack` delega a `unarchive` |
+| P1-03 `quick-backup` × `folder-sync` | ✅ Decidido | Manter separados; referências cruzadas |
+| P1-04 `hunt-duplicates` × `dedup-files` | ✅ Decidido | Manter ambos; preset seguro vs avançado |
+| P1-05 `codebase-summary` × `context-gather` | ✅ Decidido | Manter separados; referências cruzadas |
+| P1-06 biblioteca de conversão | ✅ Avaliado | Não extrair agora; convenção no SCRIPTING_GUIDE |
+| P1-07 `doctor` + `completion` | ✅ Implementado | 8 checks e completion bash/zsh |
+| P1-08 README/menu × manifesto | ✅ Implementado | `doctor` verifica 105/105 |
+
+Detalhes em `P1-DECISOES.md`.
+
 ---
 
 ## 1. Escopo e método
@@ -380,7 +395,7 @@ Também foram executados:
 
 **JUDGE:** `VERIFIED` — baseline ancorado em `refs/kata/base/2b4a4277…`; lint, testes e coverage re-executados; a única claim aceita sem re-execução é o critério de sucesso, que é qualitativo.
 
-**PENDING:** os P0 estão implementados; implementar os achados P1/P2 (consolidações e scripts novos) — aguardando autorização e priorização.
+**PENDING:** P0 e P1 implementados; implementar os scripts novos e o agregador `docker-doctor` do P2 — aguardando autorização e priorização.
 
 ---
 

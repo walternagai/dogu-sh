@@ -1,0 +1,191 @@
+task: p1-consolidacao-e-doutor
+status: approved
+domain: coding
+done: >
+  Os oito itens P1 do relatório implementados ou decididos com evidência:
+  archive-manager delega --unpack a unarchive; docker-volume-mgr e
+  docker-backup/restore têm fronteiras documentadas; quick-backup x folder-sync,
+  hunt-duplicates x dedup-files e codebase-summary x context-gather têm spike
+  concluído com decisão; a biblioteca de conversão foi avaliada; dogu doctor e
+  dogu completion (bash/zsh) funcionam; cobertura manifesto/menu/README/SKILL
+  é verificada. Verificação: shellcheck, bash -n, doctor com 105/105, smoke de
+  completion e --help/--version sem regressões.
+base_commit: "4f7b8c6a7dcd011042633288fca2aa2b4819363b"
+approved_commit: ""
+fit:
+  trivial: false
+  route: code-loop
+  reason: >
+    Oito itens P1 com escopo definido no relatório, misturando implementação
+    (delegação, doctor, completion), documentação de fronteiras e spikes de
+    consolidação. O usuário autorizou a execução.
+  answered: true
+  skipped: false
+think:
+  problem: >
+    O portfólio tem sobreposições que confundem a escolha do usuário
+    (backup Docker, sync/backup, duplicados, contexto de projeto), não tem
+    um autodiagnóstico do manifesto e não oferece completion. Sem resolver
+    isso, a descoberta continua dependendo de ler o README e cada script.
+  assumptions:
+    - "Delegações devem preservar o comportamento e falhar com mensagem clara se o script alvo não existir."
+    - "Itens marcados como spike/avaliar no relatório podem terminar em decisão documentada, não em merge imediato."
+    - "Novas abstrações só entram se removem duplicação real; não criar biblioteca especulativa."
+    - "doctor deve ser somente leitura e não exigir dependências externas além de Python/Bash."
+  alternatives:
+    - "Unir quick-backup e folder-sync agora — descartada: semelhança de flags não garante o mesmo modelo mental; retenção e mirror/watch divergem."
+    - "Unir hunt-duplicates e dedup-files agora — descartada: 935 vs 357 linhas e perfis de segurança diferentes; exige plano de compatibilidade."
+    - "Criar convert-helper.sh e migrar cinco scripts — descartada: a parte comum é pequena e os toolchains divergem; seria abstração prematura."
+    - "Doctor com shell puro — descartada: o dispatcher já usa Python para o manifesto; reutilizar evita parser duplicado."
+  unknowns: |
+    RESOLVIDO:
+    1. archive-manager e unarchive têm a mesma semântica de pasta por arquivo? → sim; unarchive é superset.
+    2. docker-volume-mgr e docker-backup são o mesmo fluxo? → não; um é tar.gz por volume, outro é snapshot de diretório.
+    3. Doctor consegue checar metadados sem executar scripts? → sim, por leitura de flags/casos.
+    4. Completion pode ser gerado a partir do manifesto? → sim.
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: >
+    Sem novas dependências. Doctor reutiliza o parser Python existente.
+    Itens de merge sem evidência suficiente terminam em decisão documentada.
+  answered: true
+  skipped: false
+intent:
+  code_does: "archive-manager mantém --pack e delega --unpack; dogu ganha doctor e completion; docs ganham fronteiras."
+  check_expects: "shellcheck/bash -n continuam verdes; --help/--version não quebram; doctor 105/105; completion válido."
+  spec_says: "AGENTS.md pede um script por ferramenta, descoberta por manifesto e compatibilidade."
+  all_agree: true
+  conflict_resolution: ""
+  answered: true
+  skipped: false
+surgical:
+  files:
+    - path: ".kata/p1-consolidacao-e-doutor.yaml"
+      necessary: true
+      motivo: "Registro da task P1"
+    - path: "REVISAO-USABILIDADE.md"
+      necessary: true
+      motivo: "Atualização do status dos P1 e do PENDING"
+    - path: "P1-DECISOES.md"
+      necessary: true
+      motivo: "Decisões P1 com evidência"
+    - path: "README.md"
+      necessary: true
+      motivo: "Documentação de doctor/completion e link para P1-DECISOES"
+    - path: "SCRIPTING_GUIDE.md"
+      necessary: true
+      motivo: "Correção do padrão readonly/NO_COLOR e convenção de conversores"
+    - path: "SKILL.md"
+      necessary: true
+      motivo: "Regenerado com doctor/completion"
+    - path: "archive-manager.sh"
+      necessary: true
+      motivo: "P1-02 — --unpack delega a unarchive"
+    - path: "codebase-summary.sh"
+      necessary: true
+      motivo: "P1-05 — referência cruzada"
+    - path: "context-gather.sh"
+      necessary: true
+      motivo: "P1-05 — referência cruzada"
+    - path: "dedup-files.sh"
+      necessary: true
+      motivo: "P1-04 — referência cruzada"
+    - path: "docker-backup.sh"
+      necessary: true
+      motivo: "P1-01 — fronteira documentada"
+    - path: "docker-restore.sh"
+      necessary: true
+      motivo: "P1-01 — fronteira documentada"
+    - path: "docker-volume-mgr.sh"
+      necessary: true
+      motivo: "P1-01 — fronteira documentada"
+    - path: "dogu"
+      necessary: true
+      motivo: "P1-07 — doctor e completion"
+    - path: "dogu-make-skill.sh"
+      necessary: true
+      motivo: "P1-08 — linhas de doctor/completion no SKILL.md"
+    - path: "folder-sync.sh"
+      necessary: true
+      motivo: "P1-03 — referência cruzada"
+    - path: "hunt-duplicates.sh"
+      necessary: true
+      motivo: "P1-04 — referência cruzada"
+    - path: "quick-backup.sh"
+      necessary: true
+      motivo: "P1-03 — referência cruzada"
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+verify:
+  ruff_clean: "N/A (Bash; ShellCheck --severity=error passou em dogu + 105 scripts)"
+  tests_pass: "N/A (não há suíte; bash -n em 106 arquivos e smoke tests passaram)"
+  coverage_pct: 100.0
+  coverage_pass: true
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+  notes: |
+    Gate do projeto (.kata/config.yaml) via python -m kata --check-only:
+    - shellcheck --severity=error dogu *.sh → PASS
+    - bash -n dogu *.sh → PASS
+    - coverage do gerador de SKILL → 100%
+    Verificações adicionais:
+    - ./dogu doctor → 8 checks OK, 105/105 em manifesto, arquivos, menu, README e metadados.
+    - ./dogu doctor --json | jq .ok → true.
+    - ./dogu completion bash → bash -n OK; zsh → zsh -n OK.
+    - ./archive-manager.sh --unpack --dry-run → delega a unarchive; extração real de .zip validada.
+    - --help/--version nos 105 scripts → 0 falhas.
+    - 0 escapes ANSI em --help redirecionado.
+    - P0 preservado: dogu list --json | head -c 120 sem traceback; NO_COLOR e TTY estáveis.
+preflight:
+  skills_missing: []
+artifact:
+  intent_owed: true
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: true
+  pending_present: true
+  twins_owed: true
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: "Implementar os scripts novos e o agregador docker-doctor do P2 — fora do escopo desta task de P1."
+  documented: true
+twins:
+  pattern: "readonly em variáveis de cor no guia e extração duplicada entre archive-manager e unarchive"
+  result: "O SCRIPTING_GUIDE ainda ensinava readonly nas cores, contradizendo o NO_COLOR/TTY; corrigido. archive-manager mantinha um extrator próprio; agora delega a unarchive. Buscas de confirmação retornam 0 ocorrências de readonly de cor e de lógica de extração duplicada."
+  searched: true
+  defect_fixed: true
+  matches_count: 2
+  files_count: 2
+  fix_applied: true
+metrics:
+  p1_items: 8
+  p1_implemented: 3
+  p1_decided: 4
+  p1_evaluated: 1
+  doctor_checks: 8
+  coverage_manifest: 105
+  files_changed: 18
+judge:
+  verdict: VERIFIED
+  baseline_anchor: "refs/kata/base/ddeb14306b3504701928e57a7399dc9aa50262b6ce94e666a6ddf5ee3d5fbbab"
+  claims_verified:
+    - "lint limpo (shellcheck --severity=error)"
+    - "testes passam (bash -n em 105 scripts + dispatcher)"
+    - "coverage 100% ≥ gate"
+    - "17 arquivos alterados cirurgicamente (necessários)"
+    - "intenção alinhada: código, teste e spec concordam"
+  accepted_without_verification:
+    - "critério de sucesso satisfeito (não re-executável pelo juiz)"
+  blind_spots: []

@@ -69,6 +69,8 @@ while [[ $# -gt 0 ]]; do
             echo "    --help           Mostra esta ajuda"
             echo "    --version        Mostra versao"
             echo ""
+            echo "  Veja tambem: docker-volume-mgr.sh --restore (volume unico em tar.gz)"
+            echo ""
             echo "  Exemplos:"
             echo "    ./docker-restore.sh --input ~/docker-backups/20240113_143000 --all"
             echo "    ./docker-restore.sh --input ~/docker-backups/20240113_143000 --volume pgdata"

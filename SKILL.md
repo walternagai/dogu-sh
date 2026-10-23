@@ -17,6 +17,8 @@ description: >
 - Para operações destrutivas, use `--dry-run` antes de aplicar
 - Para bypass de confirmação, use `--yes` (quando disponível)
 - Todos os scripts respeitam `NO_COLOR=1`
+- Diagnostique manifesto e cobertura com `dogu doctor`
+- Completion: `source <(dogu completion bash)` ou `dogu completion zsh`
 
 ## Comandos Disponíveis
 

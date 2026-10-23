@@ -331,6 +331,8 @@ ${BOLD}Uso:${RESET}
   dogu info ${GREEN}<script>${RESET} [--json]          Metadados de um script
   dogu categories [--json]             Categorias com contagem
   dogu risks [--json]                  Níveis de risco com contagem
+  dogu doctor [--json]                 Diagnostica manifesto e cobertura
+  dogu completion bash|zsh             Gera script de completion
   dogu help                            Esta ajuda
   dogu version                         Versão
 
@@ -341,6 +343,8 @@ ${BOLD}Exemplos:${RESET}
   dogu list --category docker          Só scripts docker
   dogu search \"limpeza\"                Busca por descrição
   dogu info docker-clean.sh            Ver metadados
+  dogu doctor                          Diagnostica manifesto, menu e README
+  dogu completion bash                 Gera completion para Bash
 
 ${BOLD}Segurança:${RESET}
   Scripts ${RED}destructive${RESET} pedem confirmação antes de executar.
@@ -571,6 +575,197 @@ else:
   exec "$script_path" "${filtered_args[@]}"
 }
 
+# ─── Doctor e completion ─────────────────────────────────────────────
+cmd_doctor() {
+  local json_out=false
+  [[ "${1:-}" == "--json" ]] && json_out=true
+
+  local report
+  report=$(py "$(cat <<'PY'
+import json, sys, os, glob, re
+from collections import Counter
+
+root, manifest_path = sys.argv[1], sys.argv[2]
+checks, errors, warnings = [], [], []
+
+def add(label, status, detail):
+    checks.append({"label": label, "status": status, "detail": detail})
+    if status == "error":
+        errors.append(f"{label}: {detail}")
+    elif status == "warn":
+        warnings.append(f"{label}: {detail}")
+
+add("Python", "ok", sys.version.split()[0])
+repo_mode = os.path.isdir(os.path.join(root, ".git"))
+
+try:
+    data = json.load(open(manifest_path))
+    scripts = data.get("scripts", {})
+    add("Manifesto", "ok", f"{len(scripts)} scripts")
+except Exception as e:
+    add("Manifesto", "error", str(e))
+    scripts, data = {}, {}
+
+disk = {os.path.basename(p) for p in glob.glob(os.path.join(root, "*.sh"))}
+missing = sorted(set(scripts) - disk)
+unlisted = sorted(disk - set(scripts))
+if missing:
+    add("Arquivos", "error", f"ausentes: {', '.join(missing)}")
+else:
+    add("Arquivos", "ok", f"{len(scripts)}/{len(scripts)} presentes")
+if unlisted:
+    add("Fora do manifesto", "warn", ", ".join(unlisted))
+
+menu_path = os.path.join(root, "menu-launcher.sh")
+if os.path.exists(menu_path):
+    menu = set(re.findall(r"\[([^\]]+\.sh)\]", open(menu_path, errors="replace").read()))
+    miss_menu = sorted(set(scripts) - menu)
+    extra_menu = sorted(menu - set(scripts))
+    if miss_menu:
+        add("Menu", "warn", f"faltam: {', '.join(miss_menu)}")
+    elif extra_menu:
+        add("Menu", "warn", f"entradas sem manifesto: {', '.join(extra_menu)}")
+    else:
+        add("Menu", "ok", f"{len(scripts)}/{len(scripts)}")
+else:
+    add("Menu", "warn", "menu-launcher.sh nao encontrado")
+
+readme_path = os.path.join(root, "README.md")
+if os.path.exists(readme_path):
+    readme = set(re.findall(r"`([^`]+\.sh)`", open(readme_path, errors="replace").read()))
+    miss_readme = sorted(set(scripts) - readme)
+    if miss_readme:
+        add("README", "warn", f"faltam: {', '.join(miss_readme)}")
+    else:
+        add("README", "ok", f"{len(scripts)}/{len(scripts)}")
+else:
+    add("README", "warn" if repo_mode else "ok", "ausente" if repo_mode else "nao instalado (modo repo)")
+
+skill_path = os.path.join(root, "SKILL.md")
+if os.path.exists(skill_path) and os.path.getsize(skill_path) > 0:
+    add("SKILL.md", "ok", "presente")
+else:
+    add("SKILL.md", "warn" if repo_mode else "ok", "ausente (rode dogu-make-skill.sh)" if repo_mode else "nao instalado (opcional)")
+
+issues = []
+for name, meta in scripts.items():
+    path = os.path.join(root, name)
+    if not os.path.exists(path):
+        continue
+    text = open(path, errors="replace").read()
+    has_json = bool(re.search(r"--json(?:\||\))", text))
+    has_dry = bool(re.search(r"--dry-run(?:\||\))", text))
+    if bool(meta.get("has_json")) != has_json:
+        issues.append(f"{name}: has_json")
+    if bool(meta.get("has_dry_run")) != has_dry and not meta.get("dry_run_default"):
+        issues.append(f"{name}: has_dry_run")
+if issues:
+    add("Metadados", "warn", f"{len(issues)} divergencia(s): {', '.join(issues[:8])}")
+else:
+    add("Metadados", "ok", f"{len(scripts)}/{len(scripts)} consistentes")
+
+count_issues = []
+if data.get("total_scripts") != len(scripts):
+    count_issues.append("total_scripts")
+cats = Counter(m.get("category") for m in scripts.values())
+for k, v in data.get("categories", {}).items():
+    if cats.get(k, 0) != v:
+        count_issues.append(f"categoria {k}")
+risks = Counter(m.get("risk") for m in scripts.values())
+for k, v in data.get("risk_levels", {}).items():
+    if risks.get(k, 0) != v:
+        count_issues.append(f"risco {k}")
+feats = {
+    "has_json": sum(1 for m in scripts.values() if m.get("has_json")),
+    "has_dry_run": sum(1 for m in scripts.values() if m.get("has_dry_run")),
+    "interactive": sum(1 for m in scripts.values() if m.get("interactive")),
+}
+for k, v in data.get("features", {}).items():
+    if feats.get(k, 0) != v:
+        count_issues.append(f"feature {k}")
+if count_issues:
+    add("Contadores", "warn", ", ".join(count_issues))
+else:
+    add("Contadores", "ok", "total, categorias, riscos e features")
+
+print(json.dumps({"ok": not errors, "checks": checks, "errors": errors, "warnings": warnings}, ensure_ascii=False))
+PY
+)" "$SCRIPT_DIR" "$MANIFEST")
+
+  if $json_out; then
+    printf '%s\n' "$report"
+  else
+    printf '%s' "$report" | py "
+import json, sys
+d = json.load(sys.stdin)
+icons = {'ok': '✅', 'warn': '⚠️ ', 'error': '❌'}
+for c in d['checks']:
+    print(f\"  {icons.get(c['status'], '•')} {c['label']}: {c['detail']}\")
+print()
+print('  ✅ Doctor OK' if d['ok'] else '  ❌ Doctor encontrou erros')
+"
+  fi
+
+  printf '%s' "$report" | py "import json,sys; sys.exit(0 if json.load(sys.stdin)['ok'] else 1)"
+}
+
+cmd_completion() {
+  local shell_name="${1:-}"
+  case "$shell_name" in
+    bash)
+      cat <<'BASH'
+_dogu_completion() {
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+  local cmds="list search info categories risks doctor completion help version"
+  local names
+  names=$(dogu list --json 2>/dev/null | grep -o '"name": "[^"]*"' | cut -d'"' -f4 | sed 's/\.sh$//')
+  if [[ $COMP_CWORD -eq 1 ]]; then
+    COMPREPLY=( $(compgen -W "$cmds $names" -- "$cur") )
+  elif [[ "${COMP_WORDS[1]}" == "info" && $COMP_CWORD -eq 2 ]]; then
+    COMPREPLY=( $(compgen -W "$names" -- "$cur") )
+  elif [[ "${COMP_WORDS[1]}" == "completion" && $COMP_CWORD -eq 2 ]]; then
+    COMPREPLY=( $(compgen -W "bash zsh" -- "$cur") )
+  fi
+}
+complete -F _dogu_completion dogu
+BASH
+      ;;
+    zsh)
+      cat <<'ZSH'
+#compdef dogu
+_dogu() {
+  local -a cmds scripts
+  cmds=(list search info categories risks doctor completion help version)
+  scripts=(${(f)"$(dogu list --json 2>/dev/null | grep -o '"name": "[^"]*"' | cut -d'"' -f4 | sed 's/\.sh$//')"})
+  if [[ $CURRENT -eq 2 ]]; then
+    _describe 'command' cmds
+    _describe 'script' scripts
+  elif [[ $words[2] == info ]]; then
+    _describe 'script' scripts
+  elif [[ $words[2] == completion ]]; then
+    _values 'shell' bash zsh
+  fi
+}
+_dogu "$@"
+ZSH
+      ;;
+    --help|-h|"")
+      echo ""
+      echo "  dogu completion — Gera script de completion"
+      echo ""
+      echo "  Uso: dogu completion bash|zsh"
+      echo ""
+      echo "  Exemplos:"
+      echo "    source <(dogu completion bash)"
+      echo "    dogu completion zsh > ~/.zfunc/_dogu"
+      echo ""
+      ;;
+    *)
+      error "Shell nao suportado: $shell_name (use bash ou zsh)"
+      ;;
+  esac
+}
+
 # ─── Main ────────────────────────────────────────────────────────────
 main() {
   [[ $# -eq 0 ]] && { cmd_help; exit 0; }
@@ -593,6 +788,8 @@ main() {
     info)       cmd_info "$@" ;;
     categories) cmd_categories "$@" ;;
     risks)      cmd_risks "$@" ;;
+    doctor)     cmd_doctor "$@" ;;
+    completion) cmd_completion "$@" ;;
     *)          cmd_run "$cmd" "$@" ;;
   esac
 }

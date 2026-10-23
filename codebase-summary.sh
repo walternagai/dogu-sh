@@ -7,6 +7,7 @@
 #   --deep          Analise profunda (inclui complexidade)
 #   --help          Mostra esta ajuda
 #   --version       Mostra versao
+#   Veja tambem:    context-gather.sh (contexto por arquivo/tarefa)
 
 set -euo pipefail
 
@@ -55,6 +56,8 @@ while [[ $# -gt 0 ]]; do
             echo "    --deep|-d       Analise profunda (inclui complexidade)"
             echo "    --help|-h       Mostra esta ajuda"
             echo "    --version|-V    Mostra versao"
+            echo ""
+            echo "  Veja tambem: context-gather.sh (contexto por arquivo/tarefa)"
             echo ""
             exit 0
             ;;

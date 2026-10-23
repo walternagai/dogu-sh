@@ -85,6 +85,8 @@ while [[ $# -gt 0 ]]; do
             echo "    --help          Mostra esta ajuda"
             echo "    --version       Mostra versao"
             echo ""
+            echo "  Veja tambem: docker-volume-mgr.sh --backup (volume unico em tar.gz)"
+            echo ""
             echo "  Exemplos:"
             echo "    ./docker-backup.sh --all"
             echo "    ./docker-backup.sh --volume pgdata --volume redis-data"

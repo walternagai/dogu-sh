@@ -9,6 +9,7 @@
 #   --include-tests     Inclui testes relacionados
 #   --help              Mostra esta ajuda
 #   --version           Mostra versao
+#   Veja tambem:        codebase-summary.sh (resumo do projeto)
 
 set -euo pipefail
 
@@ -65,6 +66,8 @@ while [[ $# -gt 0 ]]; do
             echo "    --include-tests     Inclui testes relacionados"
             echo "    --help|-h           Mostra esta ajuda"
             echo "    --version|-V        Mostra versao"
+            echo ""
+            echo "  Veja tambem: codebase-summary.sh (resumo do projeto)"
             echo ""
             exit 0
             ;;

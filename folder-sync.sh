@@ -74,6 +74,8 @@ while [[ $# -gt 0 ]]; do
             echo "    --help        Mostra esta ajuda"
             echo "    --version     Mostra versao"
             echo ""
+            echo "  Veja tambem: quick-backup.sh (backup incremental com retencao)"
+            echo ""
             echo "  Exemplos:"
             echo "    ./folder-sync.sh --dry-run ~/Documents /run/media/user/hd/Documents"
             echo "    ./folder-sync.sh --mirror ~/Projects /mnt/nas/projects"

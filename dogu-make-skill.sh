@@ -183,6 +183,8 @@ lines.append('- Para saída parseável, use `--json`')
 lines.append('- Para operações destrutivas, use `--dry-run` antes de aplicar')
 lines.append('- Para bypass de confirmação, use `--yes` (quando disponível)')
 lines.append('- Todos os scripts respeitam `NO_COLOR=1`')
+lines.append('- Diagnostique manifesto e cobertura com `dogu doctor`')
+lines.append('- Completion: `source <(dogu completion bash)` ou `dogu completion zsh`')
 lines.append('')
 
 # ── Comandos por categoria ─────────────────────────────────────────
