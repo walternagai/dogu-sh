@@ -45,7 +45,7 @@ Detalhes em `P1-DECISOES.md`.
 | `docker-doctor` | ✅ Implementado | Agrega status, saúde e auditoria; `--full` inclui CIS/gargalos |
 | `json-yaml-tool` | ✅ Implementado | jq + PyYAML; validate/format/query/to-yaml/to-json |
 | `cron-manager` | ✅ Implementado | `--list/--add/--remove`, backup, marcadores, JSON |
-| `systemd-timer` | ⏳ Pendente | Backend systemd não entrou nesta rodada |
+| `systemd-timer` | ✅ Implementado | Backend `systemd --user` com add/list/remove |
 | `http-server` | ✅ Implementado | Python `http.server`, bind localhost por padrão |
 | `dotfiles-manager` | ✅ Implementado | init/add/remove/list/status/apply com symlinks |
 | `file-watcher` | ✅ Implementado | Polling com snapshot e JSON Lines |
