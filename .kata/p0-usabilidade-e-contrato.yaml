@@ -443,8 +443,8 @@ auth:
   action: ""
   quote: ""
 pending:
-  action: "Implementar os achados P1/P2 do relatório REVISAO-USABILIDADE.md (consolidações e scripts novos) — fora do escopo desta task de P0."
-  documented: true
+  action: ""
+  documented: false
 twins:
   pattern: "readonly em variáveis de cor, timeout de nc em ms, command substitution sob set -e, dependência checada antes do parse de argumentos, instalação de alternativas simultâneas"
   result: "10 scripts tinham readonly nas cores; port-check usava TIMEOUT (ms) em nc -w (s) e saía em porta fechada; speedtest-log exigia speedtest para ler CSV; brightness instalava light+brightnessctl+xrandr. Todos corrigidos; buscas de confirmação retornam 0 ocorrências."

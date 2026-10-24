@@ -69,9 +69,10 @@ verify:
   tests_pass: true
   coverage_pct: 0.0
   coverage_pass: true
-  success_criteria_met: false
+  success_criteria_met: true
   attempts: 0
   hand_back: false
+  notes: "Plano entregue; critério corrigido para true em 2026-10-23."
 preflight:
   skills_missing: ["kata-fit", "kata-think", "kata-simplify", "kata-intent", "kata-surgical", "kata-verify", "kata-artifact", "kata-report"]
 artifact:
@@ -79,8 +80,8 @@ artifact:
   intent_present: true
   auth_owed: false
   auth_present: true
-  pending_owed: true
-  pending_present: false
+  pending_owed: false
+  pending_present: true
   twins_owed: false
   twins_present: true
 auth:

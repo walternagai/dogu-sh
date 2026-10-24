@@ -79,8 +79,8 @@ auth:
   action: ""
   quote: ""
 pending:
-  action: "Implementar Fase 3: --json e NO_COLOR nos scripts prioritários"
-  documented: true
+  action: ""
+  documented: false
 twins:
   pattern: ""
   result: ""

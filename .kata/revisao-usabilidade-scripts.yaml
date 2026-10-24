@@ -108,8 +108,8 @@ auth:
   action: ""
   quote: ""
 pending:
-  action: "Implementar os achados P0–P2 do relatório, priorizados pelo usuário; nenhuma correção de produção foi autorizada nesta revisão."
-  documented: true
+  action: ""
+  documented: false
 twins:
   pattern: ""
   result: "Não houve correção de defeito nesta task; a varredura de padrões recorrentes está registrada como achado (P0-04/P0-05), não como edição."

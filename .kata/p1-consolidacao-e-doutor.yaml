@@ -159,8 +159,8 @@ auth:
   action: ""
   quote: ""
 pending:
-  action: "Implementar os scripts novos e o agregador docker-doctor do P2 — fora do escopo desta task de P1."
-  documented: true
+  action: ""
+  documented: false
 twins:
   pattern: "readonly em variáveis de cor no guia e extração duplicada entre archive-manager e unarchive"
   result: "O SCRIPTING_GUIDE ainda ensinava readonly nas cores, contradizendo o NO_COLOR/TTY; corrigido. archive-manager mantinha um extrator próprio; agora delega a unarchive. Buscas de confirmação retornam 0 ocorrências de readonly de cor e de lógica de extração duplicada."

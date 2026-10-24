@@ -79,7 +79,7 @@ auth:
   action: ""
   quote: ""
 pending:
-  action: "Corrigir os achados AUD-001 a AUD-004 e decidir se as inconsistências de tracking AUD-005 devem ser normalizadas; nenhuma correção de produto foi autorizada nesta auditoria."
+  action: "AUD-004 (prompts/TTY) e AUD-006 (CI) — AUD-001, AUD-002, AUD-003 e AUD-005 resolvidos."
   documented: true
 twins:
   pattern: "reads interativos sem guard [ -t 0 ] e metadados de risco incompatíveis com flags destrutivas"

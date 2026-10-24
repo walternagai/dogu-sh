@@ -84,8 +84,8 @@ auth:
   action: ""
   quote: ""
 pending:
-  action: "Implementar Fase 4: SKILL.md gerado automaticamente a partir de dogu.json"
-  documented: true
+  action: ""
+  documented: false
 twins:
   pattern: "bug fixes in for loops and fd redirection"
   result: "5 bugs found and fixed in Tier 1 scripts"

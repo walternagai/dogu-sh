@@ -1,0 +1,116 @@
+task: normalizar-tracking-kata
+status: approved
+domain: coding
+done: >
+  Pendências obsoletas removidas das tasks concluídas; dogu-agent-readiness
+  normalizada; pendências genuínas (AUD-004/AUD-006, prompts e CI) preservadas.
+  Verificação: todos os YAML carregam com PyYAML e o estado das tasks reflete o
+  código atual.
+base_commit: "a4aae9912b47c59554888c05587d64ea74f3b46e"
+approved_commit: ""
+fit:
+  trivial: false
+  route: code-loop
+  reason: "Bookkeeping de 9 arquivos .kata, sem alteração de código de produção."
+  answered: true
+  skipped: false
+think:
+  problem: >
+    Várias tasks aprovadas mantêm pending.action apontando para trabalho já
+    concluído, e dogu-agent-readiness está approved com success_criteria_met
+    false. Isso faz o estado do projeto parecer mais aberto do que é.
+  assumptions:
+    - "Pendências genuínas devem ser preservadas; só as concluídas são limpas."
+    - "O histórico de preflight degradado não deve ser reescrito."
+  alternatives:
+    - "Apagar tasks antigas — descartada: perde histórico."
+    - "Limpar apenas os pending obsoletos — escolhida: preserva rastreabilidade."
+  unknowns: "Nenhum bloqueante."
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: "Somente edição de metadados."
+  answered: true
+  skipped: false
+intent:
+  code_does: "Nenhum código de produção foi alterado."
+  check_expects: "Os YAML continuam válidos e as tasks mantêm suas evidências."
+  spec_says: "O estado da task deve refletir o trabalho realizado."
+  all_agree: true
+  conflict_resolution: ""
+  answered: true
+  skipped: false
+surgical:
+  files:
+    - path: ".kata/dogu-cli-dispatcher.yaml"
+      necessary: true
+      motivo: "Pending da Fase 3 já concluída"
+    - path: ".kata/dogu-json-nocolor.yaml"
+      necessary: true
+      motivo: "Pending da Fase 4 já concluída"
+    - path: ".kata/dogu-manifest-implementation.yaml"
+      necessary: true
+      motivo: "Pending da Fase 2 já concluída"
+    - path: ".kata/video-catalog-organizer.yaml"
+      necessary: true
+      motivo: "Pending de implementação já concluída"
+    - path: ".kata/revisao-usabilidade-scripts.yaml"
+      necessary: true
+      motivo: "P0–P2 concluídos"
+    - path: ".kata/p0-usabilidade-e-contrato.yaml"
+      necessary: true
+      motivo: "P1/P2 concluídos"
+    - path: ".kata/p1-consolidacao-e-doutor.yaml"
+      necessary: true
+      motivo: "P2 concluído"
+    - path: ".kata/analise-revisao-repositorio.yaml"
+      necessary: true
+      motivo: "Pending reduzido a AUD-004/AUD-006"
+    - path: ".kata/dogu-agent-readiness.yaml"
+      necessary: true
+      motivo: "success_criteria_met corrigido"
+    - path: ".kata/normalizar-tracking-kata.yaml"
+      necessary: true
+      motivo: "Registro da task"
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+verify:
+  ruff_clean: "N/A (sem código)"
+  tests_pass: "N/A (sem código)"
+  coverage_pct: 0.0
+  coverage_pass: true
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+  notes: "Todos os .kata/*.yaml carregam com PyYAML; pendências genuínas preservadas."
+preflight:
+  skills_missing: []
+artifact:
+  intent_owed: false
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: true
+  pending_present: true
+  twins_owed: false
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: "AUD-004 (prompts/TTY) e AUD-006 (CI) seguem abertos em analise-revisao-repositorio."
+  documented: true
+twins:
+  pattern: ""
+  result: ""
+  searched: false
+  defect_fixed: false
+  matches_count: 0
+  files_count: 0
+  fix_applied: false

@@ -78,8 +78,8 @@ auth:
   action: ""
   quote: ""
 pending:
-  action: "Implementar Fase 2: CLI dispatcher 'dogu' que consome dogu.json"
-  documented: true
+  action: ""
+  documented: false
 twins:
   pattern: ""
   result: ""

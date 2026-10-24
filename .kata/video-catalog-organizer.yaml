@@ -203,8 +203,8 @@ auth:
   action: ""
   quote: ""
 pending:
-  action: "Implementar video-catalog-organizer.sh com as 3 estratégias decididas (content/year/quality); modo dry-run default + --apply para mover; ffprobe opt-in via --probe-quality. Aguardando autorização do usuário para retomar a task com code-loop (SIMPLIFY → SURGICAL → VERIFY → ARTIFACT → REPORT)."
-  documented: true
+  action: ""
+  documented: false
 twins:
   pattern: ""
   result: ""
