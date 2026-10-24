@@ -202,9 +202,12 @@ case "$ACTION" in
         echo "    5) Hex Encode        6) Hex Decode"
         echo ""
         printf "  Opcao: "
-        read -r choice < /dev/tty
+        { read -r choice < /dev/tty; } 2>/dev/null || choice=""
         printf "  Texto: "
-        read -r text < /dev/tty
+        { read -r text < /dev/tty; } 2>/dev/null || text=""
+
+        [ -z "$choice" ] && { echo "Opcao vazia." >&2; exit 1; }
+        [ -z "$text" ] && { echo "Texto vazio." >&2; exit 1; }
 
         case "$choice" in
             1) ACTION="encode"; INPUT_TEXT="$text" ;;

@@ -325,9 +325,8 @@ auth:
   action: ""
   quote: ""
 pending:
-  action: |
-    Hardening de scripts dogu-sh com `read VAR < /dev/tty` SEM fallback (categoria C — input livre URL/texto). Cerca de 12 ocorrencias em 7 arquivos: api-tester.sh, alarm.sh, base64-tool.sh, color-converter.sh, dns-lookup.sh, port-check.sh, qr-gen-sh. Em pipe/CI a variavel fica vazia e o script prossegue com string vazia em vez de cancelar. Decisao Q2=A: tarefa separada quando voce quiser. Tambem: adicionar SCRIPTING_GUIDE.md §5 + §15 bullets com a regra canonica apos implementacao (Q4=A).
-  documented: true
+  action: ""
+  documented: false
 twins:
   pattern: 'read -r (confirm|VAR) < /dev/tty 2>/dev/null || VAR="default"'
   result: "0 read -r sem [ -t 0 ] guard no repo inteiro (apos patch)"

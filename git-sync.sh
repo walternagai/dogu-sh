@@ -124,7 +124,7 @@ check_ollama_model() {
         fi
         echo ""
         printf "  Informe o modelo padrao para commits: "
-        if [ -t 0 ] || [ -r /dev/tty ]; then
+        if [ -t 0 ]; then
             read -r OLLAMA_MODEL < /dev/tty 2>/dev/null || OLLAMA_MODEL=""
         else
             error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
@@ -171,7 +171,7 @@ generate_commit_message() {
             msg=$(echo "$msg" | sed 's/^[`"'"'"']//;s/[`"'"'"']$//' | head -c 200)
             echo -e "    ${GREEN}Mensagem sugerida:${RESET} $msg" >&2
             printf "    Usar esta mensagem? [S/n/e=editar]: " >&2
-            if [ -t 0 ] || [ -r /dev/tty ]; then
+            if [ -t 0 ]; then
                 read -r choice < /dev/tty 2>/dev/null || choice="s"
             else
                 error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
@@ -180,7 +180,7 @@ generate_commit_message() {
                 [nN]*)
                     echo -e "    ${BOLD}Tags disponiveis:${RESET} $COMMIT_TAGS" >&2
                     printf "    Digite a mensagem de commit: " >&2
-                    if [ -t 0 ] || [ -r /dev/tty ]; then
+                    if [ -t 0 ]; then
                         read -r msg < /dev/tty 2>/dev/null || msg=""
                     else
                         error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
@@ -188,7 +188,7 @@ generate_commit_message() {
                     ;;
                 [eE]*)
                     printf "    Edite a mensagem: " >&2
-                    if [ -t 0 ] || [ -r /dev/tty ]; then
+                    if [ -t 0 ]; then
                         read -r -e -i "$msg" msg < /dev/tty 2>/dev/null || msg="$msg"
                     else
                         error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
@@ -200,7 +200,7 @@ generate_commit_message() {
             echo -e "    ${YELLOW}Ollama nao retornou mensagem.${RESET}" >&2
             echo -e "    ${BOLD}Tags disponiveis:${RESET} $COMMIT_TAGS" >&2
             printf "    Digite a mensagem de commit: " >&2
-            if [ -t 0 ] || [ -r /dev/tty ]; then
+            if [ -t 0 ]; then
                 read -r msg < /dev/tty 2>/dev/null || msg=""
             else
                 error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
@@ -210,7 +210,7 @@ generate_commit_message() {
     else
         echo -e "    ${BOLD}Tags de commit:${RESET} $COMMIT_TAGS" >&2
         printf "    Digite a mensagem de commit: " >&2
-        if [ -t 0 ] || [ -r /dev/tty ]; then
+        if [ -t 0 ]; then
             read -r msg < /dev/tty 2>/dev/null || msg=""
         else
             error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
@@ -245,7 +245,7 @@ resolve_merge_conflicts() {
         echo -e "      ${CYAN}0${RESET} Abortar e sair"
         echo ""
         printf "    Escolha [0-4]: "
-        if [ -t 0 ] || [ -r /dev/tty ]; then
+        if [ -t 0 ]; then
             read -r choice < /dev/tty 2>/dev/null || choice="0"
         else
             error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
@@ -288,7 +288,7 @@ resolve_merge_conflicts() {
                     echo -e "      ${BOLD}Arquivo:${RESET} $f"
                     echo -e "        ${CYAN}o${RESET}) ours   ${CYAN}t${RESET}) theirs   ${CYAN}e${RESET}) editor   ${CYAN}s${RESET}) pular"
                     printf "        Resolucao para $f: "
-                    if [ -t 0 ] || [ -r /dev/tty ]; then
+                    if [ -t 0 ]; then
                         read -r fchoice < /dev/tty 2>/dev/null || fchoice="s"
                     else
                         error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
@@ -345,7 +345,7 @@ resolve_diverged_repo() {
     echo -e "      ${CYAN}0${RESET} Pular este repositorio"
     echo ""
     printf "    Escolha [0-3]: "
-    if [ -t 0 ] || [ -r /dev/tty ]; then
+    if [ -t 0 ]; then
         read -r choice < /dev/tty 2>/dev/null || choice="0"
     else
         error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
@@ -406,7 +406,7 @@ resolve_diverged_repo() {
         3)
             echo -e "    ${RED}ATENCAO: Isso descartara ${ahead} commit(s) local(is)!${RESET}"
             printf "    Confirmar reset para remoto? [s/N]: "
-            if [ -t 0 ] || [ -r /dev/tty ]; then
+            if [ -t 0 ]; then
                 read -r confirm < /dev/tty 2>/dev/null || confirm="n"
             else
                 error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
@@ -543,7 +543,7 @@ while IFS= read -r repo_path; do
                     fi
                 else
                     printf "    Fazer commit de %s alteracao(oes)? [s/N]: " "$dirty"
-                    if [ -t 0 ] || [ -r /dev/tty ]; then
+                    if [ -t 0 ]; then
                         read -r confirm < /dev/tty 2>/dev/null || confirm="n"
                     else
                         error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
@@ -672,7 +672,7 @@ while IFS= read -r repo_path; do
             fi
         else
             printf "    Fazer commit de %s alteracao(oes)? [s/N]: " "$dirty"
-            if [ -t 0 ] || [ -r /dev/tty ]; then
+            if [ -t 0 ]; then
                 read -r confirm < /dev/tty 2>/dev/null || confirm="n"
             else
                 error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
@@ -726,7 +726,7 @@ while IFS= read -r repo_path; do
                 fi
             else
                 printf "    Puxar atualizacoes? [s/N]: "
-                if [ -t 0 ] || [ -r /dev/tty ]; then
+                if [ -t 0 ]; then
                     read -r confirm < /dev/tty 2>/dev/null || confirm="n"
                 else
                     error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
@@ -812,7 +812,7 @@ while IFS= read -r repo_path; do
                 fi
             else
                 printf "    Enviar commits? [s/N]: "
-                if [ -t 0 ] || [ -r /dev/tty ]; then
+                if [ -t 0 ]; then
                     read -r confirm < /dev/tty 2>/dev/null || confirm="n"
                 else
                     error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."

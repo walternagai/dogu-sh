@@ -79,7 +79,7 @@ auth:
   action: ""
   quote: ""
 pending:
-  action: "AUD-004 (prompts/TTY) e AUD-006 (CI) — AUD-001, AUD-002, AUD-003 e AUD-005 resolvidos."
+  action: "AUD-006 (CI) — AUD-001 a AUD-005 resolvidos."
   documented: true
 twins:
   pattern: "reads interativos sem guard [ -t 0 ] e metadados de risco incompatíveis com flags destrutivas"

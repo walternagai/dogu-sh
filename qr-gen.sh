@@ -84,7 +84,7 @@ if [ -z "$QR_TEXT" ]; then
     echo -e "  ${BOLD}QR Generator${RESET}  ${DIM}v$VERSION${RESET}"
     echo ""
     printf "  Texto/URL: "
-    read -r QR_TEXT < /dev/tty
+    { read -r QR_TEXT < /dev/tty; } 2>/dev/null || QR_TEXT=""
 fi
 
 if [ -z "$QR_TEXT" ]; then

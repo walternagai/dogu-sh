@@ -93,7 +93,7 @@ if [ -z "$DOMAIN" ]; then
     echo -e "  ${BOLD}DNS Lookup${RESET}  ${DIM}v$VERSION${RESET}"
     echo ""
     printf "  Dominio: "
-    read -r DOMAIN < /dev/tty
+    { read -r DOMAIN < /dev/tty; } 2>/dev/null || DOMAIN=""
 fi
 
 if [ -z "$DOMAIN" ]; then

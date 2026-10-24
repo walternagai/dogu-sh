@@ -120,8 +120,10 @@ if [ -z "$COLOR_INPUT" ]; then
     echo -e "  ${BOLD}Color Converter${RESET}  ${DIM}v$VERSION${RESET}"
     echo ""
     printf "  Cor (HEX, RGB, HSL ou nome): "
-    read -r COLOR_INPUT < /dev/tty
+    { read -r COLOR_INPUT < /dev/tty; } 2>/dev/null || COLOR_INPUT=""
 fi
+
+[ -z "$COLOR_INPUT" ] && error "Cor vazia."
 
 hex_to_rgb() {
     local hex="$1"

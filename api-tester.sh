@@ -110,7 +110,7 @@ if [ -z "$URL" ]; then
     echo -e "  ${BOLD}── API Tester ──${RESET}"
     echo ""
     printf "  URL: "
-    read -r URL < /dev/tty
+    { read -r URL < /dev/tty; } 2>/dev/null || URL=""
     echo ""
 fi
 

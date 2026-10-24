@@ -158,11 +158,13 @@ if [ -z "$ALARM_TIME" ]; then
     echo -e "  ${BOLD}Alarm${RESET}  ${DIM}v$VERSION${RESET}"
     echo ""
     printf "  Hora ou duracao (ex: 07:30, 25m, 2h): "
-    read -r ALARM_TIME < /dev/tty
+    { read -r ALARM_TIME < /dev/tty; } 2>/dev/null || ALARM_TIME=""
     printf "  Mensagem (Enter para 'Alarme!'): "
-    read -r ALARM_MSG < /dev/tty
+    { read -r ALARM_MSG < /dev/tty; } 2>/dev/null || ALARM_MSG=""
     ALARM_MSG="${ALARM_MSG:-Alarme!}"
 fi
+
+[ -z "$ALARM_TIME" ] && error "Hora ou duracao obrigatoria."
 
 target_secs=0
 
