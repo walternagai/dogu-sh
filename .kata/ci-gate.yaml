@@ -1,0 +1,91 @@
+task: ci-gate
+status: approved
+domain: coding
+done: >
+  Workflow de CI criado com bash -n, ShellCheck, validação do manifesto, doctor,
+  sincronia do SKILL.md e smoke de --help/--version. Executado localmente com
+  sucesso. Fecha AUD-006.
+base_commit: "29fee04fadcf3cee577aa5e11f07209f7dc47ea3"
+approved_commit: ""
+fit:
+  trivial: false
+  route: code-loop
+  reason: "Novo workflow de CI e fechamento do AUD-006."
+  answered: true
+  skipped: false
+think:
+  problem: "O projeto não tinha gate automatizado em CI; as verificações dependiam de execução local."
+  assumptions:
+    - "GitHub Actions ubuntu-latest tem Python 3 e bash."
+    - "ShellCheck severity=error é o gate acordado no .kata/config.yaml."
+  alternatives:
+    - "Rodar o CLI kata no CI — descartada: kata é ferramenta externa e não está no repositório."
+    - "Rodar os comandos diretamente — escolhida: sem dependência extra."
+  unknowns: "Nenhum bloqueante."
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: "Workflow mínimo, sem matrix e sem steps especulativos."
+  answered: true
+  skipped: false
+intent:
+  code_does: "CI executa os mesmos gates do .kata/config.yaml e o doctor."
+  check_expects: "Workflow YAML válido; todos os steps passam localmente."
+  spec_says: "AUD-006 recomenda um gate automatizado."
+  all_agree: true
+  conflict_resolution: ""
+  answered: true
+  skipped: false
+surgical:
+  files:
+    - path: ".github/workflows/ci.yml"
+      necessary: true
+      motivo: "Novo gate de CI"
+    - path: ".kata/ci-gate.yaml"
+      necessary: true
+      motivo: "Registro da task"
+    - path: ".kata/analise-revisao-repositorio.yaml"
+      necessary: true
+      motivo: "AUD-006 resolvido"
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+verify:
+  ruff_clean: "N/A (Bash)"
+  tests_pass: "N/A (sem suíte; steps executados localmente)"
+  coverage_pct: 0.0
+  coverage_pass: true
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+  notes: "Workflow YAML válido; bash -n, shellcheck, jq, doctor, diff do SKILL.md e smoke --help/--version passaram localmente."
+preflight:
+  skills_missing: []
+artifact:
+  intent_owed: true
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: false
+  pending_present: true
+  twins_owed: false
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: ""
+  documented: false
+twins:
+  pattern: ""
+  result: ""
+  searched: false
+  defect_fixed: false
+  matches_count: 0
+  files_count: 0
+  fix_applied: false

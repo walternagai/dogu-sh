@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    name: Bash quality gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck jq
+
+      - name: Bash syntax
+        run: bash -n dogu *.sh
+
+      - name: ShellCheck
+        run: shellcheck --severity=error dogu *.sh
+
+      - name: Validate manifest
+        run: jq empty dogu.json
+
+      - name: Doctor
+        run: ./dogu doctor
+
+      - name: SKILL.md is in sync
+        run: |
+          ./dogu-make-skill.sh --dry-run >/dev/null
+          diff -u SKILL.md /tmp/dogu-skill-preview.md
+
+      - name: Help and version smoke
+        run: |
+          for f in *.sh; do
+            ./"$f" --help >/dev/null
+            ./"$f" --version >/dev/null
+          done

@@ -79,8 +79,8 @@ auth:
   action: ""
   quote: ""
 pending:
-  action: "AUD-006 (CI) — AUD-001 a AUD-005 resolvidos."
-  documented: true
+  action: ""
+  documented: false
 twins:
   pattern: "reads interativos sem guard [ -t 0 ] e metadados de risco incompatíveis com flags destrutivas"
   result: "Busca ampla encontrou 3 reads com default sem guard em git-sync.sh e flags destrutivas subdeclaradas em git-stale.sh; não houve edição."
