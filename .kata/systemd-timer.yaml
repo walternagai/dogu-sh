@@ -1,0 +1,101 @@
+task: systemd-timer
+status: approved
+domain: coding
+done: >
+  Script systemd-timer.sh funcional para listar, adicionar e remover timers
+  systemd --user, com OnCalendar validado, unit service/timer, wrapper,
+  --dry-run, --json, confirmação e --force. Registrado no manifesto, menu,
+  README e SKILL.md. Verificação: smoke tests com systemctl fake e doctor 117/117.
+base_commit: "00c6bbfa10dc376b2f2914aa0886fc7b63b302cd"
+approved_commit: ""
+fit:
+  trivial: false
+  route: code-loop
+  reason: "Novo script de integração com systemd --user, com unit files e registro."
+  answered: true
+  skipped: false
+think:
+  problem: "O cron-manager cobre crontab, mas não há backend para timers systemd --user."
+  assumptions:
+    - "O usuário quer timers persistentes em ~/.config/systemd/user."
+    - "O comando pode ser encapsulado em um wrapper para evitar quoting de ExecStart."
+  alternatives:
+    - "Adicionar --backend systemd ao cron-manager — descartada: mistura dois modelos de agendamento."
+    - "Script systemd-timer separado — escolhida: mantém um script por ferramenta."
+  unknowns: "Nenhum bloqueante."
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: "Apenas list/add/remove; sem enable/disable separados nesta rodada."
+  answered: true
+  skipped: false
+intent:
+  code_does: "Gera units e wrapper, habilita/desabilita timers e lista o estado."
+  check_expects: "Smoke tests com systemctl fake; --help/--version; JSON válido."
+  spec_says: "AGENTS.md exige boilerplate, manifesto, menu, README e deps."
+  all_agree: true
+  conflict_resolution: ""
+  answered: true
+  skipped: false
+surgical:
+  files:
+    - path: systemd-timer.sh
+      necessary: true
+      motivo: "Novo script"
+    - path: dogu.json
+      necessary: true
+      motivo: "Registro e contadores"
+    - path: menu-launcher.sh
+      necessary: true
+      motivo: "Entrada no menu"
+    - path: README.md
+      necessary: true
+      motivo: "Documentação e dependências"
+    - path: SKILL.md
+      necessary: true
+      motivo: "Regenerado"
+    - path: .kata/systemd-timer.yaml
+      necessary: true
+      motivo: "Registro da task"
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+verify:
+  ruff_clean: "N/A (Bash)"
+  tests_pass: "N/A (sem suíte; smoke tests)"
+  coverage_pct: 0.0
+  coverage_pass: true
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+  notes: "Testado com XDG dirs temporários e systemctl fake: add, list, remove, dry-run e JSON."
+preflight:
+  skills_missing: []
+artifact:
+  intent_owed: true
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: true
+  pending_present: true
+  twins_owed: false
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: "Testar com systemctl --user real e adicionar enable/disable sem recriar o timer; fora do escopo."
+  documented: true
+twins:
+  pattern: ""
+  result: ""
+  searched: false
+  defect_fixed: false
+  matches_count: 0
+  files_count: 0
+  fix_applied: false

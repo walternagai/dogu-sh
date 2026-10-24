@@ -71,6 +71,7 @@ Uma coleção de **104 ferramentas Bash precisas** para artesãos do terminal. N
 ### ⚙️ Infraestrutura
 - `dependency-helper.sh`: Biblioteca compartilhada de verificação e auto-instalação de dependências.
 - `cron-manager.sh`: Lista, adiciona e remove tarefas do crontab com backup e marcadores seguros.
+- `systemd-timer.sh`: Gerencia timers `systemd --user` (OnCalendar, serviço, enable/disable).
 - `dotfiles-manager.sh`: Gerencia dotfiles com symlinks e um repositório local.
 
 ### 🔢 Calculadoras e Conversores
@@ -308,6 +309,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 | `docker-doctor.sh` | `docker`, `jq` |
 | `json-yaml-tool.sh` | `jq`, `python3`, `pyyaml` (pip) |
 | `cron-manager.sh` | `crontab` (cron) |
+| `systemd-timer.sh` | `systemctl` (systemd --user) |
 | `http-server.sh` | `python3` |
 | `dotfiles-manager.sh` | nenhum (coreutils: `ln`, `cp`, `readlink`) |
 | `file-watcher.sh` | `python3`, `findutils`, `stat` |

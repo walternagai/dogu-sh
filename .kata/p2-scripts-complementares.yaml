@@ -180,7 +180,7 @@ auth:
   action: ""
   quote: ""
 pending:
-  action: "Implementar um backend systemd-timer para cron-manager e rodar uma transcricao real do video-to-text com Whisper; ambos fora do escopo desta rodada."
+  action: "Executar uma transcricao real do video-to-text com Whisper; systemd-timer concluido."
   documented: true
 twins:
   pattern: "JSON declarado sem saída JSON válida e contadores em subshell (grep -c || echo 0)"

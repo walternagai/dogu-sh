@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "project": "dogu-sh",
   "description": "Manifesto estruturado das ferramentas dogu-sh para autodescoberta por agentes de IA",
-  "total_scripts": 116,
+  "total_scripts": 117,
   "categories": {
     "productivity": 13,
     "network": 10,
@@ -11,18 +11,18 @@
     "conversion": 15,
     "other": 1,
     "docker": 18,
-    "devops": 16,
+    "devops": 17,
     "security": 5,
     "code-analysis": 6
   },
   "risk_levels": {
     "read-only": 68,
     "dry-run-ok": 38,
-    "destructive": 10
+    "destructive": 11
   },
   "features": {
-    "has_json": 42,
-    "has_dry_run": 50,
+    "has_json": 43,
+    "has_dry_run": 51,
     "interactive": 8
   },
   "scripts": {
@@ -6452,6 +6452,74 @@
         }
       ],
       "example": "file-watcher.sh -p ./src -g \"*.py\" --json"
+    },
+    "systemd-timer.sh": {
+      "description": "Gerencia timers systemd --user (adicionar, listar, remover)",
+      "category": "devops",
+      "risk": "destructive",
+      "has_json": true,
+      "has_dry_run": true,
+      "interactive": false,
+      "deps": [
+        "systemctl"
+      ],
+      "args": [
+        {
+          "flag": "--list",
+          "short": null,
+          "type": "bool",
+          "desc": "Lista timers"
+        },
+        {
+          "flag": "--add",
+          "short": null,
+          "type": "string",
+          "desc": "Expressao OnCalendar"
+        },
+        {
+          "flag": "--command",
+          "short": null,
+          "type": "string",
+          "desc": "Comando executado pelo timer"
+        },
+        {
+          "flag": "--remove",
+          "short": null,
+          "type": "string",
+          "desc": "Remove timer por ID"
+        },
+        {
+          "flag": "--force",
+          "short": null,
+          "type": "bool",
+          "desc": "Nao pede confirmacao"
+        },
+        {
+          "flag": "--dry-run",
+          "short": null,
+          "type": "bool",
+          "desc": "Mostra o que seria feito"
+        },
+        {
+          "flag": "--json",
+          "short": null,
+          "type": "bool",
+          "desc": "Saida em formato JSON"
+        },
+        {
+          "flag": "--help",
+          "short": "-h",
+          "type": "bool",
+          "desc": "Mostra esta ajuda"
+        },
+        {
+          "flag": "--version",
+          "short": "-V",
+          "type": "bool",
+          "desc": "Mostra versao"
+        }
+      ],
+      "example": "systemd-timer.sh --add \"*-*-* 03:00:00\" --command /home/user/backup.sh"
     }
   }
 }

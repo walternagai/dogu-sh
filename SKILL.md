@@ -1,7 +1,7 @@
 ---
 name: dogu-sh
 description: >
-  Coleção de 116 ferramentas Bash para terminal. Use quando precisar de
+  Coleção de 117 ferramentas Bash para terminal. Use quando precisar de
   diagnóstico Docker, limpeza de sistema, conversão de arquivos, rede,
   ou produtividade. Execute via `dogu <comando>`. Use `--json` quando
   disponível para saída parseável. Use `--dry-run` antes de operações
@@ -75,7 +75,7 @@ description: >
 | `update-all.sh` | dry-run-ok | Atualiza pacotes do sistema e linguagens em um comando | ❌ |
 | `volume.sh` | read-only | Controle de volume e mute via PulseAudio/PipeWire | ❌ |
 
-### DevOps (16 scripts)
+### DevOps (17 scripts)
 
 | Script | Risco | Descrição | JSON |
 |--------|-------|-----------|------|
@@ -95,6 +95,7 @@ description: >
 | `package-list-backup.sh` | dry-run-ok | Exporta/importa lista de pacotes instalados para replicar maquina | ❌ |
 | `quick-backup.sh` | dry-run-ok | Backup incremental com rsync | ❌ |
 | `snap-flatpak-manager.sh` | dry-run-ok | Lista, atualiza e limpa snaps e flatpaks | ✅ |
+| `systemd-timer.sh` | destructive | Gerencia timers systemd --user (adicionar, listar, remover) | ✅ |
 
 ### Rede (10 scripts)
 
@@ -233,6 +234,7 @@ Estes scripts produzem JSON válido quando chamados com `--json`:
 | `ssh-key-manager.sh` | security | Gerencia chaves SSH (gerar, listar, rotacionar, distribuir) |
 | `ssl-cert-check.sh` | security | Verifica validade e emissor de certificado TLS |
 | `stack-detector.sh` | code-analysis | Detecta automaticamente a stack tecnologica do projeto |
+| `systemd-timer.sh` | devops | Gerencia timers systemd --user (adicionar, listar, remover) |
 | `test-coverage.sh` | code-analysis | Analise de cobertura de testes por modulo |
 | `video-to-text.sh` | media | Converte video em texto via extracao de audio e Whisper |
 | `wifi-scanner.sh` | network | Escaneia redes Wi-Fi e sugere o melhor canal |
@@ -253,6 +255,7 @@ Estes scripts produzem JSON válido quando chamados com `--json`:
 | `git-sync.sh` | devops | Sincroniza multiplos repositorios git |
 | `hunt-duplicates.sh` | system | Encontra arquivos duplicados por hash SHA-256 |
 | `process-killer.sh` | system | Seletor interativo de processos para termino |
+| `systemd-timer.sh` | devops | Gerencia timers systemd --user (adicionar, listar, remover) |
 
 ## Dependências Comuns
 
@@ -335,4 +338,5 @@ Estes scripts produzem JSON válido quando chamados com `--json`:
 | `convert` | image-optimizer.sh |
 | `pyyaml (Python)` | json-yaml-tool.sh |
 | `crontab` | cron-manager.sh |
+| `systemctl` | systemd-timer.sh |
 

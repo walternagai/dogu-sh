@@ -146,6 +146,7 @@ SCRIPT_DESC=(
     [http-server.sh]="Servidor HTTP local para um diretorio"
     [dotfiles-manager.sh]="Gerencia dotfiles com symlinks"
     [file-watcher.sh]="Observa arquivos e reporta mudancas"
+    [systemd-timer.sh]="Gerencia timers systemd --user"
 )
 
 declare -A SCRIPT_CATEGORY
@@ -266,6 +267,7 @@ SCRIPT_CATEGORY=(
     [http-server.sh]="Rede e Lookup"
     [dotfiles-manager.sh]="Instalacao e Execucao"
     [file-watcher.sh]="Sistema e Monitoramento"
+    [systemd-timer.sh]="Infraestrutura"
 )
 
 CATEGORY_ORDER=("Instalacao e Execucao" "Docker" "Sistema e Manutencao" "Sincronizacao e Backup" "Infraestrutura" "Calculadoras e Conversores" "Tempo e Relogio" "Produtividade e Notas" "Sistema e Monitoramento" "Rede e Lookup" "Seguranca e Criptografia" "Analise de Codigo")
