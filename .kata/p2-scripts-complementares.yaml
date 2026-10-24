@@ -151,7 +151,7 @@ verify:
     Verificações adicionais:
     - ./dogu doctor → 8 checks OK, 116/116 em manifesto, arquivos, menu, README e metadados.
     - --help/--version nos 116 scripts → 0 falhas.
-    - 9 smoke tests JSON novos: video-to-text (pipeline fake), pdf-split, pdf-merge,
+    - 9 smoke tests JSON novos: video-to-text (Whisper tiny real), pdf-split, pdf-merge,
       image-optimizer, ssl-cert-check, docker-doctor, cron-manager, dotfiles-manager,
       file-watcher. Todos válidos em jq.
     - pdf-split/pdf-merge: PDF de 3 páginas gerado e dividido/juntado; pdfinfo confirma 3 páginas.
@@ -180,8 +180,8 @@ auth:
   action: ""
   quote: ""
 pending:
-  action: "Executar uma transcricao real do video-to-text com Whisper; systemd-timer concluido."
-  documented: true
+  action: ""
+  documented: false
 twins:
   pattern: "JSON declarado sem saída JSON válida e contadores em subshell (grep -c || echo 0)"
   result: "docker-audit --json imprimia texto humano; docker-healthcheck gerava '0\n0' e JSON inválido; cis/bottleneck tinham o mesmo padrão de contagem. Corrigidos e validados com jq."

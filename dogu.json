@@ -5831,6 +5831,12 @@
           "desc": "Idioma: auto, en ou pt"
         },
         {
+          "flag": "--model",
+          "short": "-m",
+          "type": "string",
+          "desc": "Modelo Whisper: tiny, base, small, medium, large"
+        },
+        {
           "flag": "--keep-audio",
           "short": null,
           "type": "bool",

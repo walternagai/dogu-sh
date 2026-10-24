@@ -49,6 +49,7 @@ INPUT=""
 OUTPUT=""
 FORMAT="txt"
 LANGUAGE="auto"
+MODEL="base"
 KEEP_AUDIO=false
 DRY_RUN=false
 JSON_MODE=false
@@ -64,6 +65,9 @@ while [[ $# -gt 0 ]]; do
         -l|--language)
             [[ -z "${2-}" ]] && { echo "Flag --language requer um valor" >&2; exit 2; }
             LANGUAGE="$2"; shift 2 ;;
+        -m|--model)
+            [[ -z "${2-}" ]] && { echo "Flag --model requer um valor" >&2; exit 2; }
+            MODEL="$2"; shift 2 ;;
         --keep-audio) KEEP_AUDIO=true; shift ;;
         --dry-run) DRY_RUN=true; shift ;;
         --json) JSON_MODE=true; shift ;;
@@ -77,6 +81,7 @@ while [[ $# -gt 0 ]]; do
             echo "    -o, --output FILE     Arquivo de saida (padrao: video + .txt)"
             echo "    -f, --format FMT      txt, srt ou vtt (padrao: txt)"
             echo "    -l, --language LANG   auto, en ou pt (padrao: auto)"
+            echo "    -m, --model MODEL     tiny, base, small, medium, large (padrao: base)"
             echo "        --keep-audio      Mantem o audio extraido"
             echo "        --dry-run         Mostra os comandos sem executar"
             echo "        --json            Saida em formato JSON"
@@ -104,6 +109,7 @@ done
 [[ -f "$INPUT" ]] || error "Arquivo nao encontrado: $INPUT"
 case "$FORMAT" in txt|srt|vtt) ;; *) error "Formato invalido: $FORMAT (use txt, srt ou vtt)" ;; esac
 case "$LANGUAGE" in auto|en|pt) ;; *) error "Idioma invalido: $LANGUAGE (use auto, en ou pt)" ;; esac
+case "$MODEL" in tiny|base|small|medium|large) ;; *) error "Modelo invalido: $MODEL (use tiny, base, small, medium ou large)" ;; esac
 
 VIDEO_TO_AUDIO="$SCRIPT_DIR/video-to-audio.sh"
 AUDIO_TO_TEXT="$SCRIPT_DIR/audio-to-text.sh"
@@ -125,7 +131,7 @@ fi
 
 if $DRY_RUN; then
     echo "$VIDEO_TO_AUDIO -f wav -o \"$AUDIO\" \"$INPUT\""
-    echo "$AUDIO_TO_TEXT -f $FORMAT -l $LANGUAGE -o \"$OUTPUT\" \"$AUDIO\""
+    echo "$AUDIO_TO_TEXT -f $FORMAT -l $LANGUAGE -m $MODEL -o \"$OUTPUT\" \"$AUDIO\""
     exit 0
 fi
 
@@ -133,7 +139,7 @@ $JSON_MODE || log "Extraindo audio de $INPUT"
 "$VIDEO_TO_AUDIO" -f wav -o "$AUDIO" "$INPUT" >/dev/null
 
 $JSON_MODE || log "Transcrevendo audio (formato $FORMAT, idioma $LANGUAGE)"
-"$AUDIO_TO_TEXT" -f "$FORMAT" -l "$LANGUAGE" -o "$OUTPUT" "$AUDIO" >/dev/null
+"$AUDIO_TO_TEXT" -f "$FORMAT" -l "$LANGUAGE" -m "$MODEL" -o "$OUTPUT" "$AUDIO" >/dev/null
 
 if $KEEP_AUDIO; then
     $JSON_MODE || log "Audio mantido em: $AUDIO"
@@ -147,9 +153,9 @@ if $JSON_MODE; then
     else
         audio_json=null
     fi
-    printf '{"input":"%s","audio":%s,"output":"%s","format":"%s","language":"%s","keep_audio":%s}\n' \
+    printf '{"input":"%s","audio":%s,"output":"%s","format":"%s","language":"%s","model":"%s","keep_audio":%s}\n' \
         "$(json_escape "$INPUT")" "$audio_json" "$(json_escape "$OUTPUT")" \
-        "$FORMAT" "$LANGUAGE" "$KEEP_AUDIO"
+        "$FORMAT" "$LANGUAGE" "$MODEL" "$KEEP_AUDIO"
 else
     success "Transcricao salva em: $OUTPUT"
 fi

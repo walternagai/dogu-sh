@@ -38,7 +38,7 @@ Detalhes em `P1-DECISOES.md`.
 
 | Script | Status | Observação |
 |---|---|---|
-| `video-to-text` | ✅ Implementado | Pipeline video → áudio → Whisper; testado com backend fake |
+| `video-to-text` | ✅ Implementado | Pipeline video → áudio → Whisper; transcrito com modelo tiny real |
 | `pdf-split` / `pdf-merge` | ✅ Implementado | `pdfseparate`/`pdfunite`; testado com PDF de 3 páginas |
 | `image-optimizer` | ✅ Implementado | ImageMagick; PNG e WebP testados |
 | `ssl-cert-check` | ✅ Implementado | `openssl s_client`; testado contra example.com |
@@ -411,7 +411,7 @@ Também foram executados:
 
 **JUDGE:** `VERIFIED` — baseline ancorado em `refs/kata/base/2b4a4277…`; lint, testes e coverage re-executados; a única claim aceita sem re-execução é o critério de sucesso, que é qualitativo.
 
-**PENDING:** P2 implementado, exceto o backend `systemd-timer` e uma transcrição real com Whisper (o pipeline foi validado com backend fake) — aguardando autorização.
+**PENDING:** P2 e `systemd-timer` implementados; transcrição real com Whisper validada com o modelo `tiny`.
 
 ---
 

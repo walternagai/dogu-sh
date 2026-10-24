@@ -1,0 +1,105 @@
+task: video-to-text-e2e
+status: approved
+domain: coding
+done: >
+  video-to-text.sh com opcao --model, executado de ponta a ponta com Whisper
+  real (modelo tiny) sobre um video de 11s com fala; transcricao contem o texto
+  esperado. JSON valido, manifesto e SKILL.md atualizados. Verificação:
+  execucao real, jq e doctor 117/117.
+base_commit: "b7133b0923fe2985e45df110157d43ee08c90165"
+approved_commit: ""
+fit:
+  trivial: false
+  route: code-loop
+  reason: "Adiciona --model e valida o pipeline completo com o backend real."
+  answered: true
+  skipped: false
+think:
+  problem: "O pipeline video-to-text só havia sido testado com scripts fake; faltava provar a transcrição real."
+  assumptions:
+    - "faster-whisper e ffmpeg estão instalados."
+    - "O modelo tiny é suficiente para validar o encadeamento e o formato."
+  alternatives:
+    - "Usar modelo base — descartada: download maior sem ganho para o teste."
+    - "Usar áudio sintético — descartada: fala real dá evidência mais forte."
+  unknowns: "Rede para baixar o modelo; resolvida."
+  answered: true
+  skipped: false
+simplify:
+  minimum_code: true
+  no_single_use_abstractions: true
+  no_speculative_config: true
+  notes: "Apenas uma flag --model; sem novas abstrações."
+  answered: true
+  skipped: false
+intent:
+  code_does: "video-to-text extrai áudio e chama audio-to-text com o modelo escolhido."
+  check_expects: "Transcrição real, JSON e --help/--version."
+  spec_says: "Pipeline deve compor os dois scripts existentes."
+  all_agree: true
+  conflict_resolution: ""
+  answered: true
+  skipped: false
+surgical:
+  files:
+    - path: video-to-text.sh
+      necessary: true
+      motivo: "Flag --model e JSON"
+    - path: dogu.json
+      necessary: true
+      motivo: "Arg --model no manifesto"
+    - path: SKILL.md
+      necessary: true
+      motivo: "Regenerado"
+    - path: .kata/video-to-text-e2e.yaml
+      necessary: true
+      motivo: "Registro da task"
+    - path: .kata/p2-scripts-complementares.yaml
+      necessary: true
+      motivo: "Pending e nota de verificação"
+    - path: REVISAO-USABILIDADE.md
+      necessary: true
+      motivo: "Status do P2"
+  removed_imports_clean: true
+  answered: true
+  skipped: false
+verify:
+  ruff_clean: "N/A (Bash)"
+  tests_pass: "N/A (sem suíte; execução real)"
+  coverage_pct: 0.0
+  coverage_pass: true
+  success_criteria_met: true
+  attempts: 1
+  hand_back: false
+  notes: |
+    Vídeo de 11s gerado a partir de jfk.wav (whisper.cpp). Execução:
+    ./video-to-text.sh -m tiny -f txt -l en -o /tmp/jfk.txt --json /tmp/jfk.mp4
+    Resultado: "And so my fellow Americans, ask not what your country can do for you,
+    ask what you can do for your country." JSON válido; exit 0.
+preflight:
+  skills_missing: []
+artifact:
+  intent_owed: true
+  intent_present: true
+  auth_owed: false
+  auth_present: true
+  pending_owed: false
+  pending_present: true
+  twins_owed: false
+  twins_present: true
+auth:
+  action_taken: false
+  authorized: false
+  action: ""
+  quote: ""
+pending:
+  action: ""
+  documented: false
+twins:
+  pattern: ""
+  result: ""
+  searched: false
+  defect_fixed: false
+  matches_count: 0
+  files_count: 0
+  fix_applied: false
