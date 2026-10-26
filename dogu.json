@@ -2678,10 +2678,16 @@
           "desc": "Apenas fetch, sem pull/push"
         },
         {
+          "flag": "--commit",
+          "short": "-C",
+          "type": "bool",
+          "desc": "Oferece commit para repositorios modificados"
+        },
+        {
           "flag": "--all",
           "short": "-a",
           "type": "bool",
-          "desc": "Executa sem confirmacao"
+          "desc": "Executa sem confirmacao (aceita a mensagem de commit sugerida)"
         },
         {
           "flag": "--depth",

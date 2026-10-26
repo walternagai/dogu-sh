@@ -354,7 +354,7 @@ Sincroniza múltiplos repositórios Git com suporte a commit com IA e resoluçã
 | `--push` / `-p` | Faz push após pull (apenas se sem conflito) |
 | `--fetch` / `-f` | Apenas fetch, sem pull/push |
 | `--commit` / `-C` | Oferece commit para repos modificados |
-| `--all` / `-a` | Executa sem confirmação |
+| `--all` / `-a` | Executa sem confirmação (aceita a mensagem de commit sugerida) |
 | `--depth N` | Profundidade máxima de busca (padrão: 5) |
 
 ### Commits com IA (Ollama)
@@ -366,12 +366,20 @@ Quando `--commit` está ativo e o [Ollama](https://ollama.com) está instalado e
 3. O usuário pode **aceitar (S)**, **recusar (n)** e digitar manualmente, ou **editar (e)** a mensagem sugerida.
 4. Se o Ollama não estiver disponível, o script exibe as tags disponíveis e pede a mensagem manualmente.
 
-A variável de ambiente `OLLAMA_DEFAULT_MODEL` define o modelo padrão. Se não estiver definida, o script lista os modelos disponíveis e pergunta qual usar.
+A variável de ambiente `OLLAMA_DEFAULT_MODEL` define o modelo padrão. Se não estiver definida, o script lista os modelos disponíveis e pergunta qual usar — exceto em modo automático, quando seleciona o primeiro modelo da lista.
 
 ```bash
 export OLLAMA_DEFAULT_MODEL=llama3
 ./git-sync.sh --commit --all ~/Projects
 ```
+
+### Modo automático (sem TTY)
+
+O script só faz perguntas quando há um terminal interativo disponível:
+
+- **Com `--all`** (ou sem TTY, como em CI/cron/pipe): não há nenhuma pergunta. A mensagem de commit sugerida pelo Ollama é aceita automaticamente.
+- Sem `--all` e sem TTY: o script aborta com `[ERROR] Execucao nao interativa detectada...` em vez de cancelar operações silenciosamente.
+- Se o Ollama estiver indisponível (ou não gerar mensagem) em modo automático, o commit é **ignorado** com aviso e o repositório permanece com as alterações não commitadas.
 
 ### Resolução de Conflitos
 

@@ -175,6 +175,19 @@ Usar **sempre** loop `while` com `case` para parsing de flags. Preferir `[[ ]]` 
 >
 > **Não** usar fallback `confirm="n"` sem o guard: em pipe/CI o script aborta
 > silenciosamente, dando impressão de operação bem-sucedida.
+>
+> **Cuidado: loop que redireciona stdin não é TTY.** `while read -r x; do ... done < arquivo`
+> troca o fd 0 dentro do loop, então `[ -t 0 ]` será sempre falso e o modo interativo
+> nunca funcionará (bug real no `git-sync.sh`). Use um fd dedicado:
+> `while IFS= read -r x <&3; do ... done 3< arquivo`.
+>
+> **Flags de automação (ex.: `--all`, `--force`, `--yes`) DEVEM eliminar todo prompt.**
+> Quando o modo automático estiver ativo, aceite o valor padrão/gerado ou pule a ação
+> com aviso — nunca chame `error` por falta de TTY. Centralize o predicado:
+>
+> ```bash
+> is_auto_mode() { $AUTO_FLAG || [ ! -t 0 ]; }
+> ```
 
 ```bash
 while [[ $# -gt 0 ]]; do
@@ -529,6 +542,8 @@ Antes de considerar um script pronto, verificar:
 - [ ] Argumentos via `while/case` com validação de valor obrigatório e tratamento de `--`
 - [ ] `--json` implementado (para scripts de diagnóstico/status)
 - [ ] Confirmações no formato `[s/N]` com `read -r`, **wrap em `if [ -t 0 ]; then ... else error ...; fi`** (ver §5)
+- [ ] Loop de itens usa fd dedicado (`done 3< arquivo` + `read <&3`) para não mascarar o TTY
+- [ ] Flags de automação (`--all`, `--force`) não deixam nenhum prompt pendente (ver §5)
 - [ ] `trap` + `mktemp` para arquivos temporários
 - [ ] SIGTERM antes de SIGKILL
 - [ ] Exit codes padronizados (0/1/2/127/130)

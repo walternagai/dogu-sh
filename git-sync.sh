@@ -75,7 +75,7 @@ while [[ $# -gt 0 ]]; do
             echo "    --push          Faz push apos pull (apenas se sem conflito)"
             echo "    --fetch         Apenas fetch, sem pull/push"
             echo "    --commit        Oferece commit para repos modificados"
-            echo "    --all           Executa sem confirmacao"
+            echo "    --all           Executa sem confirmacao (aceita a mensagem de commit sugerida)"
             echo "    --depth N       Profundidade maxima de busca (padrao: 5)"
             echo "    --help          Mostra esta ajuda"
             echo "    --version       Mostra versao"
@@ -101,39 +101,49 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Modo automatico: --all (sem confirmacao) ou ausencia de TTY.
+is_auto_mode() {
+    $CLEAN_ALL || [ ! -t 0 ]
+}
+
 check_ollama_model() {
     if ! command -v ollama &>/dev/null; then
         return 1
     fi
     local ollama_list_output
-    ollama_list_output=$(ollama list 2>/dev/null)
-    if [ $? -ne 0 ]; then
+    if ! ollama_list_output=$(ollama list 2>/dev/null); then
         echo -e "  ${YELLOW}Aviso: Ollama instalado mas nao esta em execucao.${RESET}" >&2
         return 1
     fi
-    if [ -n "$OLLAMA_DEFAULT_MODEL" ]; then
+    if [ -n "${OLLAMA_DEFAULT_MODEL:-}" ]; then
         OLLAMA_MODEL="$OLLAMA_DEFAULT_MODEL"
     else
-        echo ""
-        echo -e "  ${BOLD}Modelos Ollama disponiveis:${RESET}"
-        models=$(echo "$ollama_list_output" | tail -n +2 | awk '{print "    - " $1}')
-        if [ -n "$models" ]; then
-            echo "$models"
+        if is_auto_mode; then
+            OLLAMA_MODEL=$(echo "$ollama_list_output" | tail -n +2 | awk 'NF && $1 !~ /embed/ {print $1; exit}')
+            if [ -z "$OLLAMA_MODEL" ]; then
+                echo -e "  ${YELLOW}Aviso: nenhum modelo Ollama encontrado — commit sera manual.${RESET}" >&2
+                return 1
+            fi
+            echo -e "  ${DIM}→ Modo automatico: usando o modelo ${CYAN}${OLLAMA_MODEL}${RESET}" >&2
+            OLLAMA_DEFAULT_MODEL="$OLLAMA_MODEL"
         else
-            echo "    (nenhum modelo encontrado)"
-        fi
-        echo ""
-        printf "  Informe o modelo padrao para commits: "
-        if [ -t 0 ]; then
+            echo ""
+            echo -e "  ${BOLD}Modelos Ollama disponiveis:${RESET}"
+            models=$(echo "$ollama_list_output" | tail -n +2 | awk '{print "    - " $1}')
+            if [ -n "$models" ]; then
+                echo "$models"
+            else
+                echo "    (nenhum modelo encontrado)"
+            fi
+            echo ""
+            printf "  Informe o modelo padrao para commits: "
             read -r OLLAMA_MODEL < /dev/tty 2>/dev/null || OLLAMA_MODEL=""
-        else
-            error "Execucao nao interativa detectada. Rode em terminal interativo (TTY) para confirmar."
+            if [ -z "$OLLAMA_MODEL" ]; then
+                echo -e "  ${RED}Erro: Nenhum modelo informado.${RESET}" >&2
+                return 1
+            fi
+            OLLAMA_DEFAULT_MODEL="$OLLAMA_MODEL"
         fi
-        if [ -z "$OLLAMA_MODEL" ]; then
-            echo -e "  ${RED}Erro: Nenhum modelo informado.${RESET}" >&2
-            return 1
-        fi
-        OLLAMA_DEFAULT_MODEL="$OLLAMA_MODEL"
     fi
     return 0
 }
@@ -151,7 +161,7 @@ generate_commit_message() {
         diff_full="$diff_raw"
     fi
 
-    if command -v ollama &>/dev/null && [ -n "$OLLAMA_MODEL" ]; then
+    if command -v ollama &>/dev/null && [ -n "${OLLAMA_MODEL:-}" ]; then
         echo -e "    ${DIM}→ Gerando commit com Ollama ($OLLAMA_MODEL)...${RESET}" >&2
         local prompt
         prompt="Analyze this git diff and generate a concise commit message using Conventional Commits format. Use one of these tags: feat, fix, docs, style, refactor, perf, test, chore. Format: tag: description. Return ONLY the commit message, nothing else. Diff stats: ${diff_output}. Diff: ${diff_full}"
@@ -170,6 +180,11 @@ generate_commit_message() {
         if [ -n "$msg" ]; then
             msg=$(echo "$msg" | sed 's/^[`"'"'"']//;s/[`"'"'"']$//' | head -c 200)
             echo -e "    ${GREEN}Mensagem sugerida:${RESET} $msg" >&2
+            if is_auto_mode; then
+                echo -e "    ${DIM}→ Modo automatico: mensagem aceita sem confirmacao${RESET}" >&2
+                echo "$msg"
+                return 0
+            fi
             printf "    Usar esta mensagem? [S/n/e=editar]: " >&2
             if [ -t 0 ]; then
                 read -r choice < /dev/tty 2>/dev/null || choice="s"
@@ -198,6 +213,10 @@ generate_commit_message() {
             echo "$msg"
         else
             echo -e "    ${YELLOW}Ollama nao retornou mensagem.${RESET}" >&2
+            if is_auto_mode; then
+                echo -e "    ${YELLOW}Commit ignorado: repositorio permanece com alteracoes nao commitadas.${RESET}" >&2
+                return 0
+            fi
             echo -e "    ${BOLD}Tags disponiveis:${RESET} $COMMIT_TAGS" >&2
             printf "    Digite a mensagem de commit: " >&2
             if [ -t 0 ]; then
@@ -209,6 +228,11 @@ generate_commit_message() {
         fi
     else
         echo -e "    ${BOLD}Tags de commit:${RESET} $COMMIT_TAGS" >&2
+        if is_auto_mode; then
+            echo -e "    ${YELLOW}Ollama indisponivel e modo automatico ativo.${RESET}" >&2
+            echo -e "    ${YELLOW}Commit ignorado: repositorio permanece com alteracoes nao commitadas.${RESET}" >&2
+            return 0
+        fi
         printf "    Digite a mensagem de commit: " >&2
         if [ -t 0 ]; then
             read -r msg < /dev/tty 2>/dev/null || msg=""
@@ -433,8 +457,8 @@ resolve_diverged_repo() {
 count_diverged=0
 
 if $DO_COMMIT || ($DO_PUSH && $CLEAN_ALL); then
-    check_ollama_model
-    ollama_rc=$?
+    ollama_rc=0
+    check_ollama_model || ollama_rc=$?
     if [ "$ollama_rc" -eq 0 ]; then
         echo -e "  ${GREEN}Ollama disponivel${RESET} — modelo: ${CYAN}$OLLAMA_MODEL${RESET}"
     else
@@ -494,7 +518,7 @@ while IFS= read -r rpath; do
     [ "$len" -gt "$max_name_len" ] && max_name_len=$len
 done < "$REPO_LIST"
 
-while IFS= read -r repo_path; do
+while IFS= read -r repo_path <&3; do
     [ -z "$repo_path" ] && continue
 
     repo_name="${repo_path#$BASE_DIR/}"
@@ -867,7 +891,7 @@ while IFS= read -r repo_path; do
         fi
     fi
 
-done < "$REPO_LIST"
+done 3< "$REPO_LIST"
 
 echo ""
 echo "  ─────────────────────────────────"
