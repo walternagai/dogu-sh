@@ -10,7 +10,7 @@ Uma coleção de **117 ferramentas Bash precisas** para artesãos do terminal. N
 - `dogu`: Dispatcher unificado — ponto de entrada único para todas as ferramentas com listagem, busca e metadados.
 - `dogu.json`: Manifesto estruturado com metadados de todos os scripts para autodescoberta por agentes de IA.
 - `dogu-make-skill.sh`: Gera o pacote de skill (`SKILL.md` + `reference/`) a partir de `dogu.json` para harnesses de agentes (Claude Code, OpenCode).
-- `install-scripts.sh`: Instala todos os scripts em `~/.local/bin` e configura o PATH automaticamente.
+- `install-scripts.sh`: Instala todos os scripts em `~/.local/bin`, configura o PATH e publica o skill nos diretórios padrão do Claude Code e do OpenCode.
 - `menu-launcher.sh`: Menu interativo (com suporte a `fzf`) para executar qualquer ferramenta do kit.
 - `env-manager.sh`: Orquestrador de ambientes que detecta e instala dependências de projetos (npm, pip, cargo, maven, gradle, composer, bundler, brew, apt).
 - `dependency-helper.sh`: Biblioteca compartilhada de verificação e auto-instalação de dependências usada por todos os scripts.
@@ -166,7 +166,18 @@ chmod +x install-scripts.sh
 ./install-scripts.sh
 ```
 
-Isso copia todos os scripts para `~/.local/bin`, configura o PATH no seu shell (`~/.bashrc`, `~/.zshrc` ou `config.fish`) e garante permissões de execução. Reinicie o terminal ou execute `source ~/.bashrc` (ou equivalente).
+Isso copia todos os scripts para `~/.local/bin`, configura o PATH no seu shell (`~/.bashrc`, `~/.zshrc` ou `config.fish`), garante permissões de execução e publica o skill do `dogu` nos diretórios padrão dos harnesses:
+
+- Claude Code: `~/.claude/skills/dogu-sh/`
+- OpenCode: `${XDG_CONFIG_HOME:-~/.config}/opencode/skills/dogu-sh/`
+
+Reinicie o terminal ou execute `source ~/.bashrc` (ou equivalente).
+
+Para atualizar apenas o skill (sem mexer no PATH nem nos links de `~/.local/bin`):
+
+```bash
+./install-scripts.sh --skill-only
+```
 
 ### Instalação com preview
 
@@ -321,7 +332,7 @@ Todos os scripts que dependem de softwares externos (Docker, rsync, smartctl, et
 - Execute qualquer script com `--help` para ver todas as opções disponíveis.
 - Scripts com `--json` produzem saída estruturada para integração com agentes de IA e automação.
 - Todos os scripts respeitam a variável de ambiente `NO_COLOR` (padrão [no-color.org](https://no-color.org/)) — defina `export NO_COLOR=1` para desabilitar cores.
-- Para **desinstalar** todos os scripts, execute `./install-scripts.sh --uninstall` — remove os links em `~/.local/bin` e limpa a entrada do PATH.
+- Para **desinstalar** todos os scripts, execute `./install-scripts.sh --uninstall` — remove os links em `~/.local/bin`, as cópias do skill nos harnesses e limpa a entrada do PATH.
 - Para ver o número de dependências suportadas, execute `./dependency-helper.sh --help`.
 
 ## 🛠️ Guia do Desenvolvedor

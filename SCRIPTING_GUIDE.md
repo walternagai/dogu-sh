@@ -526,6 +526,12 @@ Após criar um novo script, adicionar sua entrada no `dogu.json` manualmente ou 
 
 O `SKILL.md` gerado é o contrato carregado por harnesses de agentes (Claude Code, OpenCode): invocação, política de risco e índice de categorias. Os detalhes de cada script (flags, dependências e exemplos) ficam em `reference/<categoria>.md` e são lidos sob demanda, mantendo o contexto do harness pequeno. Não edite os arquivos gerados à mão.
 
+Depois de regenerar, republique o skill nos harnesses:
+
+```bash
+./install-scripts.sh --skill-only
+```
+
 ---
 
 ## 15. Checklist para Novos Scripts

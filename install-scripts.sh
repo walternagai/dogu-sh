@@ -19,11 +19,15 @@ if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
   GREEN='' YELLOW='' RED='' CYAN='' BLUE='' BOLD='' DIM='' RESET=''
 fi
 
-readonly VERSION="1.4.0"
+readonly VERSION="1.5.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN_DIR="$HOME/.local/bin"
+readonly SKILL_NAME="dogu-sh"
+CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
+OPENCODE_SKILLS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/skills"
 DRY_RUN=false
 UNINSTALL=false
+SKILL_ONLY=false
 
 # Parse arguments
 for arg in "$@"; do
@@ -36,9 +40,15 @@ for arg in "$@"; do
             echo ""
             echo "  Opcoes:"
             echo "    --dry-run       Simula a instalacao sem alterar arquivos"
-            echo "    --uninstall     Remove scripts e limpa PATH"
+            echo "    --uninstall     Remove scripts, skill e limpa PATH"
+            echo "    --skill-only    Apenas publica o skill nos harnesses (nao mexe no PATH)"
             echo "    --help|-h       Mostra esta ajuda"
             echo "    --version|-V    Mostra versao"
+            echo ""
+            echo "  Efeitos: instala os scripts em ~/.local/bin e publica o skill"
+            echo "           '$SKILL_NAME' (SKILL.md + reference/) em:"
+            echo "             $CLAUDE_SKILLS_DIR/$SKILL_NAME"
+            echo "             $OPENCODE_SKILLS_DIR/$SKILL_NAME"
             echo ""
             echo "  Requisitos: Python 3 para o dispatcher 'dogu' (os scripts .sh sao Bash)."
             echo ""
@@ -47,6 +57,7 @@ for arg in "$@"; do
         --version|-V) echo "install-scripts.sh $VERSION"; exit 0 ;;
         --dry-run) DRY_RUN=true ;;
         --uninstall) UNINSTALL=true ;;
+        --skill-only) SKILL_ONLY=true ;;
         -*)
             echo -e "${RED}[ERROR]${RESET} Unknown option: $arg" >&2; exit 2
             ;;
@@ -98,6 +109,19 @@ if [ "$UNINSTALL" = true ]; then
         fi
     done
 
+    # Remover skill publicado nos harnesses (Claude Code e OpenCode)
+    for skills_root in "$CLAUDE_SKILLS_DIR" "$OPENCODE_SKILLS_DIR"; do
+        target="$skills_root/$SKILL_NAME"
+        if [ -d "$target" ]; then
+            if [ "$DRY_RUN" = false ]; then
+                rm -rf "$target"
+                log "  ✓ Removido: $target"
+            else
+                echo "  [Dry-run] rm -rf $target"
+            fi
+        fi
+    done
+
     # Remove PATH entry from RC files
     SHELL_RC=""
     case "$SHELL" in
@@ -116,6 +140,37 @@ if [ "$UNINSTALL" = true ]; then
         fi
     fi
     success "Desinstalação concluída!"
+    exit 0
+fi
+
+# Publica o skill (SKILL.md + reference/) nos diretórios padrão dos harnesses
+publish_skill() {
+    if [ ! -f "$SCRIPT_DIR/SKILL.md" ]; then
+        warn "SKILL.md não encontrado; skill não publicado (rode ./dogu-make-skill.sh)."
+        return 1
+    fi
+
+    log "Publicando skill '$SKILL_NAME' (SKILL.md + reference/)..."
+    for skills_root in "$CLAUDE_SKILLS_DIR" "$OPENCODE_SKILLS_DIR"; do
+        target="$skills_root/$SKILL_NAME"
+        if [ "$DRY_RUN" = false ]; then
+            mkdir -p "$skills_root"
+            rm -rf "$target"
+            mkdir -p "$target"
+            cp "$SCRIPT_DIR/SKILL.md" "$target/SKILL.md"
+            if [ -d "$SCRIPT_DIR/reference" ]; then
+                cp -R "$SCRIPT_DIR/reference" "$target/reference"
+            fi
+            log "  ✓ $target"
+        else
+            echo "  [Dry-run] cp SKILL.md + reference/ -> $target"
+        fi
+    done
+}
+
+if [ "$SKILL_ONLY" = true ]; then
+    publish_skill || exit 1
+    success "Skill publicado nos harnesses."
     exit 0
 fi
 
@@ -177,7 +232,10 @@ if [ -f "$DOGU_MANIFEST" ]; then
     fi
 fi
 
-# 5. Configurar PATH
+# 5. Publicar skill nos harnesses de agentes (Claude Code e OpenCode)
+publish_skill || true
+
+# 6. Configurar PATH
 log "Verificando configuração do PATH..."
 SHELL_RC=""
 case "$SHELL" in

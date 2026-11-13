@@ -128,3 +128,13 @@ demanda). Ambos são gerados — nunca edite à mão.
 ./dogu-make-skill.sh --dry-run               # Preview em /tmp/dogu-skill-preview/
 ./dogu-make-skill.sh --output /tmp/skill.md  # Pacote em outro diretório
 ```
+
+### Distribuição do skill
+
+`./install-scripts.sh` publica o skill nos diretórios padrão dos harnesses:
+
+- `~/.claude/skills/dogu-sh/` (Claude Code)
+- `${XDG_CONFIG_HOME:-~/.config}/opencode/skills/dogu-sh/` (OpenCode)
+
+Ambos recebem cópia de `SKILL.md` e `reference/`. Use `--skill-only` para
+republicar só o skill (sem tocar em PATH/links) e `--uninstall` para removê-lo.
