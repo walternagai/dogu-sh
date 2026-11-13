@@ -4,7 +4,7 @@ Guia para agentes de IA trabalhando neste repositório.
 
 ## Visão Geral
 
-dōgu-sh (道具 — "ferramentas") é uma coleção de **104 ferramentas Bash precisas** para artesãos do terminal. Docker, sistema, rede, produtividade, criptografia, conversão e muito mais para Linux/macOS.
+dōgu-sh (道具 — "ferramentas") é uma coleção de **117 ferramentas Bash precisas** para artesãos do terminal. Docker, sistema, rede, produtividade, criptografia, conversão e muito mais para Linux/macOS.
 
 ## Stack
 
@@ -44,9 +44,10 @@ dōgu-sh (道具 — "ferramentas") é uma coleção de **104 ferramentas Bash p
 dogu-sh/
 ├── dogu                  # Dispatcher unificado (sem extensão .sh)
 ├── dogu.json             # Manifesto estruturado (metadados de todos os scripts)
-├── dogu-make-skill.sh    # Gerador de SKILL.md para agentes de IA
-├── SKILL.md              # Skill gerado para Claude Code/OpenCode
-├── *.sh                  # 104 scripts (cada um auto-contido)
+├── dogu-make-skill.sh    # Gerador do pacote de skill (SKILL.md + reference/)
+├── SKILL.md              # Contrato do skill: invocação, risco e índice (gerado)
+├── reference/            # Referências por categoria: flags, deps e exemplos (gerado)
+├── *.sh                  # 117 scripts (cada um auto-contido)
 ├── install-scripts.sh    # Instalador
 ├── menu-launcher.sh      # Menu interativo
 ├── dependency-helper.sh  # Lib compartilhada de dependências
@@ -114,12 +115,16 @@ O manifesto contém metadados estruturados de todos os scripts:
 
 Todos os scripts respeitam `export NO_COLOR=1` para desabilitar cores ANSI.
 
-### Gerador de SKILL.md
+### Gerador do pacote de skill
 
-Para regenerar o `SKILL.md` após alterações no `dogu.json`:
+O gerador produz dois artefatos consumidos por harnesses de agentes: `SKILL.md`
+(contrato curto: invocação, política de risco, índice de categorias) e
+`reference/<categoria>.md` (flags, dependências e exemplos por script, lidos sob
+demanda). Ambos são gerados — nunca edite à mão.
 
 ```bash
-./dogu-make-skill.sh                    # Gera SKILL.md na raiz
-./dogu-make-skill.sh --dry-run          # Preview sem escrever
-./dogu-make-skill.sh --output /tmp/skill.md  # Saída customizada
+./dogu-make-skill.sh                         # Regenera SKILL.md + reference/
+./dogu-make-skill.sh --check                 # Falha em caso de drift (gate de CI)
+./dogu-make-skill.sh --dry-run               # Preview em /tmp/dogu-skill-preview/
+./dogu-make-skill.sh --output /tmp/skill.md  # Pacote em outro diretório
 ```

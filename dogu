@@ -648,6 +648,13 @@ if os.path.exists(skill_path) and os.path.getsize(skill_path) > 0:
 else:
     add("SKILL.md", "warn" if repo_mode else "ok", "ausente (rode dogu-make-skill.sh)" if repo_mode else "nao instalado (opcional)")
 
+ref_dir = os.path.join(root, "reference")
+refs = glob.glob(os.path.join(ref_dir, "*.md")) if os.path.isdir(ref_dir) else []
+if refs:
+    add("Referências", "ok", f"{len(refs)} categorias")
+elif repo_mode and os.path.exists(skill_path):
+    add("Referências", "warn", "ausentes (rode dogu-make-skill.sh)")
+
 issues = []
 for name, meta in scripts.items():
     path = os.path.join(root, name)

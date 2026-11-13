@@ -30,10 +30,8 @@ jobs:
       - name: Doctor
         run: ./dogu doctor
 
-      - name: SKILL.md is in sync
-        run: |
-          ./dogu-make-skill.sh --dry-run >/dev/null
-          diff -u SKILL.md /tmp/dogu-skill-preview.md
+      - name: Skill bundle is in sync
+        run: ./dogu-make-skill.sh --check
 
       - name: Help and version smoke
         run: |

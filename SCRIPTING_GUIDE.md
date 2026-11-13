@@ -518,11 +518,13 @@ Todo script novo deve ser registrado no `dogu.json` na raiz do projeto. O manife
 Após criar um novo script, adicionar sua entrada no `dogu.json` manualmente ou executar o gerador automático:
 
 ```bash
-# Regenerar SKILL.md após alterações no dogu.json
-./dogu-make-skill.sh
+# Regenerar o pacote de skill após alterações no dogu.json
+./dogu-make-skill.sh            # Escreve SKILL.md + reference/*.md
+./dogu-make-skill.sh --check    # Falha se houver drift (usado no CI)
+./dogu-make-skill.sh --dry-run  # Preview em /tmp/dogu-skill-preview/
 ```
 
-O `SKILL.md` gerado é consumido por agentes de IA (Claude Code, OpenCode) para descoberta de ferramentas.
+O `SKILL.md` gerado é o contrato carregado por harnesses de agentes (Claude Code, OpenCode): invocação, política de risco e índice de categorias. Os detalhes de cada script (flags, dependências e exemplos) ficam em `reference/<categoria>.md` e são lidos sob demanda, mantendo o contexto do harness pequeno. Não edite os arquivos gerados à mão.
 
 ---
 

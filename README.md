@@ -2,14 +2,14 @@
 
 > **dōgu** (道具) — *substantivo japonês*: ferramenta, instrumento, utensílio.
 
-Uma coleção de **104 ferramentas Bash precisas** para artesãos do terminal. Não é um sistema, não é uma plataforma — é o seu kit de instrumentos para Docker, sistema, rede, produtividade, criptografia, conversão e muito mais em Linux/macOS.
+Uma coleção de **117 ferramentas Bash precisas** para artesãos do terminal. Não é um sistema, não é uma plataforma — é o seu kit de instrumentos para Docker, sistema, rede, produtividade, criptografia, conversão e muito mais em Linux/macOS.
 
 ## 🚀 Funcionalidades
 
 ### 📦 Instalação e Execução
 - `dogu`: Dispatcher unificado — ponto de entrada único para todas as ferramentas com listagem, busca e metadados.
 - `dogu.json`: Manifesto estruturado com metadados de todos os scripts para autodescoberta por agentes de IA.
-- `dogu-make-skill.sh`: Gerador automático de `SKILL.md` a partir de `dogu.json` para integração com Claude Code/OpenCode.
+- `dogu-make-skill.sh`: Gera o pacote de skill (`SKILL.md` + `reference/`) a partir de `dogu.json` para harnesses de agentes (Claude Code, OpenCode).
 - `install-scripts.sh`: Instala todos os scripts em `~/.local/bin` e configura o PATH automaticamente.
 - `menu-launcher.sh`: Menu interativo (com suporte a `fzf`) para executar qualquer ferramenta do kit.
 - `env-manager.sh`: Orquestrador de ambientes que detecta e instala dependências de projetos (npm, pip, cargo, maven, gradle, composer, bundler, brew, apt).
@@ -333,7 +333,8 @@ O `dogu-sh` é projetado para uso por agentes de IA (Claude Code, OpenCode, etc.
 
 - **`dogu.json`**: Manifesto estruturado com metadados de todos os scripts (categoria, risco, argumentos, dependências).
 - **`dogu`**: Dispatcher que normaliza acesso e fornece listagem, busca e info.
-- **`--json`**: Saída estruturada em JSON para 15 scripts (diagnóstico, Docker, sistema).
+- **`SKILL.md` + `reference/`**: Skill gerado por `./dogu-make-skill.sh` — índice e protocolo de uso no `SKILL.md`, flags/dependências/exemplos por categoria em `reference/` (carregados sob demanda pelo harness).
+- **`--json`**: Saída estruturada em JSON para 43 scripts (diagnóstico, Docker, sistema).
 - **`NO_COLOR`**: Suporte ao padrão [no-color.org](https://no-color.org/) em todos os scripts.
 
 ## 📖 git-sync.sh — Detalhes
